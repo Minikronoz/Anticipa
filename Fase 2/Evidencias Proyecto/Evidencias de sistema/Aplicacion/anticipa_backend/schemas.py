@@ -201,3 +201,12 @@ class HistorialResponse(ConfigBase):
     id_actividad:       int
     fecha_cumplimiento: datetime
     observaciones:      Optional[str]
+
+
+
+#Logica para frontend
+
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str

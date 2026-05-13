@@ -4,6 +4,7 @@
 # =========================================================
 from fastapi import FastAPI, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from fastapi.middleware.cors import CORSMiddleware
 import models
 import schemas
 from database import engine, get_db
@@ -20,6 +21,13 @@ app = FastAPI(
     version="1.0.0"
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/", tags=["Estado"])
@@ -194,3 +202,30 @@ def listar_estrellas(id_estudiante: int, db: Session = Depends(get_db)):
     return db.query(models.RegistroEstrellaDiaria).filter(
         models.RegistroEstrellaDiaria.id_estudiante == id_estudiante
     ).all()
+
+
+# =========================================================
+# ENDPOINT: LOGIN (AUTH)
+# Valida credenciales y retorna el rol para el Frontend
+# =========================================================
+@app.post("/auth/login", tags=["Autenticación"])
+def iniciar_sesion(request: schemas.LoginRequest, db: Session = Depends(get_db)):
+    # 1. Buscar al usuario por email
+    usuario = db.query(models.Usuario).filter(models.Usuario.email == request.email).first()
+    
+    # 2. Validar que exista y que la contraseña coincida
+    if not usuario or usuario.password_hash != request.password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, 
+            detail="Email o contraseña incorrectos"
+        )
+    
+    # 3. Buscar el nombre de su rol para que Flutter sepa a qué pantalla ir
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.id_rol).first()
+    
+    return {
+        "mensaje": "Login exitoso",
+        "id_usuario": usuario.id_usuario,
+        "nombre": usuario.nombre,
+        "rol": rol.nombre_rol
+    }
