@@ -55,6 +55,8 @@ class Usuario(Base):
     codigo_vinculacion = Column(String(7), unique=True, nullable=True)
     puntos_totales     = Column(Integer, default=0)
     curso              = Column(String(100), nullable=True)
+    codigo_recuperacion = Column(String(6), nullable=True)
+    codigo_expiracion  = Column(TIMESTAMP(timezone=True), nullable=True)
 
     rol = relationship("Rol")
 

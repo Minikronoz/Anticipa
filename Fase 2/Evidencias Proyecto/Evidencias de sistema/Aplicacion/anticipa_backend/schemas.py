@@ -210,3 +210,15 @@ class HistorialResponse(ConfigBase):
 class LoginRequest(BaseModel):
     email: str
     password: str
+
+class RecuperarPasswordRequest(BaseModel):
+    email: str
+
+class VerificarCodigoRequest(BaseModel):
+    email: str
+    codigo: str
+
+class CambiarPasswordRequest(BaseModel):
+    email: str
+    codigo: str
+    nueva_password: str
