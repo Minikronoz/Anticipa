@@ -16,7 +16,7 @@ class PanelProfesor extends StatelessWidget {
         child: ListView(
           children: [
             const Text(
-              'Bienvenido/a al panel del profesor',
+              'Bienvenido/a', //al panel de profesor
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -72,3 +72,4 @@ class PanelProfesor extends StatelessWidget {
     );
   }
 }
+
