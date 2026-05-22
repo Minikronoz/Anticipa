@@ -3,73 +3,173 @@ import 'package:flutter/material.dart';
 class PanelProfesor extends StatelessWidget {
   const PanelProfesor({super.key});
 
+  final List<Map<String, dynamic>> cursos = const [
+    {
+      'nombre': '1° Básico A',
+      'alumnos': [
+        {'nombre': 'Mateo', 'puntos': 45, 'emoji': ''},
+        {'nombre': 'Sofía', 'puntos': 52, 'emoji': ''},
+      ],
+    },
+    {
+      'nombre': '1° Básico B',
+      'alumnos': [
+        {'nombre': 'Lucas', 'puntos': 38, 'emoji': ''},
+        {'nombre': 'Valentina', 'puntos': 60, 'emoji': ''},
+      ],
+    },
+    {
+      'nombre': '2° Básico A',
+      'alumnos': [
+        {'nombre': 'Diego', 'puntos': 41, 'emoji': ''},
+      ],
+    },
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FB),
+      backgroundColor: const Color(0xFFEAF1FF),
       appBar: AppBar(
         title: const Text('Panel Profesor'),
-        backgroundColor: Colors.blue[200],
+        centerTitle: true,
+        backgroundColor: const Color(0xFF4F46E5),
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
+      body: ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          const Text(
+            'Mis cursos y alumnos',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 34,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF061A40),
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Organiza tus alumnos por curso y gestiona sus calendarios de actividades.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 35),
+
+          for (final curso in cursos) _cursoSection(context, curso),
+        ],
+      ),
+    );
+  }
+
+  Widget _cursoSection(BuildContext context, Map<String, dynamic> curso) {
+    final alumnos = curso['alumnos'] as List;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
           children: [
-            const Text(
-              'Bienvenido/a', //al panel de profesor
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            const Icon(Icons.school, color: Color(0xFF4F46E5), size: 28),
+            const SizedBox(width: 8),
+            Text(
+              curso['nombre'],
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF061A40),
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '${alumnos.length} alumnos',
+              style: const TextStyle(
+                fontSize: 15,
+                color: Color(0xFF334155),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+
+        Wrap(
+          spacing: 20,
+          runSpacing: 20,
+          children: alumnos.map((alumno) {
+            return _alumnoCard(context, alumno);
+          }).toList(),
+        ),
+
+        const SizedBox(height: 40),
+      ],
+    );
+  }
+
+  Widget _alumnoCard(BuildContext context, Map<String, dynamic> alumno) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Seleccionaste a ${alumno['nombre']}'),
+          ),
+        );
+      },
+      child: Container(
+        width: 270,
+        height: 170,
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              alumno['emoji'],
+              style: const TextStyle(fontSize: 46),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Desde aquí podrás gestionar alumnos, actividades visuales y alertas de anticipación.',
-              style: TextStyle(fontSize: 16),
+            Text(
+              alumno['nombre'],
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF061A40),
+              ),
             ),
-            const SizedBox(height: 24),
-
-            _opcionPanel(
-              icono: Icons.group,
-              titulo: 'Alumnos vinculados',
-              descripcion: 'Ver estudiantes asociados al profesor.',
-            ),
-            _opcionPanel(
-              icono: Icons.add_task,
-              titulo: 'Crear actividad',
-              descripcion: 'Asignar una rutina visual con horario y pictograma.',
-            ),
-            _opcionPanel(
-              icono: Icons.notifications_active,
-              titulo: 'Configurar alertas',
-              descripcion: 'Definir anticipación, sonido y apoyo visual.',
-            ),
-            _opcionPanel(
-              icono: Icons.bar_chart,
-              titulo: 'Historial de cumplimiento',
-              descripcion: 'Revisar avances y actividades completadas.',
+            const SizedBox(height: 12),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.star, color: Color(0xFFEAB308), size: 22),
+                const SizedBox(width: 5),
+                Text(
+                  '${alumno['puntos']}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFEAB308),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
-
-  Widget _opcionPanel({
-    required IconData icono,
-    required String titulo,
-    required String descripcion,
-  }) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 3,
-      child: ListTile(
-        leading: Icon(icono, size: 36, color: Colors.blue),
-        title: Text(
-          titulo,
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        subtitle: Text(descripcion),
-        trailing: const Icon(Icons.arrow_forward_ios),
-      ),
-    );
-  }
 }
-
