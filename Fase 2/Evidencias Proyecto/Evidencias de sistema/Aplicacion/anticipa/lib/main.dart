@@ -59,6 +59,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
+
+//esto agrege
+          final String rol = data['rol'] ?? '';
+      if (rol.toLowerCase() == 'profesor') {
+      Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PanelProfesor(),
+      ),
+    );
+    return;
+  }
+// hasta aca
         setState(() {
           mensajeSistema = "¡Bienvenido ${data['nombre']}!\nRol: ${data['rol']}";
         });
