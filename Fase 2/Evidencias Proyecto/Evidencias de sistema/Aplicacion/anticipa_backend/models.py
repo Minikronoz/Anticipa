@@ -1,6 +1,8 @@
 # =========================================================
-# MODELS.PY
-# Cada clase representa una tabla en la base de datos.
+# MODELS.PY — VERSIÓN FINAL v3
+# Proyecto: Anticipa
+# CAMBIO PRINCIPAL: Estudiante separado de Usuario.
+# Solo 3 roles de usuario: Administrador, Profesor, Tutor.
 # =========================================================
 import enum
 from sqlalchemy import (
@@ -16,6 +18,8 @@ from database import Base
 
 # =========================================================
 # 0. TIPOS PERSONALIZADOS (ENUMS)
+# values_callable garantiza que SQLAlchemy guarda el VALOR
+# del enum ('suave', '5') y no el NOMBRE Python ('suave', 'cinco')
 # =========================================================
 class TipoSonidoEnum(enum.Enum):
     suave    = 'suave'
@@ -30,7 +34,7 @@ class MinutosAnticipacionEnum(enum.Enum):
 
 
 # =========================================================
-# 1. TABLA ROL
+# 1. ROL — Solo 3 roles: Administrador, Profesor, Tutor
 # =========================================================
 class Rol(Base):
     __tablename__ = "rol"
@@ -40,7 +44,9 @@ class Rol(Base):
 
 
 # =========================================================
-# 2. TABLA USUARIO
+# 2. USUARIO — Solo adultos que inician sesión
+# Se eliminaron: codigo_vinculacion, puntos_totales,
+# curso, fecha_nacimiento (ahora están en Estudiante)
 # =========================================================
 class Usuario(Base):
     __tablename__ = "usuario"
@@ -51,25 +57,46 @@ class Usuario(Base):
     email              = Column(String(100), nullable=False, unique=True)
     password_hash      = Column(String(255), nullable=False)
     fecha_registro     = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
-    fecha_nacimiento   = Column(Date, nullable=False)
-    codigo_vinculacion = Column(String(7), unique=True, nullable=True)
-    puntos_totales     = Column(Integer, default=0)
-    curso              = Column(String(100), nullable=True)
-    codigo_recuperacion = Column(String(6), nullable=True)
-    codigo_expiracion  = Column(TIMESTAMP(timezone=True), nullable=True)
+    # Campos para recuperación de contraseña
+    reset_token        = Column(String(100), unique=True, nullable=True)
+    reset_token_expiry = Column(TIMESTAMP(timezone=True), nullable=True)
 
-    rol = relationship("Rol")
+    rol            = relationship("Rol")
+    vinculaciones  = relationship("VinculacionHistorial", foreign_keys="VinculacionHistorial.id_usuario", back_populates="usuario")
 
 
 # =========================================================
-# 3. TABLA VINCULACION_HISTORIAL
+# 3. ESTUDIANTE — El niño/a con TEA o NEE
+# NO tiene email ni contraseña.
+# Accede al sistema a través de la cuenta de su tutor.
+# =========================================================
+class Estudiante(Base):
+    __tablename__ = "estudiante"
+
+    id_estudiante      = Column(Integer, primary_key=True, nullable=False)
+    nombre             = Column(String(100), nullable=False)
+    fecha_nacimiento   = Column(Date, nullable=False)
+    curso              = Column(String(100), nullable=True)
+    codigo_vinculacion = Column(String(7), unique=True, nullable=True)
+    puntos_totales     = Column(Integer, nullable=False, default=0)
+    creado_en          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+    vinculaciones = relationship("VinculacionHistorial", foreign_keys="VinculacionHistorial.id_estudiante", back_populates="estudiante")
+    actividades   = relationship("Actividad", foreign_keys="Actividad.id_estudiante", back_populates="estudiante")
+
+
+# =========================================================
+# 4. VINCULACION_HISTORIAL
+# Tabla N:M entre USUARIO (adulto) y ESTUDIANTE (niño).
+# CAMBIO: id_estudiante ahora FK a ESTUDIANTE, no a USUARIO.
+# Un niño puede tener mamá + papá + profesor vinculados.
 # =========================================================
 class VinculacionHistorial(Base):
     __tablename__ = "vinculacion_historial"
 
     id_vinculo    = Column(Integer, primary_key=True, nullable=False)
-    id_adulto     = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
-    id_estudiante = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    id_usuario    = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    id_estudiante = Column(Integer, ForeignKey("estudiante.id_estudiante"), nullable=False)
     fecha_inicio  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     fecha_termino = Column(TIMESTAMP(timezone=True), nullable=True)
     motivo_cambio = Column(String(255), nullable=True)
@@ -77,19 +104,19 @@ class VinculacionHistorial(Base):
     __table_args__ = (
         Index(
             'idx_un_vinculo_activo',
-            'id_adulto',
+            'id_usuario',
             'id_estudiante',
             unique=True,
             postgresql_where=text('fecha_termino IS NULL')
         ),
     )
 
-    adulto     = relationship("Usuario", foreign_keys=[id_adulto])
-    estudiante = relationship("Usuario", foreign_keys=[id_estudiante])
+    usuario     = relationship("Usuario", foreign_keys=[id_usuario], back_populates="vinculaciones")
+    estudiante  = relationship("Estudiante", foreign_keys=[id_estudiante], back_populates="vinculaciones")
 
 
 # =========================================================
-# 4. TABLA PICTOGRAMA
+# 5. PICTOGRAMA
 # =========================================================
 class Pictograma(Base):
     __tablename__ = "pictograma"
@@ -101,7 +128,7 @@ class Pictograma(Base):
 
 
 # =========================================================
-# 5. TABLA CATALOGO_ACTIVIDAD
+# 6. CATALOGO_ACTIVIDAD
 # =========================================================
 class CatalogoActividad(Base):
     __tablename__ = "catalogo_actividad"
@@ -114,13 +141,15 @@ class CatalogoActividad(Base):
 
 
 # =========================================================
-# 6. TABLA ACTIVIDAD
+# 7. ACTIVIDAD
+# CAMBIO: id_estudiante ahora FK a ESTUDIANTE.
+# id_creador sigue siendo FK a USUARIO (el adulto que crea).
 # =========================================================
 class Actividad(Base):
     __tablename__ = "actividad"
 
     id_actividad    = Column(Integer, primary_key=True, nullable=False)
-    id_estudiante   = Column(Integer, ForeignKey("usuario.id_usuario", ondelete="CASCADE"), nullable=False)
+    id_estudiante   = Column(Integer, ForeignKey("estudiante.id_estudiante", ondelete="CASCADE"), nullable=False)
     id_creador      = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
     id_pictograma   = Column(Integer, ForeignKey("pictograma.id_pictograma"), nullable=True)
     id_catalogo     = Column(Integer, ForeignKey("catalogo_actividad.id_catalogo"), nullable=True)
@@ -131,14 +160,14 @@ class Actividad(Base):
     fecha_actividad = Column(Date, nullable=False)
     fecha_creacion  = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
-    estudiante = relationship("Usuario", foreign_keys=[id_estudiante])
+    estudiante = relationship("Estudiante", foreign_keys=[id_estudiante], back_populates="actividades")
     creador    = relationship("Usuario", foreign_keys=[id_creador])
     pictograma = relationship("Pictograma")
     catalogo   = relationship("CatalogoActividad")
 
 
 # =========================================================
-# 7. TABLA CONFIGURACION_ALERTA
+# 8. CONFIGURACION_ALERTA — Sin cambios
 # =========================================================
 class ConfiguracionAlerta(Base):
     __tablename__ = "configuracion_alerta"
@@ -161,43 +190,45 @@ class ConfiguracionAlerta(Base):
 
 
 # =========================================================
-# 8. TABLA RECOMPENSA_DISPONIBLE
+# 9. RECOMPENSA_DISPONIBLE
+# CAMBIO: id_estudiante ahora FK a ESTUDIANTE.
 # =========================================================
 class RecompensaDisponible(Base):
     __tablename__ = "recompensa_disponible"
 
     id_recompensa     = Column(Integer, primary_key=True, nullable=False)
-    id_estudiante     = Column(Integer, ForeignKey("usuario.id_usuario", ondelete="CASCADE"), nullable=False)
+    id_estudiante     = Column(Integer, ForeignKey("estudiante.id_estudiante", ondelete="CASCADE"), nullable=False)
     nombre_recompensa = Column(String(100), nullable=False)
     recompensa_url    = Column(Text, nullable=True)
     meta_estrellas    = Column(Integer, nullable=False, default=5)
     estado_logro      = Column(Boolean, nullable=False, default=False)
     fecha_logro       = Column(TIMESTAMP(timezone=True), nullable=True)
 
-    estudiante = relationship("Usuario")
+    estudiante = relationship("Estudiante")
 
 
 # =========================================================
-# 9. TABLA REGISTRO_ESTRELLA_DIARIA
+# 10. REGISTRO_ESTRELLA_DIARIA
+# CAMBIO: id_estudiante ahora FK a ESTUDIANTE.
 # =========================================================
 class RegistroEstrellaDiaria(Base):
     __tablename__ = "registro_estrella_diaria"
 
     id_registro       = Column(Integer, primary_key=True, nullable=False)
-    id_estudiante     = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
+    id_estudiante     = Column(Integer, ForeignKey("estudiante.id_estudiante"), nullable=False)
     fecha             = Column(Date, nullable=False, server_default=text('CURRENT_DATE'))
     estrellas_ganadas = Column(Integer, nullable=False, default=0)
 
     __table_args__ = (
-        CheckConstraint('estrellas_ganadas >= 0', name='check_estrellas_ganadas_positivas'),
+        CheckConstraint('estrellas_ganadas >= 0', name='check_estrellas_positivas'),
         UniqueConstraint('id_estudiante', 'fecha', name='unq_estudiante_fecha'),
     )
 
-    estudiante = relationship("Usuario")
+    estudiante = relationship("Estudiante")
 
 
 # =========================================================
-# 10. TABLA HISTORIAL_CUMPLIMIENTO
+# 11. HISTORIAL_CUMPLIMIENTO — Sin cambios
 # =========================================================
 class HistorialCumplimiento(Base):
     __tablename__ = "historial_cumplimiento"
