@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
-class PanelProfesor extends StatelessWidget {
+class PanelProfesor extends StatefulWidget {
   const PanelProfesor({super.key});
 
-  final List<Map<String, dynamic>> cursos = const [
+  @override
+  State<PanelProfesor> createState() => _PanelProfesorState();
+}
+
+class _PanelProfesorState extends State<PanelProfesor> {
+  List<Map<String, dynamic>> cursos = [
     {
       'nombre': '1° Básico A',
       'alumnos': [
@@ -25,6 +30,126 @@ class PanelProfesor extends StatelessWidget {
       ],
     },
   ];
+
+  String generarCodigo() {
+    final numeros = DateTime.now().millisecondsSinceEpoch.toString();
+    return 'ANT-${numeros.substring(numeros.length - 4)}';
+  }
+
+  void mostrarCodigo(String nombreAlumno) {
+    final codigo = generarCodigo();
+
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Código generado'),
+        content: Text(
+          'Código para $nombreAlumno:\n\n$codigo',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void mostrarAgregarAlumno() {
+    final nombreController = TextEditingController();
+    String cursoSeleccionado = cursos.first['nombre'];
+    String emojiSeleccionado = '👦';
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Agregar alumno'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nombreController,
+                    decoration: const InputDecoration(
+                      labelText: 'Nombre del alumno',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: cursoSeleccionado,
+                    decoration: const InputDecoration(
+                      labelText: 'Curso',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: cursos.map((curso) {
+                      return DropdownMenuItem<String>(
+                        value: curso['nombre'],
+                        child: Text(curso['nombre']),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      setDialogState(() {
+                        cursoSeleccionado = value!;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: emojiSeleccionado,
+                    decoration: const InputDecoration(
+                      labelText: 'Icono',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: '👦', child: Text('👦 Niño')),
+                      DropdownMenuItem(value: '👧', child: Text('👧 Niña')),
+                      DropdownMenuItem(value: '🧒', child: Text('🧒 Estudiante')),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() {
+                        emojiSeleccionado = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (nombreController.text.trim().isEmpty) return;
+
+                    setState(() {
+                      final curso = cursos.firstWhere(
+                        (c) => c['nombre'] == cursoSeleccionado,
+                      );
+
+                      (curso['alumnos'] as List).add({
+                        'nombre': nombreController.text.trim(),
+                        'puntos': 0,
+                        'emoji': emojiSeleccionado,
+                      });
+                    });
+
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Guardar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,13 +180,28 @@ class PanelProfesor extends StatelessWidget {
             style: TextStyle(fontSize: 16, color: Color(0xFF334155)),
           ),
           const SizedBox(height: 35),
-          for (final curso in cursos) _cursoSection(context, curso),
+
+          for (final curso in cursos) _cursoSection(curso),
+
+          _agregarAlumnoButton(),
+
+          const SizedBox(height: 28),
+
+          const Center(
+            child: Text(
+              '🛡 Uso pedagógico autorizado — Ley 21.545 (TEA Chile)',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF94A3B8),
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _cursoSection(BuildContext context, Map<String, dynamic> curso) {
+  Widget _cursoSection(Map<String, dynamic> curso) {
     final alumnos = curso['alumnos'] as List;
 
     return Column(
@@ -91,7 +231,7 @@ class PanelProfesor extends StatelessWidget {
           spacing: 20,
           runSpacing: 20,
           children: alumnos.map((alumno) {
-            return _alumnoCard(context, alumno);
+            return _alumnoCard(alumno);
           }).toList(),
         ),
         const SizedBox(height: 40),
@@ -99,7 +239,7 @@ class PanelProfesor extends StatelessWidget {
     );
   }
 
-  Widget _alumnoCard(BuildContext context, Map<String, dynamic> alumno) {
+  Widget _alumnoCard(Map<String, dynamic> alumno) {
     return Container(
       width: 270,
       height: 210,
@@ -152,18 +292,54 @@ class PanelProfesor extends StatelessWidget {
             width: double.infinity,
             height: 36,
             child: OutlinedButton.icon(
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Código generado para ${alumno['nombre']}'),
-                  ),
-                );
-              },
+              onPressed: () => mostrarCodigo(alumno['nombre']),
               icon: const Icon(Icons.link, size: 16),
               label: const Text('Generar código'),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _agregarAlumnoButton() {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: mostrarAgregarAlumno,
+      child: Container(
+        width: double.infinity,
+        height: 150,
+        decoration: BoxDecoration(
+          color: Colors.white70,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFFCBD5E1),
+            width: 1.5,
+          ),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 32,
+              backgroundColor: Color(0xFFE0E7FF),
+              child: Icon(
+                Icons.add,
+                size: 42,
+                color: Color(0xFF4F46E5),
+              ),
+            ),
+            SizedBox(height: 14),
+            Text(
+              'Agregar alumno',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1E293B),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
