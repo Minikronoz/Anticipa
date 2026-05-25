@@ -7,21 +7,21 @@ class PanelProfesor extends StatelessWidget {
     {
       'nombre': '1° Básico A',
       'alumnos': [
-        {'nombre': 'Mateo', 'puntos': 45, 'emoji': ''},
-        {'nombre': 'Sofía', 'puntos': 52, 'emoji': ''},
+        {'nombre': 'Mateo', 'puntos': 45, 'emoji': '👦'},
+        {'nombre': 'Sofía', 'puntos': 52, 'emoji': '👧'},
       ],
     },
     {
       'nombre': '1° Básico B',
       'alumnos': [
-        {'nombre': 'Lucas', 'puntos': 38, 'emoji': ''},
-        {'nombre': 'Valentina', 'puntos': 60, 'emoji': ''},
+        {'nombre': 'Lucas', 'puntos': 38, 'emoji': '👦'},
+        {'nombre': 'Valentina', 'puntos': 60, 'emoji': '👧'},
       ],
     },
     {
       'nombre': '2° Básico A',
       'alumnos': [
-        {'nombre': 'Diego', 'puntos': 41, 'emoji': ''},
+        {'nombre': 'Diego', 'puntos': 41, 'emoji': '👦'},
       ],
     },
   ];
@@ -35,7 +35,6 @@ class PanelProfesor extends StatelessWidget {
         centerTitle: true,
         backgroundColor: const Color(0xFF4F46E5),
         foregroundColor: Colors.white,
-        elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(24),
@@ -53,13 +52,9 @@ class PanelProfesor extends StatelessWidget {
           const Text(
             'Organiza tus alumnos por curso y gestiona sus calendarios de actividades.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF334155),
-            ),
+            style: TextStyle(fontSize: 16, color: Color(0xFF334155)),
           ),
           const SizedBox(height: 35),
-
           for (final curso in cursos) _cursoSection(context, curso),
         ],
       ),
@@ -87,15 +82,11 @@ class PanelProfesor extends StatelessWidget {
             const Spacer(),
             Text(
               '${alumnos.length} alumnos',
-              style: const TextStyle(
-                fontSize: 15,
-                color: Color(0xFF334155),
-              ),
+              style: const TextStyle(fontSize: 15, color: Color(0xFF334155)),
             ),
           ],
         ),
         const SizedBox(height: 18),
-
         Wrap(
           spacing: 20,
           runSpacing: 20,
@@ -103,72 +94,76 @@ class PanelProfesor extends StatelessWidget {
             return _alumnoCard(context, alumno);
           }).toList(),
         ),
-
         const SizedBox(height: 40),
       ],
     );
   }
 
   Widget _alumnoCard(BuildContext context, Map<String, dynamic> alumno) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Seleccionaste a ${alumno['nombre']}'),
+    return Container(
+      width: 270,
+      height: 210,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
-        );
-      },
-      child: Container(
-        width: 270,
-        height: 170,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFE2E8F0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
+        ],
+      ),
+      child: Column(
+        children: [
+          Text(
+            alumno['emoji'],
+            style: const TextStyle(fontSize: 42),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            alumno['nombre'],
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF061A40),
             ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              alumno['emoji'],
-              style: const TextStyle(fontSize: 46),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              alumno['nombre'],
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF061A40),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star, color: Color(0xFFEAB308), size: 22),
-                const SizedBox(width: 5),
-                Text(
-                  '${alumno['puntos']}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFFEAB308),
-                    fontWeight: FontWeight.bold,
-                  ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.star, color: Color(0xFFEAB308), size: 22),
+              const SizedBox(width: 5),
+              Text(
+                '${alumno['puntos']}',
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFFEAB308),
+                  fontWeight: FontWeight.bold,
                 ),
-              ],
+              ),
+            ],
+          ),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 36,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Código generado para ${alumno['nombre']}'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.link, size: 16),
+              label: const Text('Generar código'),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
