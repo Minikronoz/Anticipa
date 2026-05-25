@@ -90,7 +90,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost:8080",
+
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -142,7 +145,7 @@ def solicitar_codigo_recuperacion(
         raise HTTPException(status_code=404, detail="No existe ninguna cuenta con este correo.")
 
     codigo     = generar_codigo_recuperacion()
-    expiracion = datetime.now() + timedelta(minutes=15)
+    expiracion = datetime.now(timezone.utc) + timedelta(minutes=15)
 
     usuario.reset_token = codigo
     usuario.reset_token_expiry   = expiracion
@@ -169,7 +172,7 @@ def verificar_codigo(
         raise HTTPException(status_code=400, detail="No hay código activo. Solicita uno nuevo.")
     if usuario.reset_token != request.codigo:
         raise HTTPException(status_code=400, detail="Código incorrecto.")
-    if datetime.now() > usuario.reset_token_expiry:
+    if datetime.now(timezone.utc) > usuario.reset_token_expiry:
         usuario.reset_token = None
         usuario.reset_token_expiry   = None
         db.commit()
@@ -192,7 +195,7 @@ def cambiar_password(
         raise HTTPException(status_code=400, detail="Debes verificar el código primero.")
     if usuario.reset_token != request.codigo:
         raise HTTPException(status_code=400, detail="Código incorrecto.")
-    if datetime.now() > usuario.reset_token_expiry:
+    if datetime.now(timezone.utc) > usuario.reset_token_expiry:
         usuario.reset_token = None
         usuario.reset_token_expiry   = None
         db.commit()
