@@ -271,6 +271,17 @@ def registrar_con_deteccion_rol(
 
     rol_id = detectar_rol_por_email(request.email)
 
+    if rol_id == 4 and not request.fecha_nacimiento:
+        raise HTTPException(
+            status_code=400,
+            detail="Fecha de nacimiento es obligatoria para estudiantes."
+        )
+    if rol_id == 4 and not request.curso_id_curso:
+        raise HTTPException(
+            status_code=400,
+            detail="Curso es obligatorio para estudiantes."
+        )
+
     usuario = models.Usuario(
         rol_id_rol=rol_id,
         nombre=request.nombre,
@@ -280,16 +291,40 @@ def registrar_con_deteccion_rol(
     )
     db.add(usuario); db.commit(); db.refresh(usuario)
 
-    rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.rol_id_rol).first()
-
-    return {
-        "mensaje": "Usuario registrado exitosamente",
+    resultado = {
         "id_usuario": usuario.id_usuario,
         "nombre": usuario.nombre,
         "email": usuario.email,
-        "rol": rol.nombre_rol,
-        "rol_id_rol": usuario.rol_id_rol,
+        "rol": db.query(models.Rol).filter(models.Rol.id_rol == rol_id).first().nombre_rol,
+        "rol_id_rol": rol_id,
     }
+
+    if rol_id == 4:
+        # Crear registro en tabla estudiante
+        while True:
+            codigo = generar_codigo_vinculacion()
+            if not db.query(models.Estudiante).filter(
+                models.Estudiante.codigo_vinculacion == codigo
+            ).first():
+                break
+
+        estudiante = models.Estudiante(
+            nombre=request.nombre,
+            fecha_nacimiento=request.fecha_nacimiento,
+            curso=request.curso,
+            curso_id_curso=request.curso_id_curso,
+            codigo_vinculacion=codigo,
+            usuario_id_usuario=usuario.id_usuario,
+        )
+        db.add(estudiante); db.commit(); db.refresh(estudiante)
+
+        resultado["mensaje"] = "Estudiante registrado exitosamente"
+        resultado["id_estudiante"] = estudiante.id_estudiante
+        resultado["codigo_vinculacion"] = codigo
+    else:
+        resultado["mensaje"] = f"{resultado['rol']} registrado exitosamente"
+
+    return resultado
 
 @app.get("/usuarios/", response_model=list[schemas.UsuarioResponse], tags=["Usuarios"])
 def listar_usuarios(db: Session = Depends(get_db)):

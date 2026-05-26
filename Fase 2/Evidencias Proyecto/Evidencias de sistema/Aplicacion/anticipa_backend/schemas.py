@@ -198,10 +198,12 @@ class EstrellaResponse(ConfigBase):
 
 # REGISTRO CON DETECCIÓN DE ROL
 class RegistroRequest(BaseModel):
-    nombre:  str
-    email:   str
-    password: str
-    curso_id_curso: Optional[int] = None
+    nombre:            str
+    email:             str
+    password:          str
+    fecha_nacimiento:  Optional[date] = None
+    curso_id_curso:    Optional[int] = None
+    curso:             Optional[str] = None
 
 
 # AUTENTICACION
