@@ -1,9 +1,3 @@
-# =========================================================
-# MAIN.PY — VERSIÓN FINAL
-# Proyecto: Anticipa
-# Para correr: uvicorn main:app --reload
-# Documentación: http://127.0.0.1:8000/docs
-# =========================================================
 from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -23,7 +17,6 @@ load_dotenv(dotenv_path=env_path)
 
 models.Base.metadata.create_all(bind=engine)
 
-# ── Utilidades ───────────────────────────────────────────
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 def hash_password(password: str) -> str:
@@ -33,16 +26,13 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 def generar_codigo_vinculacion(length: int = 7) -> str:
-    """Genera código único para vincular adultos al estudiante."""
     characters = string.ascii_uppercase + string.digits
     return ''.join(random.choices(characters, k=length))
 
 def generar_codigo_recuperacion(length: int = 6) -> str:
-    """Genera código numérico de 6 dígitos para recuperar contraseña."""
     return ''.join(random.choices(string.digits, k=length))
 
 def enviar_codigo_email(email: str, codigo: str, nombre: str = ""):
-    """Envía el código de recuperación por correo usando yagmail."""
     try:
         import yagmail
         email_user     = os.getenv("EMAIL_USER")
@@ -80,8 +70,23 @@ def enviar_codigo_email(email: str, codigo: str, nombre: str = ""):
         print(f"Error al enviar email: {e}")
         return False
 
+ALLOWED_DOMAINS = {
+    'gmail.com': 3,
+    'outlook.com': 3,
+    'profesor.cl': 2,
+    'estudiante.cl': 4,
+    'duocuc.cl': 4,
+}
 
-# ── App ──────────────────────────────────────────────────
+def detectar_rol_por_email(email: str) -> int:
+    domain = email.split('@')[1].lower()
+    if domain not in ALLOWED_DOMAINS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Dominio de correo no autorizado: {domain}. Usa @gmail.com, @outlook.com, @profesor.cl, @estudiante.cl o @duocuc.cl"
+        )
+    return ALLOWED_DOMAINS[domain]
+
 app = FastAPI(
     title="API Anticipa",
     description="Backend para la aplicación de rutinas visuales para niños con TEA.",
@@ -92,7 +97,6 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:8080",
-
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -121,17 +125,17 @@ def iniciar_sesion(request: schemas.LoginRequest, db: Session = Depends(get_db))
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Email o contraseña incorrectos"
         )
-    rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.id_rol).first()
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.rol_id_rol).first()
     return {
         "mensaje":    "Login exitoso",
         "id_usuario": usuario.id_usuario,
         "nombre":     usuario.nombre,
         "rol":        rol.nombre_rol,
-        "id_rol":     usuario.id_rol
+        "rol_id_rol": usuario.rol_id_rol,
     }
 
 
-# ── Recuperación de contraseña (3 pasos) ─────────────────
+# ── Recuperación de contraseña ────────────────────────────
 
 @app.post("/auth/solicitar-codigo", tags=["Autenticación"])
 def solicitar_codigo_recuperacion(
@@ -154,7 +158,6 @@ def solicitar_codigo_recuperacion(
     if enviar_codigo_email(usuario.email, codigo, usuario.nombre):
         return {"mensaje": "Código enviado a tu correo electrónico."}
     else:
-        # En desarrollo: devuelve el código si el email falla
         return {"mensaje": f"[DEV] Código generado: {codigo}"}
 
 
@@ -227,9 +230,23 @@ def listar_roles(db: Session = Depends(get_db)):
 
 
 # =========================================================
-# USUARIOS (solo adultos: Admin, Profesor, Tutor)
-# CAMBIO: Se eliminó la generación de codigo_vinculacion
-# en usuarios. Ahora el código se genera en el ESTUDIANTE.
+# CURSOS
+# =========================================================
+@app.post("/cursos/", response_model=schemas.CursoResponse,
+          status_code=status.HTTP_201_CREATED, tags=["Cursos"])
+def crear_curso(curso: schemas.CursoCreate, db: Session = Depends(get_db)):
+    nuevo = models.Curso(**curso.model_dump())
+    db.add(nuevo); db.commit(); db.refresh(nuevo)
+    return nuevo
+
+@app.get("/cursos/", response_model=list[schemas.CursoResponse], tags=["Cursos"])
+def listar_cursos(db: Session = Depends(get_db)):
+    return db.query(models.Curso).all()
+
+
+# =========================================================
+# USUARIOS
+# Rol detectado automáticamente según dominio de email
 # =========================================================
 @app.post("/usuarios/", response_model=schemas.UsuarioResponse,
           status_code=status.HTTP_201_CREATED, tags=["Usuarios"])
@@ -238,12 +255,41 @@ def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db))
         raise HTTPException(status_code=409, detail="Ya existe un usuario con ese email.")
 
     usuario_data = usuario.model_dump()
-    # Hashear la contraseña antes de guardar
     usuario_data['password_hash'] = hash_password(usuario_data['password_hash'])
 
     nuevo = models.Usuario(**usuario_data)
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
+
+@app.post("/usuarios/registro", tags=["Usuarios"])
+def registrar_con_deteccion_rol(
+    request: schemas.RegistroRequest,
+    db: Session = Depends(get_db)
+):
+    if db.query(models.Usuario).filter(models.Usuario.email == request.email).first():
+        raise HTTPException(status_code=409, detail="Ya existe un usuario con ese email.")
+
+    rol_id = detectar_rol_por_email(request.email)
+
+    usuario = models.Usuario(
+        rol_id_rol=rol_id,
+        nombre=request.nombre,
+        email=request.email,
+        password_hash=hash_password(request.password),
+        curso_id_curso=request.curso_id_curso,
+    )
+    db.add(usuario); db.commit(); db.refresh(usuario)
+
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.rol_id_rol).first()
+
+    return {
+        "mensaje": "Usuario registrado exitosamente",
+        "id_usuario": usuario.id_usuario,
+        "nombre": usuario.nombre,
+        "email": usuario.email,
+        "rol": rol.nombre_rol,
+        "rol_id_rol": usuario.rol_id_rol,
+    }
 
 @app.get("/usuarios/", response_model=list[schemas.UsuarioResponse], tags=["Usuarios"])
 def listar_usuarios(db: Session = Depends(get_db)):
@@ -258,14 +304,12 @@ def obtener_usuario(id_usuario: int, db: Session = Depends(get_db)):
 
 
 # =========================================================
-# ESTUDIANTES (los niños/as — no inician sesión)
-# Acceden al sistema a través de la cuenta de su tutor.
+# ESTUDIANTES
 # =========================================================
 @app.post("/estudiantes/", response_model=schemas.EstudianteResponse,
           status_code=status.HTTP_201_CREATED, tags=["Estudiantes"])
 def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends(get_db)):
     datos = estudiante.model_dump()
-    # Generar código de vinculación único automáticamente
     while True:
         codigo = generar_codigo_vinculacion()
         if not db.query(models.Estudiante).filter(
@@ -294,10 +338,9 @@ def obtener_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
 @app.get("/estudiantes/usuario/{id_usuario}",
          response_model=list[schemas.EstudianteResponse], tags=["Estudiantes"])
 def estudiantes_de_usuario(id_usuario: int, db: Session = Depends(get_db)):
-    """Devuelve todos los estudiantes vinculados activamente a un adulto.
-    Usado por Flutter para mostrar la pantalla tipo Netflix al hacer login."""
+    """Devuelve todos los estudiantes vinculados activamente a un adulto."""
     vinculos = db.query(models.VinculacionHistorial).filter(
-        models.VinculacionHistorial.id_usuario    == id_usuario,
+        models.VinculacionHistorial.usuario_id_usuario == id_usuario,
         models.VinculacionHistorial.fecha_termino == None
     ).all()
     return [v.estudiante for v in vinculos]
@@ -321,14 +364,14 @@ def actualizar_estudiante(
 
 
 # =========================================================
-# VINCULACIONES (adulto ↔ estudiante)
+# VINCULACIONES
 # =========================================================
 @app.post("/vinculaciones/", response_model=schemas.VinculacionResponse,
           status_code=status.HTTP_201_CREATED, tags=["Vinculaciones"])
 def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db)):
     existente = db.query(models.VinculacionHistorial).filter(
-        models.VinculacionHistorial.id_usuario    == v.id_usuario,
-        models.VinculacionHistorial.id_estudiante == v.id_estudiante,
+        models.VinculacionHistorial.usuario_id_usuario == v.usuario_id_usuario,
+        models.VinculacionHistorial.id_estudiante      == v.id_estudiante,
         models.VinculacionHistorial.fecha_termino == None
     ).first()
     if existente:
@@ -340,24 +383,23 @@ def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db
 @app.post("/vinculaciones/codigo/{codigo}",
           response_model=schemas.VinculacionResponse,
           status_code=status.HTTP_201_CREATED, tags=["Vinculaciones"])
-def vincular_por_codigo(codigo: str, id_usuario: int, db: Session = Depends(get_db)):
-    """Vincula un adulto a un estudiante usando el código de vinculación del niño.
-    El tutor/profesor recibe este código y lo ingresa en la app para conectarse."""
+def vincular_por_codigo(codigo: str, id_usuario: int, rol_id_rol: int = 3, db: Session = Depends(get_db)):
     estudiante = db.query(models.Estudiante).filter(
         models.Estudiante.codigo_vinculacion == codigo.upper()
     ).first()
     if not estudiante:
         raise HTTPException(status_code=404, detail="Código de vinculación inválido.")
     existente = db.query(models.VinculacionHistorial).filter(
-        models.VinculacionHistorial.id_usuario    == id_usuario,
-        models.VinculacionHistorial.id_estudiante == estudiante.id_estudiante,
+        models.VinculacionHistorial.usuario_id_usuario == id_usuario,
+        models.VinculacionHistorial.id_estudiante      == estudiante.id_estudiante,
         models.VinculacionHistorial.fecha_termino == None
     ).first()
     if existente:
         raise HTTPException(status_code=409, detail="Ya estás vinculado a este estudiante.")
     nuevo = models.VinculacionHistorial(
-        id_usuario    = id_usuario,
-        id_estudiante = estudiante.id_estudiante
+        usuario_id_usuario = id_usuario,
+        id_estudiante      = estudiante.id_estudiante,
+        rol_id_rol         = rol_id_rol,
     )
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
@@ -366,7 +408,7 @@ def vincular_por_codigo(codigo: str, id_usuario: int, db: Session = Depends(get_
          response_model=list[schemas.VinculacionResponse], tags=["Vinculaciones"])
 def listar_vinculaciones(id_usuario: int, db: Session = Depends(get_db)):
     return db.query(models.VinculacionHistorial).filter(
-        models.VinculacionHistorial.id_usuario == id_usuario
+        models.VinculacionHistorial.usuario_id_usuario == id_usuario
     ).all()
 
 @app.patch("/vinculaciones/{id_vinculo}/desvincular",
@@ -376,7 +418,6 @@ def desvincular(
     motivo: str = "Desvinculación manual",
     db: Session = Depends(get_db)
 ):
-    """Cierra un vínculo activo registrando la fecha de término (HU05)."""
     v = db.query(models.VinculacionHistorial).filter(
         models.VinculacionHistorial.id_vinculo == id_vinculo
     ).first()
@@ -408,14 +449,14 @@ def listar_pictogramas(db: Session = Depends(get_db)):
 # =========================================================
 # CATÁLOGO DE ACTIVIDADES
 # =========================================================
-@app.post("/catalogo/", response_model=schemas.CatalogoActividadResponse,
+@app.post("/catalogo/", response_model=schemas.CatalogoResponse,
           status_code=status.HTTP_201_CREATED, tags=["Catálogo"])
-def crear_catalogo(catalogo: schemas.CatalogoActividadCreate, db: Session = Depends(get_db)):
+def crear_catalogo(catalogo: schemas.CatalogoCreate, db: Session = Depends(get_db)):
     nuevo = models.CatalogoActividad(**catalogo.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
-@app.get("/catalogo/", response_model=list[schemas.CatalogoActividadResponse], tags=["Catálogo"])
+@app.get("/catalogo/", response_model=list[schemas.CatalogoResponse], tags=["Catálogo"])
 def listar_catalogo(db: Session = Depends(get_db)):
     return db.query(models.CatalogoActividad).all()
 
@@ -434,7 +475,7 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
          response_model=list[schemas.ActividadResponse], tags=["Actividades"])
 def listar_actividades_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
     return db.query(models.Actividad).filter(
-        models.Actividad.id_estudiante == id_estudiante
+        models.Actividad.estudiante_id_estudiante == id_estudiante
     ).all()
 
 @app.patch("/actividades/{id_actividad}/completar",
@@ -464,7 +505,7 @@ def registrar_cumplimiento(historial: schemas.HistorialCreate, db: Session = Dep
          response_model=list[schemas.HistorialResponse], tags=["Historial"])
 def historial_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
     return db.query(models.HistorialCumplimiento).join(models.Actividad).filter(
-        models.Actividad.id_estudiante == id_estudiante
+        models.Actividad.estudiante_id_estudiante == id_estudiante
     ).all()
 
 
@@ -482,23 +523,23 @@ def crear_recompensa(recompensa: schemas.RecompensaCreate, db: Session = Depends
          response_model=list[schemas.RecompensaResponse], tags=["Recompensas"])
 def listar_recompensas(id_estudiante: int, db: Session = Depends(get_db)):
     return db.query(models.RecompensaDisponible).filter(
-        models.RecompensaDisponible.id_estudiante == id_estudiante
+        models.RecompensaDisponible.estudiante_id_estudiante == id_estudiante
     ).all()
 
 
 # =========================================================
 # ESTRELLAS DIARIAS
 # =========================================================
-@app.post("/estrellas/", response_model=schemas.EstrellaDiariaResponse,
+@app.post("/estrellas/", response_model=schemas.EstrellaResponse,
           status_code=status.HTTP_201_CREATED, tags=["Estrellas"])
-def registrar_estrellas(estrella: schemas.EstrellaDiariaCreate, db: Session = Depends(get_db)):
+def registrar_estrellas(estrella: schemas.EstrellaCreate, db: Session = Depends(get_db)):
     nuevo = models.RegistroEstrellaDiaria(**estrella.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
 @app.get("/estrellas/estudiante/{id_estudiante}",
-         response_model=list[schemas.EstrellaDiariaResponse], tags=["Estrellas"])
+         response_model=list[schemas.EstrellaResponse], tags=["Estrellas"])
 def listar_estrellas(id_estudiante: int, db: Session = Depends(get_db)):
     return db.query(models.RegistroEstrellaDiaria).filter(
-        models.RegistroEstrellaDiaria.id_estudiante == id_estudiante
+        models.RegistroEstrellaDiaria.estudiante_id_estudiante == id_estudiante
     ).all()

@@ -13,19 +13,27 @@ class RegistroScreen extends StatefulWidget {
 class _RegistroScreenState extends State<RegistroScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final TextEditingController nombreController    = TextEditingController();
-  final TextEditingController emailController     = TextEditingController();
-  final TextEditingController passwordController  = TextEditingController();
+  final TextEditingController nombreController   = TextEditingController();
+  final TextEditingController emailController    = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
-  int idRolSeleccionado = 3;
   bool isLoading = false;
   String mensajeSistema = '';
   bool registroExitoso = false;
+  String? rolDetectado;
 
-  final Map<int, String> roles = {
-    3: 'Tutor / Apoderado',
-    2: 'Profesor',
+  static const Map<String, String> dominiosRoles = {
+    'gmail.com': 'Tutor / Apoderado',
+    'outlook.com': 'Tutor / Apoderado',
+    'profesor.cl': 'Profesor',
+    'estudiante.cl': 'Estudiante',
+    'duocuc.cl': 'Estudiante',
   };
+
+  String? _rolDelEmail(String email) {
+    final dominio = email.split('@').last.toLowerCase();
+    return dominiosRoles[dominio];
+  }
 
   Future<void> registrarUsuario() async {
     if (!_formKey.currentState!.validate()) return;
@@ -35,13 +43,12 @@ class _RegistroScreenState extends State<RegistroScreen> {
       mensajeSistema = '';
     });
 
-    final url = Uri.parse('${AppConstants.baseUrl}/usuarios/');
+    final url = Uri.parse('${AppConstants.baseUrl}/usuarios/registro');
 
     final Map<String, dynamic> body = {
-      'id_rol': idRolSeleccionado,
       'nombre': nombreController.text.trim(),
       'email': emailController.text.trim(),
-      'password_hash': passwordController.text,
+      'password': passwordController.text,
     };
 
     try {
@@ -51,10 +58,12 @@ class _RegistroScreenState extends State<RegistroScreen> {
         body: jsonEncode(body),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
         setState(() {
           registroExitoso = true;
-          mensajeSistema = '¡Cuenta creada exitosamente! Ya puedes iniciar sesión.';
+          rolDetectado = data['rol'];
+          mensajeSistema = '¡Cuenta creada exitosamente como ${data['rol']}!';
         });
       } else if (response.statusCode == 409) {
         setState(() => mensajeSistema = 'Ya existe una cuenta con ese correo electrónico.');
@@ -71,6 +80,10 @@ class _RegistroScreenState extends State<RegistroScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final dominioActual = emailController.text.contains('@')
+        ? emailController.text.split('@').last.toLowerCase()
+        : '';
+
     return Scaffold(
       appBar: AppBar(title: const Text('Crear Cuenta')),
       body: SingleChildScrollView(
@@ -80,23 +93,6 @@ class _RegistroScreenState extends State<RegistroScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Tipo de cuenta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-              const SizedBox(height: 8),
-              DropdownButtonFormField<int>(
-                value: idRolSeleccionado,
-                decoration: const InputDecoration(border: OutlineInputBorder()),
-                items: roles.entries.map((entry) {
-                  return DropdownMenuItem<int>(
-                    value: entry.key,
-                    child: Text(entry.value),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() => idRolSeleccionado = value!);
-                },
-              ),
-              const SizedBox(height: 16),
-
               TextFormField(
                 controller: nombreController,
                 decoration: const InputDecoration(
@@ -113,13 +109,31 @@ class _RegistroScreenState extends State<RegistroScreen> {
                 decoration: const InputDecoration(
                   labelText: 'Correo Electrónico',
                   border: OutlineInputBorder(),
+                  helperText: 'Usa @gmail.com, @outlook.com, @profesor.cl, @estudiante.cl o @duocuc.cl',
                 ),
+                onChanged: (_) => setState(() {}),
                 validator: (v) {
                   if (v!.trim().isEmpty) return 'El correo es obligatorio';
                   if (!v.contains('@') || !v.contains('.')) return 'Ingresa un correo válido';
+                  final rol = _rolDelEmail(v);
+                  if (rol == null) return 'Dominio no autorizado. Revisa los permitidos.';
                   return null;
                 },
               ),
+
+              if (dominioActual.isNotEmpty && _rolDelEmail(emailController.text) != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Se registrará como: ${_rolDelEmail(emailController.text)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.blue[700],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+
               const SizedBox(height: 16),
 
               TextFormField(
