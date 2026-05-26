@@ -63,8 +63,8 @@ class _RegistroScreenState extends State<RegistroScreen> {
   Future<void> seleccionarFecha() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2014),
-      firstDate: DateTime(2010),
+      initialDate: fechaNacimiento ?? DateTime(2010),
+      firstDate: DateTime(1950),
       lastDate: DateTime.now(),
       helpText: 'Selecciona fecha de nacimiento',
     );
@@ -230,13 +230,13 @@ class _RegistroScreenState extends State<RegistroScreen> {
                       border: const OutlineInputBorder(),
                       prefixIcon: const Icon(Icons.calendar_today),
                       hintText: fechaNacimiento == null
-                          ? 'Selecciona una fecha'
-                          : '${fechaNacimiento!.day}/${fechaNacimiento!.month}/${fechaNacimiento!.year}',
+                          ? 'dd/mm/aaaa'
+                          : '${fechaNacimiento!.day.toString().padLeft(2, '0')}/${fechaNacimiento!.month.toString().padLeft(2, '0')}/${fechaNacimiento!.year}',
                     ),
                     controller: TextEditingController(
                       text: fechaNacimiento == null
                           ? ''
-                          : '${fechaNacimiento!.day}/${fechaNacimiento!.month}/${fechaNacimiento!.year}',
+                          : '${fechaNacimiento!.day.toString().padLeft(2, '0')}/${fechaNacimiento!.month.toString().padLeft(2, '0')}/${fechaNacimiento!.year}',
                     ),
                   ),
                 ),
