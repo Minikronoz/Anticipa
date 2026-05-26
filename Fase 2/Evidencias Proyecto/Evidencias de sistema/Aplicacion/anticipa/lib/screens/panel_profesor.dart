@@ -45,7 +45,10 @@ class _PanelProfesorState extends State<PanelProfesor> {
         title: const Text('Código generado'),
         content: Text(
           'Código para $nombreAlumno:\n\n$codigo',
-          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         actions: [
           TextButton(
@@ -72,6 +75,7 @@ class _PanelProfesorState extends State<PanelProfesor> {
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+
                   TextField(
                     controller: nombreController,
                     decoration: const InputDecoration(
@@ -79,7 +83,9 @@ class _PanelProfesorState extends State<PanelProfesor> {
                       border: OutlineInputBorder(),
                     ),
                   ),
+
                   const SizedBox(height: 16),
+
                   DropdownButtonFormField<String>(
                     value: cursoSeleccionado,
                     decoration: const InputDecoration(
@@ -98,7 +104,9 @@ class _PanelProfesorState extends State<PanelProfesor> {
                       });
                     },
                   ),
+
                   const SizedBox(height: 16),
+
                   DropdownButtonFormField<String>(
                     value: emojiSeleccionado,
                     decoration: const InputDecoration(
@@ -106,43 +114,95 @@ class _PanelProfesorState extends State<PanelProfesor> {
                       border: OutlineInputBorder(),
                     ),
                     items: const [
-                      DropdownMenuItem(value: '👦', child: Text('👦 Niño')),
-                      DropdownMenuItem(value: '👧', child: Text('👧 Niña')),
-                      DropdownMenuItem(value: '🧒', child: Text('🧒 Estudiante')),
+
+                      DropdownMenuItem(
+                        value: '👦',
+                        child: Text('👦 Niño'),
+                      ),
+
+                      DropdownMenuItem(
+                        value: '👧',
+                        child: Text('👧 Niña'),
+                      ),
+
+                      DropdownMenuItem(
+                        value: '🧒',
+                        child: Text('🧒 Estudiante'),
+                      ),
+
                     ],
+
                     onChanged: (value) {
                       setDialogState(() {
                         emojiSeleccionado = value!;
                       });
                     },
+
                   ),
+
                 ],
               ),
+
               actions: [
+
                 TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
+                  onPressed: () =>
+                      Navigator.pop(context),
+                  child:
+                      const Text('Cancelar'),
                 ),
+
                 ElevatedButton(
+
                   onPressed: () {
-                    if (nombreController.text.trim().isEmpty) return;
+
+                    if (nombreController
+                        .text
+                        .trim()
+                        .isEmpty) return;
 
                     setState(() {
-                      final curso = cursos.firstWhere(
-                        (c) => c['nombre'] == cursoSeleccionado,
+
+                      final curso =
+                          cursos.firstWhere(
+                        (c) =>
+                            c['nombre']
+                            ==
+                            cursoSeleccionado,
                       );
 
-                      (curso['alumnos'] as List).add({
-                        'nombre': nombreController.text.trim(),
-                        'puntos': 0,
-                        'emoji': emojiSeleccionado,
+                      (curso['alumnos']
+                              as List)
+                          .add({
+
+                        'nombre':
+                            nombreController
+                                .text
+                                .trim(),
+
+                        'puntos':
+                            0,
+
+                        'emoji':
+                            emojiSeleccionado,
+
                       });
+
                     });
 
-                    Navigator.pop(context);
+                    Navigator.pop(
+                      context,
+                    );
+
                   },
-                  child: const Text('Guardar'),
+
+                  child:
+                      const Text(
+                    'Guardar',
+                  ),
+
                 ),
+
               ],
             );
           },
@@ -152,195 +212,451 @@ class _PanelProfesorState extends State<PanelProfesor> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEAF1FF),
-      appBar: AppBar(
-        title: const Text('Panel Profesor'),
-        centerTitle: true,
-        backgroundColor: const Color(0xFF4F46E5),
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          const Text(
-            'Mis cursos y alumnos',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF061A40),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Organiza tus alumnos por curso y gestiona sus calendarios de actividades.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Color(0xFF334155)),
-          ),
-          const SizedBox(height: 35),
+  Widget build(
+    BuildContext context,
+  ) {
 
-          for (final curso in cursos) _cursoSection(curso),
+    return Scaffold(
+
+      backgroundColor:
+          const Color(
+        0xFFEAF1FF,
+      ),
+
+      appBar:
+          AppBar(
+
+        title:
+            const Text(
+          'Panel Profesor',
+        ),
+
+        centerTitle:
+            true,
+
+        backgroundColor:
+            const Color(
+          0xFF4F46E5,
+        ),
+
+        foregroundColor:
+            Colors.white,
+
+        actions: [
+
+          IconButton(
+
+            tooltip:
+                'Cerrar sesión',
+
+            icon:
+                const Icon(
+              Icons.logout,
+              color:
+                  Colors.white,
+            ),
+
+            onPressed:
+                () {
+
+              showDialog(
+
+                context:
+                    context,
+
+                builder:
+                    (_) =>
+                        AlertDialog(
+
+                  title:
+                      const Text(
+                    'Cerrar sesión',
+                  ),
+
+                  content:
+                      const Text(
+                    '¿Deseas volver al inicio de sesión?',
+                  ),
+
+                  actions: [
+
+                    TextButton(
+
+                      onPressed:
+                          () {
+
+                        Navigator.pop(
+                          context,
+                        );
+
+                      },
+
+                      child:
+                          const Text(
+                        'Cancelar',
+                      ),
+
+                    ),
+
+                    ElevatedButton(
+
+                      onPressed:
+                          () {
+
+                        Navigator.pushNamedAndRemoveUntil(
+
+                          context,
+
+                          '/',
+
+                          (
+                            route,
+                          ) =>
+                              false,
+
+                        );
+
+                      },
+
+                      child:
+                          const Text(
+                        'Salir',
+                      ),
+
+                    ),
+
+                  ],
+
+                ),
+
+              );
+
+            },
+
+          ),
+
+        ],
+
+      ),
+
+      body:
+          ListView(
+
+        padding:
+            const EdgeInsets
+                .all(
+          24,
+        ),
+
+        children: [
+
+          const Text(
+
+            'Mis cursos y alumnos',
+
+            textAlign:
+                TextAlign
+                    .center,
+
+            style:
+                TextStyle(
+
+              fontSize:
+                  34,
+
+              fontWeight:
+                  FontWeight
+                      .bold,
+
+              color:
+                  Color(
+                0xFF061A40,
+              ),
+
+            ),
+
+          ),
+
+          const SizedBox(
+            height:
+                10,
+          ),
+
+          const Text(
+
+            'Organiza tus alumnos por curso y gestiona actividades.',
+
+            textAlign:
+                TextAlign
+                    .center,
+
+          ),
+
+          const SizedBox(
+            height:
+                35,
+          ),
+
+          for (
+            final curso
+                in cursos
+          )
+            _cursoSection(
+              curso,
+            ),
 
           _agregarAlumnoButton(),
 
-          const SizedBox(height: 28),
+          const SizedBox(
+            height:
+                25,
+          ),
 
           const Center(
-            child: Text(
-              '🛡 Uso pedagógico autorizado — Ley 21.545 (TEA Chile)',
-              style: TextStyle(
-                fontSize: 14,
-                color: Color(0xFF94A3B8),
+
+            child:
+                Text(
+
+              '🛡 Uso pedagógico autorizado — Ley 21.545',
+
+              style:
+                  TextStyle(
+                color:
+                    Colors.grey,
               ),
+
             ),
-          ),
+
+          )
+
         ],
+
       ),
+
     );
   }
 
-  Widget _cursoSection(Map<String, dynamic> curso) {
-    final alumnos = curso['alumnos'] as List;
+  Widget _cursoSection(
+    Map<String, dynamic>
+        curso,
+  ) {
+
+    final alumnos =
+        curso[
+            'alumnos']
+        as List;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+
+      crossAxisAlignment:
+          CrossAxisAlignment
+              .start,
+
       children: [
+
         Row(
+
           children: [
-            const Icon(Icons.school, color: Color(0xFF4F46E5), size: 28),
-            const SizedBox(width: 8),
-            Text(
-              curso['nombre'],
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF061A40),
-              ),
+
+            const Icon(
+              Icons.school,
             ),
+
+            const SizedBox(
+              width: 10,
+            ),
+
+            Text(
+              curso[
+                  'nombre'],
+            ),
+
             const Spacer(),
+
             Text(
               '${alumnos.length} alumnos',
-              style: const TextStyle(fontSize: 15, color: Color(0xFF334155)),
             ),
+
           ],
+
         ),
-        const SizedBox(height: 18),
+
+        const SizedBox(
+          height: 15,
+        ),
+
         Wrap(
-          spacing: 20,
-          runSpacing: 20,
-          children: alumnos.map((alumno) {
-            return _alumnoCard(alumno);
-          }).toList(),
+
+          spacing:
+              20,
+
+          runSpacing:
+              20,
+
+          children:
+
+              alumnos.map(
+            (
+              alumno,
+            ) {
+
+              return _alumnoCard(
+                alumno,
+              );
+
+            },
+          ).toList(),
+
         ),
-        const SizedBox(height: 40),
+
+        const SizedBox(
+          height: 40,
+        )
+
       ],
+
     );
   }
 
-  Widget _alumnoCard(Map<String, dynamic> alumno) {
+  Widget _alumnoCard(
+    Map<String, dynamic>
+        alumno,
+  ) {
+
     return Container(
-      width: 270,
-      height: 210,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
+
+      width:
+          270,
+
+      height:
+          210,
+
+      padding:
+          const EdgeInsets
+              .all(
+        16,
       ),
-      child: Column(
+
+      decoration:
+          BoxDecoration(
+
+        color:
+            Colors.white,
+
+        borderRadius:
+            BorderRadius
+                .circular(
+          18,
+        ),
+
+      ),
+
+      child:
+          Column(
+
         children: [
+
           Text(
-            alumno['emoji'],
-            style: const TextStyle(fontSize: 42),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            alumno['nombre'],
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF061A40),
+            alumno[
+                'emoji'],
+            style:
+                const TextStyle(
+              fontSize:
+                  42,
             ),
           ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.star, color: Color(0xFFEAB308), size: 22),
-              const SizedBox(width: 5),
-              Text(
-                '${alumno['puntos']}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFEAB308),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
+
+          Text(
+            alumno[
+                'nombre'],
           ),
+
+          Text(
+            "⭐ ${alumno['puntos']}",
+          ),
+
           const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            height: 36,
-            child: OutlinedButton.icon(
-              onPressed: () => mostrarCodigo(alumno['nombre']),
-              icon: const Icon(Icons.link, size: 16),
-              label: const Text('Generar código'),
+
+          OutlinedButton
+              .icon(
+
+            onPressed:
+                () =>
+                    mostrarCodigo(
+              alumno[
+                  'nombre'],
             ),
+
+            icon:
+                const Icon(
+              Icons.link,
+            ),
+
+            label:
+                const Text(
+              "Generar código",
+            ),
+
           ),
+
         ],
+
       ),
+
     );
   }
 
   Widget _agregarAlumnoButton() {
+
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
-      onTap: mostrarAgregarAlumno,
-      child: Container(
-        width: double.infinity,
-        height: 150,
-        decoration: BoxDecoration(
-          color: Colors.white70,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: const Color(0xFFCBD5E1),
-            width: 1.5,
+
+      onTap:
+          mostrarAgregarAlumno,
+
+      child:
+          Container(
+
+        height:
+            150,
+
+        decoration:
+            BoxDecoration(
+
+          color:
+              Colors.white70,
+
+          borderRadius:
+              BorderRadius.circular(
+            18,
           ),
+
         ),
-        child: const Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+
+        child:
+            const Column(
+
+          mainAxisAlignment:
+              MainAxisAlignment
+                  .center,
+
           children: [
-            CircleAvatar(
-              radius: 32,
-              backgroundColor: Color(0xFFE0E7FF),
-              child: Icon(
-                Icons.add,
-                size: 42,
-                color: Color(0xFF4F46E5),
-              ),
+
+            Icon(
+              Icons.add,
+              size:
+                  50,
             ),
-            SizedBox(height: 14),
+
             Text(
-              'Agregar alumno',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-              ),
-            ),
+              "Agregar alumno",
+            )
+
           ],
+
         ),
+
       ),
+
     );
   }
 }
