@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'screens/panel_profesor.dart';
+import 'screens/panel_estudiante.dart';
 import 'screens/registro_screen.dart';
 import 'screens/recuperar_password_screen.dart';
 import 'constants.dart';
@@ -60,18 +61,36 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-//esto agrege
-          final String rol = data['rol'] ?? '';
-      if (rol.toLowerCase() == 'profesor') {
-      Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const PanelProfesor(),
-      ),
-    );
-    return;
-  }
-// hasta aca
+        final String rol = data['rol'] ?? '';
+        final int idUsuario = data['id_usuario'] ?? 0;
+        final String nombre = data['nombre'] ?? '';
+
+        if (rol.toLowerCase() == 'profesor') {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PanelProfesor(),
+            ),
+          );
+          return;
+        }
+
+        if (rol.toLowerCase() == 'estudiante') {
+          final int idEstudiante = data['id_estudiante'] ?? 0;
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => PanelEstudiante(
+                idEstudiante: idEstudiante,
+                idUsuario: idUsuario,
+                rol: rol,
+                nombreEstudiante: nombre,
+              ),
+            ),
+          );
+          return;
+        }
+
         setState(() {
           mensajeSistema = "¡Bienvenido ${data['nombre']}!\nRol: ${data['rol']}";
         });

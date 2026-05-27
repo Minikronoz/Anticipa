@@ -126,13 +126,20 @@ def iniciar_sesion(request: schemas.LoginRequest, db: Session = Depends(get_db))
             detail="Email o contraseña incorrectos"
         )
     rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.rol_id_rol).first()
-    return {
+    respuesta = {
         "mensaje":    "Login exitoso",
         "id_usuario": usuario.id_usuario,
         "nombre":     usuario.nombre,
         "rol":        rol.nombre_rol,
         "rol_id_rol": usuario.rol_id_rol,
     }
+    if usuario.rol_id_rol == 4:
+        estudiante = db.query(models.Estudiante).filter(
+            models.Estudiante.usuario_id_usuario == usuario.id_usuario
+        ).first()
+        if estudiante:
+            respuesta["id_estudiante"] = estudiante.id_estudiante
+    return respuesta
 
 
 # ── Recuperación de contraseña ────────────────────────────
@@ -311,7 +318,6 @@ def registrar_con_deteccion_rol(
         estudiante = models.Estudiante(
             nombre=request.nombre,
             fecha_nacimiento=request.fecha_nacimiento,
-            curso=request.curso,
             curso_id_curso=request.curso_id_curso,
             codigo_vinculacion=codigo,
             usuario_id_usuario=usuario.id_usuario,
@@ -521,9 +527,32 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
     ).first()
     if not a:
         raise HTTPException(status_code=404, detail="Actividad no encontrada.")
-    a.es_completada = True
+    a.es_completada = not a.es_completada
     db.commit(); db.refresh(a)
     return a
+
+@app.patch("/actividades/{id_actividad}",
+           response_model=schemas.ActividadResponse, tags=["Actividades"])
+def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: Session = Depends(get_db)):
+    a = db.query(models.Actividad).filter(
+        models.Actividad.id_actividad == id_actividad
+    ).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Actividad no encontrada.")
+    for campo, valor in datos.model_dump(exclude_unset=True).items():
+        setattr(a, campo, valor)
+    db.commit(); db.refresh(a)
+    return a
+
+@app.delete("/actividades/{id_actividad}", tags=["Actividades"])
+def eliminar_actividad(id_actividad: int, db: Session = Depends(get_db)):
+    a = db.query(models.Actividad).filter(
+        models.Actividad.id_actividad == id_actividad
+    ).first()
+    if not a:
+        raise HTTPException(status_code=404, detail="Actividad no encontrada.")
+    db.delete(a); db.commit()
+    return {"mensaje": "Actividad eliminada exitosamente"}
 
 
 # =========================================================

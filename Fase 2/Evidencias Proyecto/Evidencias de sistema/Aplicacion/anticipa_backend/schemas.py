@@ -53,13 +53,11 @@ class EstudianteCreate(ConfigBase):
     fecha_nacimiento:  date
     usuario_id_usuario: int
     curso_id_curso:    int
-    curso:             Optional[str] = None
 
 class EstudianteResponse(ConfigBase):
     id_estudiante:     int
     nombre:            str
     fecha_nacimiento:  date
-    curso:             Optional[str]
     codigo_vinculacion: Optional[str]
     puntos_totales:    int
     creado_en:         datetime
@@ -69,7 +67,6 @@ class EstudianteResponse(ConfigBase):
 class EstudianteUpdate(ConfigBase):
     nombre:           Optional[str]  = None
     fecha_nacimiento: Optional[date] = None
-    curso:            Optional[str]  = None
     curso_id_curso:   Optional[int]  = None
 
 
@@ -138,6 +135,14 @@ class ActividadResponse(ConfigBase):
     fecha_actividad:                date
     fecha_creacion:                 datetime
 
+class ActividadUpdate(ConfigBase):
+    nombre_tarea:                   Optional[str]  = None
+    hora_inicio:                    Optional[time] = None
+    hora_fin:                       Optional[time] = None
+    fecha_actividad:                Optional[date] = None
+    pictograma_id_pictograma:       Optional[int]  = None
+    catalogo_actividad_id_catalogo: Optional[int]  = None
+
 
 # CONFIGURACION_ALERTA
 class AlertaCreate(ConfigBase):
@@ -203,7 +208,6 @@ class RegistroRequest(BaseModel):
     password:          str
     fecha_nacimiento:  Optional[date] = None
     curso_id_curso:    Optional[int] = None
-    curso:             Optional[str] = None
 
 
 # AUTENTICACION
