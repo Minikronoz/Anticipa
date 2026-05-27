@@ -179,7 +179,12 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
         Container(
           width: 120, height: 120,
           decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(24)),
-          child: Center(child: Text(picto ?? '📌', style: const TextStyle(fontSize: 64))),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: picto != null
+                ? Image.network(picto, width: 100, height: 100, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 64)))
+                : const Text('📌', style: TextStyle(fontSize: 64)),
+          ),
         ),
         const SizedBox(height: 12),
         Text(a['nombre_tarea'] ?? 'Actividad', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF061A40), decoration: completada ? TextDecoration.lineThrough : null)),

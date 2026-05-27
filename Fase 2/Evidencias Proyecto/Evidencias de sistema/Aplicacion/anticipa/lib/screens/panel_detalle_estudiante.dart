@@ -334,7 +334,16 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
             color: ok ? const Color(0xFFF0FDF4) : Colors.white,
             child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
               SizedBox(width: 60, child: Text(hora, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)))),
-              Container(width: 56, height: 56, decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(12)), child: Center(child: Text(picto?['url'] ?? '📌', style: const TextStyle(fontSize: 30)))),
+              ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Container(
+                width: 56, height: 56,
+                decoration: BoxDecoration(color: const Color(0xFFEEF2FF)),
+                child: picto?['url'] != null
+                    ? Image.network(picto!['url'], width: 44, height: 44, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 30)))
+                    : const Center(child: Text('📌', style: TextStyle(fontSize: 30))),
+              ),
+            ),
               const SizedBox(width: 12),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF061A40), decoration: ok ? TextDecoration.lineThrough : null)),
