@@ -1,128 +1,146 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class PanelProfesor extends StatefulWidget {
-  const PanelProfesor({super.key});
+  final int idUsuarioProfesor;
+
+  const PanelProfesor({
+    super.key,
+    required this.idUsuarioProfesor,
+  });
 
   @override
   State<PanelProfesor> createState() => _PanelProfesorState();
 }
 
 class _PanelProfesorState extends State<PanelProfesor> {
-  List<Map<String, dynamic>> cursos = [
-    {
-      'nombre': '1° Básico A',
-      'alumnos': [
-        {'nombre': 'Mateo', 'puntos': 45, 'emoji': '👦'},
-        {'nombre': 'Sofía', 'puntos': 52, 'emoji': '👧'},
-      ],
-    },
-    {
-      'nombre': '1° Básico B',
-      'alumnos': [
-        {'nombre': 'Lucas', 'puntos': 38, 'emoji': '👦'},
-        {'nombre': 'Valentina', 'puntos': 60, 'emoji': '👧'},
-      ],
-    },
-    {
-      'nombre': '2° Básico A',
-      'alumnos': [
-        {'nombre': 'Diego', 'puntos': 41, 'emoji': '👦'},
-      ],
-    },
-  ];
+  final String apiUrl = 'http://127.0.0.1:8000';
 
-  void mostrarAgregarAlumno() {
-    final nombreController = TextEditingController();
-    String cursoSeleccionado = cursos.first['nombre'];
-    String emojiSeleccionado = '👦';
+  List<dynamic> estudiantes = [];
+  List<dynamic> cursos = [];
+  bool cargando = true;
+  String error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    cargarDatos();
+  }
+
+  Future<void> cargarDatos() async {
+    setState(() {
+      cargando = true;
+      error = '';
+    });
+
+    try {
+      final cursosResponse = await http.get(Uri.parse('$apiUrl/cursos/'));
+      final estudiantesResponse = await http.get(
+        Uri.parse('$apiUrl/estudiantes/usuario/${widget.idUsuarioProfesor}'),
+      );
+
+      if (cursosResponse.statusCode == 200 &&
+          estudiantesResponse.statusCode == 200) {
+        setState(() {
+          cursos = jsonDecode(cursosResponse.body);
+          estudiantes = jsonDecode(estudiantesResponse.body);
+          cargando = false;
+        });
+      } else {
+        setState(() {
+          error = 'No se pudieron cargar los datos.';
+          cargando = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Error de conexión con la API.';
+        cargando = false;
+      });
+    }
+  }
+
+  Future<void> vincularPorCodigo() async {
+    final codigoController = TextEditingController();
 
     showDialog(
       context: context,
-      builder: (_) {
-        return StatefulBuilder(
-          builder: (context, setDialogState) {
-            return AlertDialog(
-              title: const Text('Agregar alumno'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nombreController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nombre alumno',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  DropdownButtonFormField<String>(
-                    value: cursoSeleccionado,
-                    decoration: const InputDecoration(
-                      labelText: 'Curso',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: cursos.map((curso) {
-                      return DropdownMenuItem<String>(
-                        value: curso['nombre'],
-                        child: Text(curso['nombre']),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setDialogState(() {
-                        cursoSeleccionado = value!;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 15),
-                  DropdownButtonFormField<String>(
-                    value: emojiSeleccionado,
-                    decoration: const InputDecoration(
-                      labelText: 'Icono',
-                      border: OutlineInputBorder(),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: '👦', child: Text('👦 Niño')),
-                      DropdownMenuItem(value: '👧', child: Text('👧 Niña')),
-                      DropdownMenuItem(value: '🧒', child: Text('🧒 Estudiante')),
-                    ],
-                    onChanged: (value) {
-                      setDialogState(() {
-                        emojiSeleccionado = value!;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancelar'),
+      builder: (_) => AlertDialog(
+        title: const Text('Vincular estudiante'),
+        content: TextField(
+          controller: codigoController,
+          decoration: const InputDecoration(
+            labelText: 'Código de vinculación',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final codigo = codigoController.text.trim();
+
+              if (codigo.isEmpty) return;
+
+              final response = await http.post(
+                Uri.parse(
+                  '$apiUrl/vinculaciones/codigo/$codigo?id_usuario=${widget.idUsuarioProfesor}&rol_id_rol=2',
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (nombreController.text.trim().isEmpty) return;
+              );
 
-                    setState(() {
-                      final curso = cursos.firstWhere(
-                        (c) => c['nombre'] == cursoSeleccionado,
-                      );
+              Navigator.pop(context);
 
-                      (curso['alumnos'] as List).add({
-                        'nombre': nombreController.text.trim(),
-                        'puntos': 0,
-                        'emoji': emojiSeleccionado,
-                      });
-                    });
+              if (response.statusCode == 201) {
+                await cargarDatos();
 
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Guardar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Estudiante vinculado correctamente.'),
+                  ),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Código inválido o estudiante ya vinculado.'),
+                  ),
+                );
+              }
+            },
+            child: const Text('Vincular'),
+          ),
+        ],
+      ),
     );
+  }
+
+  String obtenerNombreCurso(dynamic estudiante) {
+    final idCurso = estudiante['curso_id_curso'];
+
+    final curso = cursos.firstWhere(
+      (c) => c['id_curso'] == idCurso,
+      orElse: () => null,
+    );
+
+    if (curso == null) return 'Sin curso';
+
+    final nivel = curso['nivel_academico'] ?? '';
+    final letra = curso['letra_academica'] ?? '';
+
+    return '$nivel $letra'.trim();
+  }
+
+  String obtenerEmoji(dynamic estudiante) {
+    final nombre = estudiante['nombre'].toString().toLowerCase();
+
+    if (nombre.endsWith('a')) {
+      return '👧';
+    }
+
+    return '👦';
   }
 
   void cerrarSesion() {
@@ -150,81 +168,78 @@ class _PanelProfesorState extends State<PanelProfesor> {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          const Text(
-            'Mis cursos y alumnos',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF061A40),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Organiza tus alumnos por curso y gestiona actividades.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: Color(0xFF334155),
-            ),
-          ),
-          const SizedBox(height: 35),
-          for (final curso in cursos) _cursoSection(curso),
-          _agregarAlumnoButton(),
-          const SizedBox(height: 25),
-          const Center(
-            child: Text(
-              '🛡 Uso pedagógico autorizado — Ley 21.545',
-              style: TextStyle(color: Colors.grey),
-            ),
-          ),
-        ],
-      ),
+      body: cargando
+          ? const Center(child: CircularProgressIndicator())
+          : error.isNotEmpty
+              ? Center(
+                  child: Text(
+                    error,
+                    style: const TextStyle(color: Colors.red, fontSize: 18),
+                  ),
+                )
+              : ListView(
+                  padding: const EdgeInsets.all(24),
+                  children: [
+                    const Text(
+                      'Mis estudiantes vinculados',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF061A40),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Ingresa un código de vinculación para agregar estudiantes reales desde Supabase.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF334155),
+                      ),
+                    ),
+                    const SizedBox(height: 35),
+
+                    if (estudiantes.isEmpty)
+                      const Center(
+                        child: Text(
+                          'Aún no tienes estudiantes vinculados.',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Color(0xFF64748B),
+                          ),
+                        ),
+                      ),
+
+                    Wrap(
+                      spacing: 20,
+                      runSpacing: 20,
+                      children: estudiantes.map((estudiante) {
+                        return _estudianteCard(estudiante);
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 35),
+
+                    _vincularEstudianteButton(),
+
+                    const SizedBox(height: 25),
+
+                    const Center(
+                      child: Text(
+                        '🛡 Uso pedagógico autorizado — Ley 21.545',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ],
+                ),
     );
   }
 
-  Widget _cursoSection(Map<String, dynamic> curso) {
-    final alumnos = curso['alumnos'] as List;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.school, color: Color(0xFF4F46E5)),
-            const SizedBox(width: 10),
-            Text(
-              curso['nombre'],
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF061A40),
-              ),
-            ),
-            const Spacer(),
-            Text('${alumnos.length} alumnos'),
-          ],
-        ),
-        const SizedBox(height: 15),
-        Wrap(
-          spacing: 20,
-          runSpacing: 20,
-          children: alumnos.map((alumno) {
-            return _alumnoCard(alumno);
-          }).toList(),
-        ),
-        const SizedBox(height: 40),
-      ],
-    );
-  }
-
-  Widget _alumnoCard(Map<String, dynamic> alumno) {
+  Widget _estudianteCard(dynamic estudiante) {
     return Container(
       width: 270,
-      height: 170,
+      height: 190,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -242,12 +257,13 @@ class _PanelProfesorState extends State<PanelProfesor> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            alumno['emoji'],
+            obtenerEmoji(estudiante),
             style: const TextStyle(fontSize: 42),
           ),
           const SizedBox(height: 8),
           Text(
-            alumno['nombre'],
+            estudiante['nombre'] ?? 'Sin nombre',
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -256,7 +272,15 @@ class _PanelProfesorState extends State<PanelProfesor> {
           ),
           const SizedBox(height: 8),
           Text(
-            '⭐ ${alumno['puntos']}',
+            obtenerNombreCurso(estudiante),
+            style: const TextStyle(
+              fontSize: 15,
+              color: Color(0xFF334155),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '⭐ ${estudiante['puntos_totales'] ?? 0}',
             style: const TextStyle(
               fontSize: 16,
               color: Color(0xFFEAB308),
@@ -268,10 +292,10 @@ class _PanelProfesorState extends State<PanelProfesor> {
     );
   }
 
-  Widget _agregarAlumnoButton() {
+  Widget _vincularEstudianteButton() {
     return InkWell(
       borderRadius: BorderRadius.circular(18),
-      onTap: mostrarAgregarAlumno,
+      onTap: vincularPorCodigo,
       child: Container(
         height: 150,
         decoration: BoxDecoration(
@@ -283,13 +307,13 @@ class _PanelProfesorState extends State<PanelProfesor> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.add,
+              Icons.link,
               size: 50,
               color: Color(0xFF4F46E5),
             ),
             SizedBox(height: 10),
             Text(
-              'Agregar alumno',
+              'Vincular estudiante con código',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,

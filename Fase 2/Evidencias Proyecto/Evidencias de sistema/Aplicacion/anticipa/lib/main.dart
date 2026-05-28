@@ -65,16 +65,30 @@ class _LoginScreenState extends State<LoginScreen> {
         final int idUsuario = data['id_usuario'] ?? 0;
         final String nombre = data['nombre'] ?? '';
 
-        if (rol.toLowerCase() == 'profesor') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PanelProfesor(),
-            ),
-          );
-          return;
-        }
+// HICE UN CAMBIO ACA 
 
+    if (rol.toLowerCase() == 'profesor') {
+
+    Navigator.pushReplacement(
+
+      context,
+
+      MaterialPageRoute(
+
+        builder: (context) => PanelProfesor(
+
+          idUsuarioProfesor: idUsuario,
+
+        ),
+
+      ),
+
+    );
+
+    return;
+  }
+
+// HASTA ACA 
         if (rol.toLowerCase() == 'estudiante') {
           final int idEstudiante = data['id_estudiante'] ?? 0;
           Navigator.pushReplacement(
