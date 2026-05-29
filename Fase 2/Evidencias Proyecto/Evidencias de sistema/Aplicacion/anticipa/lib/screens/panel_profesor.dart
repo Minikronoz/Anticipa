@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'panel_detalle_estudiante.dart';
 
 class PanelProfesor extends StatefulWidget {
   final int idUsuarioProfesor;
@@ -236,8 +237,23 @@ class _PanelProfesorState extends State<PanelProfesor> {
     );
   }
 
-  Widget _estudianteCard(dynamic estudiante) {
-    return Container(
+Widget _estudianteCard(dynamic estudiante) {
+  return InkWell(
+    borderRadius: BorderRadius.circular(18),
+    onTap: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PanelDetalleEstudiante(
+            idEstudiante: estudiante['id_estudiante'],
+            idUsuario: widget.idUsuarioProfesor,
+            rol: 'Profesor',
+            nombreEstudiante: estudiante['nombre'] ?? 'Estudiante',
+          ),
+        ),
+      );
+    },
+    child: Container(
       width: 270,
       height: 190,
       padding: const EdgeInsets.all(16),
@@ -287,10 +303,19 @@ class _PanelProfesorState extends State<PanelProfesor> {
               fontWeight: FontWeight.bold,
             ),
           ),
+          const SizedBox(height: 6),
+          const Text(
+            'Tocar para ver calendario',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFF64748B),
+            ),
+          ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _vincularEstudianteButton() {
     return InkWell(
