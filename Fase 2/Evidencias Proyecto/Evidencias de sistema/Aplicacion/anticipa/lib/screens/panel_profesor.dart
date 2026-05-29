@@ -255,7 +255,7 @@ Widget _estudianteCard(dynamic estudiante) {
     },
     child: Container(
       width: 270,
-      height: 190,
+      height: 240,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
