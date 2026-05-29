@@ -24,6 +24,9 @@ class AnticipaApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
+      routes: {
+        '/': (context) => const LoginScreen(),
+      },
       home: const LoginScreen(),
     );
   }

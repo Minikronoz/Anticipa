@@ -231,8 +231,8 @@ class _PanelProfesorState extends State<PanelProfesor> {
                         style: TextStyle(color: Colors.grey),
                       ),
                     ),
-                  ],
-                ),
+        ],
+      ),
     );
   }
 
