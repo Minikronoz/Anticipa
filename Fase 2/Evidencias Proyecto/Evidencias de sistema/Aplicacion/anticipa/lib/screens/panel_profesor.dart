@@ -191,7 +191,7 @@ class _PanelProfesorState extends State<PanelProfesor> {
                     ),
                     const SizedBox(height: 10),
                     const Text(
-                      'Ingresa un código de vinculación para agregar estudiantes reales desde Supabase.',
+                      'Ingresa un código de vinculación del estudiante',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 16,
