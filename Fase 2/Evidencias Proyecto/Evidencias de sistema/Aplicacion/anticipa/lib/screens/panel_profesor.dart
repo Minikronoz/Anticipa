@@ -152,6 +152,20 @@ class _PanelProfesorState extends State<PanelProfesor> {
     );
   }
 
+  void abrirDetalleEstudiante(dynamic estudiante) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PanelDetalleEstudiante(
+          idEstudiante: estudiante['id_estudiante'],
+          idUsuario: widget.idUsuarioProfesor,
+          rol: 'Profesor',
+          nombreEstudiante: estudiante['nombre'] ?? 'Estudiante',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -200,7 +214,6 @@ class _PanelProfesorState extends State<PanelProfesor> {
                       ),
                     ),
                     const SizedBox(height: 35),
-
                     if (estudiantes.isEmpty)
                       const Center(
                         child: Text(
@@ -211,7 +224,6 @@ class _PanelProfesorState extends State<PanelProfesor> {
                           ),
                         ),
                       ),
-
                     Wrap(
                       spacing: 20,
                       runSpacing: 20,
@@ -219,13 +231,9 @@ class _PanelProfesorState extends State<PanelProfesor> {
                         return _estudianteCard(estudiante);
                       }).toList(),
                     ),
-
                     const SizedBox(height: 35),
-
                     _vincularEstudianteButton(),
-
                     const SizedBox(height: 25),
-
                     const Center(
                       child: Text(
                         '🛡 Uso pedagógico autorizado — Ley 21.545',
@@ -237,25 +245,10 @@ class _PanelProfesorState extends State<PanelProfesor> {
     );
   }
 
-Widget _estudianteCard(dynamic estudiante) {
-  return InkWell(
-    borderRadius: BorderRadius.circular(18),
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PanelDetalleEstudiante(
-            idEstudiante: estudiante['id_estudiante'],
-            idUsuario: widget.idUsuarioProfesor,
-            rol: 'Profesor',
-            nombreEstudiante: estudiante['nombre'] ?? 'Estudiante',
-          ),
-        ),
-      );
-    },
-    child: Container(
+  Widget _estudianteCard(dynamic estudiante) {
+    return Container(
       width: 270,
-      height: 240,
+      height: 245,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -303,19 +296,27 @@ Widget _estudianteCard(dynamic estudiante) {
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 6),
-          const Text(
-            'Tocar para ver calendario',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFF64748B),
+          const Spacer(),
+          SizedBox(
+            width: double.infinity,
+            height: 40,
+            child: ElevatedButton.icon(
+              onPressed: () => abrirDetalleEstudiante(estudiante),
+              icon: const Icon(Icons.calendar_month, size: 18),
+              label: const Text('Ver calendario'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4F46E5),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
           ),
         ],
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _vincularEstudianteButton() {
     return InkWell(
