@@ -121,6 +121,7 @@ class ActividadCreate(ConfigBase):
     hora_inicio:                    time
     hora_fin:                       time
     fecha_actividad:                date
+    alerta_minutos:                 Optional[str] = None
 
 class ActividadResponse(ConfigBase):
     id_actividad:                   int

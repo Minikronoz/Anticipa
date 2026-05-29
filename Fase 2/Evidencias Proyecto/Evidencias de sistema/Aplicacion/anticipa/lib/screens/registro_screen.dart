@@ -218,6 +218,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
               ),
               const SizedBox(height: 16),
 
+              if (_esEstudiante) ...[
               // ── Fecha de Nacimiento ──────────────────────
               GestureDetector(
                 onTap: seleccionarFecha,
@@ -265,6 +266,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
                   setState(() => cursoIdSeleccionado = value);
                 },
               ),
+              ],
               const SizedBox(height: 24),
 
               ElevatedButton(

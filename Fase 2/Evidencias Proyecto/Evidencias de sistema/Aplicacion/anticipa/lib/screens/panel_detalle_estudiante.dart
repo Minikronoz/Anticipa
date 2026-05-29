@@ -94,47 +94,353 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     } catch (_) { setState(() => error = 'Error al eliminar'); }
   }
 
-  Future<void> editarActividad(Map<String, dynamic> a) async {
-    final nombreCtl = TextEditingController(text: a['nombre_tarea'] ?? '');
-    final horaCtl = TextEditingController(text: (a['hora_inicio'] ?? '').toString().substring(0, 5));
-    String? pictoId = a['pictograma_id_pictograma']?.toString();
+  Map<String, dynamic>? _pictoSeleccionado(int? id) {
+    if (id == null) return null;
+    for (final p in pictogramas) {
+      if (p['id_pictograma'] == id) return p;
+    }
+    return null;
+  }
+
+  Future<Map<String, dynamic>?> _mostrarSelectorPictograma(String? actual) async {
+    final cats = <String>{'Todos'};
+    for (final p in pictogramas) {
+      cats.add(p['categoria']?.toString() ?? 'General');
+    }
+    final categorias = cats.toList()..sort((a, b) {
+      if (a == 'Todos') return -1;
+      if (b == 'Todos') return 1;
+      return a.compareTo(b);
+    });
+
+    return showDialog<Map<String, dynamic>>(
+      context: context,
+      builder: (ctx) {
+        String categoriaSel = 'Todos';
+        String? seleccionado = actual;
+
+        return StatefulBuilder(
+        builder: (ctx, setDlg) {
+
+          List<Map<String, dynamic>> filtrar() => categoriaSel == 'Todos'
+              ? pictogramas
+              : pictogramas.where((p) => (p['categoria']?.toString() ?? 'General') == categoriaSel).toList();
+
+          Widget chip(String label) {
+            final sel = categoriaSel == label;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: sel ? Colors.white : const Color(0xFF4F46E5))),
+                selected: sel,
+                selectedColor: const Color(0xFF4F46E5),
+                backgroundColor: const Color(0xFFF0F4FF),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                side: BorderSide.none,
+                onSelected: (_) => setDlg(() => categoriaSel = label),
+              ),
+            );
+          }
+
+          Widget tarjeta(Map<String, dynamic> p) {
+            final id = p['id_pictograma'].toString();
+            final sel = seleccionado == id;
+            return GestureDetector(
+              onTap: () => Navigator.pop(ctx, p),
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: sel ? const Color(0xFFEEF2FF) : const Color(0xFFF5F7FF),
+                  borderRadius: BorderRadius.circular(16),
+                  border: sel ? Border.all(color: const Color(0xFF4F46E5), width: 2.5) : null,
+                ),
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: p['url'] != null
+                        ? Image.network(p['url'], width: 64, height: 64, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Icon(Icons.image, size: 64, color: Colors.grey))
+                        : const Icon(Icons.image, size: 64, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(p['nombre_imagen'] ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF061A40))),
+                ]),
+              ),
+            );
+          }
+
+          return Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            child: SizedBox(
+              height: 520,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Column(children: [
+                  Row(children: [
+                    const Text('Elegir pictograma', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+                    const Spacer(),
+                    IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                  ]),
+                  const SizedBox(height: 4),
+                  const Text('Elige un pictograma representativo para la actividad.', style: TextStyle(fontSize: 13, color: Colors.grey)),
+                  const SizedBox(height: 14),
+                  SizedBox(
+                    height: 38,
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(children: categorias.map((c) => chip(c)).toList()),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: filtrar().isEmpty
+                        ? const Center(child: Text('Sin pictogramas', style: TextStyle(color: Colors.grey)))
+                        : GridView.builder(
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 120, childAspectRatio: 0.85, crossAxisSpacing: 10, mainAxisSpacing: 10),
+                            itemCount: filtrar().length,
+                            itemBuilder: (_, i) => tarjeta(filtrar()[i]),
+                          ),
+                  ),
+                ]),
+              ),
+            ),
+          );
+        },
+      );
+      },
+    );
+  }
+
+  Future<void> _nuevaActividad() async {
+    final nombreCtl = TextEditingController();
+    final horaCtl = TextEditingController(text: '09:00');
+    final horaFinCtl = TextEditingController(text: '09:30');
+    Map<String, dynamic>? pictoElegido;
+    DateTime fechaAct = selectedDate;
+    String alertaMin = '5';
 
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setDlg) => AlertDialog(
-          title: const Text('Editar Actividad'),
-          content: SingleChildScrollView(
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              TextField(controller: nombreCtl, decoration: const InputDecoration(labelText: 'Nombre', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(controller: horaCtl, decoration: const InputDecoration(labelText: 'Hora (HH:MM)', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                initialValue: pictoId,
-                decoration: const InputDecoration(labelText: 'Pictograma', border: OutlineInputBorder()),
-                items: [const DropdownMenuItem(value: null, child: Text('Sin pictograma')),
-                  ...pictogramas.map((p) => DropdownMenuItem(value: p['id_pictograma'].toString(), child: Text(p['nombre_imagen'] ?? ''))),
-                ],
-                onChanged: (v) => setDlg(() => pictoId = v),
+        builder: (ctx, setDlg) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: MediaQuery.of(ctx).size.height * 0.85),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: SingleChildScrollView(
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text('Nueva Actividad', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+              const SizedBox(height: 4),
+              Text('para ${widget.nombreEstudiante}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
+              const SizedBox(height: 24),
+
+              _campoTexto('Nombre de la actividad', 'Ej: Lavarse los dientes', nombreCtl),
+              const SizedBox(height: 16),
+
+              const Text('Elegir pictograma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final p = await _mostrarSelectorPictograma(pictoElegido?['id_pictograma']?.toString());
+                  if (p != null) setDlg(() => pictoElegido = p);
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade300)),
+                  child: pictoElegido != null
+                      ? Row(children: [
+                          ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(pictoElegido!['url'], width: 44, height: 44, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Icon(Icons.image, size: 44))),
+                          const SizedBox(width: 12),
+                          Text(pictoElegido!['nombre_imagen'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                        ])
+                      : const Text('Toca para elegir un pictograma', style: TextStyle(fontSize: 15, color: Colors.grey)),
+                ),
               ),
+              const SizedBox(height: 16),
+
+              _campoFecha(fechaAct, (d) => setDlg(() => fechaAct = d)),
+              const SizedBox(height: 12),
+              _campoTexto('Hora inicio', '09:00', horaCtl, hint: 'HH:MM'),
+              const SizedBox(height: 12),
+              _campoTexto('Hora fin', '09:30', horaFinCtl, hint: 'HH:MM'),
+              const SizedBox(height: 16),
+
+              Row(children: [
+                const Icon(Icons.notifications, size: 16, color: Color(0xFF4F46E5)),
+                const SizedBox(width: 6),
+                const Text('Anticipación de alerta', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+              ]),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    value: alertaMin,
+                    isExpanded: true,
+                    borderRadius: BorderRadius.circular(12),
+                    items: const [
+                      DropdownMenuItem(value: '0', child: Text('Sin alerta')),
+                      DropdownMenuItem(value: '2', child: Text('2 minutos')),
+                      DropdownMenuItem(value: '5', child: Text('5 minutos')),
+                      DropdownMenuItem(value: '10', child: Text('10 minutos')),
+                      DropdownMenuItem(value: '15', child: Text('15 minutos')),
+                    ],
+                    onChanged: (v) => setDlg(() => alertaMin = v ?? '5'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              Row(children: [
+                Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(ctx, false), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Cancelar', style: TextStyle(fontSize: 15)))),
+                const SizedBox(width: 12),
+                Expanded(flex: 2, child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('Guardar actividad', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                )),
+              ]),
             ]),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
-            ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Guardar')),
-          ],
+            ),
+          ),
+        ),
+      ),
+    );
+    if (ok != true || nombreCtl.text.trim().isEmpty) return;
+
+    final body = <String, dynamic>{
+      'estudiante_id_estudiante': widget.idEstudiante,
+      'usuario_id_usuario': widget.idUsuario,
+      'nombre_tarea': nombreCtl.text.trim(),
+      'hora_inicio': '${horaCtl.text.trim().padRight(5, '0')}:00',
+      'hora_fin': '${horaFinCtl.text.trim().padRight(5, '0')}:00',
+      'fecha_actividad': _fmt(fechaAct),
+    };
+    if (pictoElegido != null) body['pictograma_id_pictograma'] = pictoElegido!['id_pictograma'];
+    if (alertaMin != '0') body['alerta_minutos'] = alertaMin;
+
+    try {
+      final r = await http.post(Uri.parse('${AppConstants.baseUrl}/actividades/'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
+      if (r.statusCode == 201) await _cargarTodo();
+    } catch (_) { setState(() => error = 'Error al crear actividad'); }
+  }
+
+  Future<void> editarActividad(Map<String, dynamic> a) async {
+    final nombreCtl = TextEditingController(text: a['nombre_tarea'] ?? '');
+    final horaCtl = TextEditingController(text: (a['hora_inicio'] ?? '').toString().substring(0, 5));
+    final horaFinCtl = TextEditingController(text: (a['hora_fin'] ?? '').toString().substring(0, 5));
+    Map<String, dynamic>? pictoElegido = _pictoSeleccionado(a['pictograma_id_pictograma']);
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlg) => Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const Text('Editar Actividad', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+              const SizedBox(height: 24),
+
+              _campoTexto('Nombre de la actividad', '', nombreCtl),
+              const SizedBox(height: 16),
+
+              const Text('Elegir pictograma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+              const SizedBox(height: 8),
+              InkWell(
+                onTap: () async {
+                  final p = await _mostrarSelectorPictograma(pictoElegido?['id_pictograma']?.toString());
+                  if (p != null) setDlg(() => pictoElegido = p);
+                },
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(14), border: Border.all(color: Colors.grey.shade300)),
+                  child: pictoElegido != null
+                      ? Row(children: [
+                          ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(pictoElegido!['url'], width: 44, height: 44, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Icon(Icons.image, size: 44))),
+                          const SizedBox(width: 12),
+                          Text(pictoElegido!['nombre_imagen'] ?? '', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                        ])
+                      : const Text('Toca para elegir un pictograma', style: TextStyle(fontSize: 15, color: Colors.grey)),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _campoTexto('Hora inicio', '', horaCtl, hint: 'HH:MM'),
+              const SizedBox(height: 12),
+              _campoTexto('Hora fin', '', horaFinCtl, hint: 'HH:MM'),
+              const SizedBox(height: 24),
+
+              Row(children: [
+                Expanded(child: OutlinedButton(onPressed: () => Navigator.pop(ctx, false), style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))), child: const Text('Cancelar', style: TextStyle(fontSize: 15)))),
+                const SizedBox(width: 12),
+                Expanded(flex: 2, child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx, true),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  child: const Text('Guardar cambios', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                )),
+              ]),
+            ]),
+          ),
         ),
       ),
     );
     if (ok != true) return;
 
-    final body = <String, dynamic>{'nombre_tarea': nombreCtl.text.trim(), 'hora_inicio': '${horaCtl.text.trim()}:00'};
-    if (pictoId != null) body['pictograma_id_pictograma'] = int.parse(pictoId!);
+    final body = <String, dynamic>{
+      'nombre_tarea': nombreCtl.text.trim(),
+      'hora_inicio': '${horaCtl.text.trim().padRight(5, '0')}:00',
+      'hora_fin': '${horaFinCtl.text.trim().padRight(5, '0')}:00',
+    };
+    if (pictoElegido != null) body['pictograma_id_pictograma'] = pictoElegido!['id_pictograma'];
     try {
       final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/${a['id_actividad']}'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
       if (r.statusCode == 200) await _cargarTodo();
     } catch (_) { setState(() => error = 'Error al editar'); }
+  }
+
+  Widget _campoTexto(String label, String placeholder, TextEditingController ctl, {String? hint}) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+      const SizedBox(height: 6),
+      TextField(
+        controller: ctl,
+        decoration: InputDecoration(
+          hintText: placeholder.isNotEmpty ? placeholder : (hint ?? ''),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        ),
+      ),
+    ]);
+  }
+
+  Widget _campoFecha(DateTime valor, ValueChanged<DateTime> onChange) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      const Text('Fecha', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+      const SizedBox(height: 6),
+      InkWell(
+        onTap: () async {
+          final picked = await showDatePicker(context: context, initialDate: valor, firstDate: DateTime(2020), lastDate: DateTime(2030), helpText: 'Selecciona la fecha');
+          if (picked != null) onChange(picked);
+        },
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+          decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+          child: Row(children: [
+            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF4F46E5)),
+            const SizedBox(width: 10),
+            Text('${valor.day.toString().padLeft(2, '0')}/${valor.month.toString().padLeft(2, '0')}/${valor.year}', style: const TextStyle(fontSize: 15)),
+          ]),
+        ),
+      ),
+    ]);
   }
 
   static String _fmt(DateTime d) => d.toIso8601String().split('T')[0];
@@ -199,7 +505,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       ),
       body: RefreshIndicator(
         onRefresh: _cargarTodo,
-        child: ListView(padding: const EdgeInsets.all(20), children: [
+        child: ListView(padding: const EdgeInsets.fromLTRB(20, 20, 20, 90), children: [
           _header(),
           const SizedBox(height: 12),
           Row(children: [
@@ -218,6 +524,13 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           _listaActividades(),
           if (error.isNotEmpty) ...[const SizedBox(height: 12), Center(child: Text(error, style: const TextStyle(color: Colors.red)))],
         ]),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _nuevaActividad,
+        backgroundColor: const Color(0xFF4F46E5),
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: const Text('Nueva actividad'),
       ),
     );
   }
@@ -332,33 +645,36 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
             margin: const EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: ok ? const BorderSide(color: Color(0xFF22C55E), width: 2) : BorderSide.none),
             color: ok ? const Color(0xFFF0FDF4) : Colors.white,
-            child: Padding(padding: const EdgeInsets.all(16), child: Row(children: [
-              SizedBox(width: 60, child: Text(hora, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)))),
-              ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 56, height: 56,
-                decoration: BoxDecoration(color: const Color(0xFFEEF2FF)),
-                child: picto?['url'] != null
-                    ? Image.network(picto!['url'], width: 44, height: 44, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 30)))
-                    : const Center(child: Text('📌', style: TextStyle(fontSize: 30))),
-              ),
-            ),
-              const SizedBox(width: 12),
-              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF061A40), decoration: ok ? TextDecoration.lineThrough : null)),
-                if (picto != null) Text(picto['nombre_imagen'] ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-              ])),
-              if (canEdit) ...[
-                IconButton(icon: const Icon(Icons.edit, size: 20, color: Colors.blueGrey), tooltip: 'Editar', onPressed: () => editarActividad(a)),
-                IconButton(icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent), tooltip: 'Eliminar', onPressed: () => _confirmarEliminar(a)),
-              ],
-              ElevatedButton.icon(
-                onPressed: () => completarActividad(a['id_actividad']),
-                icon: Icon(ok ? Icons.close : Icons.check, size: 18),
-                label: Text(ok ? 'Desmarcar' : 'Completar'),
-                style: ElevatedButton.styleFrom(backgroundColor: ok ? const Color(0xFF22C55E) : const Color(0xFF4F46E5), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-              ),
+            child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                SizedBox(width: 50, child: Text(hora, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)))),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(color: const Color(0xFFEEF2FF)),
+                    child: picto?['url'] != null
+                        ? Image.network(picto!['url'], width: 40, height: 40, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 26)))
+                        : const Center(child: Text('📌', style: TextStyle(fontSize: 26))),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(child: Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF061A40), decoration: ok ? TextDecoration.lineThrough : null))),
+              ]),
+              if (picto != null) Padding(padding: const EdgeInsets.only(left: 50, top: 2), child: Text(picto['nombre_imagen'] ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
+              const SizedBox(height: 10),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                if (canEdit) ...[
+                  IconButton(icon: const Icon(Icons.edit, size: 20, color: Colors.blueGrey), tooltip: 'Editar', padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36), onPressed: () => editarActividad(a)),
+                  IconButton(icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent), tooltip: 'Eliminar', padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36), onPressed: () => _confirmarEliminar(a)),
+                ],
+                ElevatedButton.icon(
+                  onPressed: () => completarActividad(a['id_actividad']),
+                  icon: Icon(ok ? Icons.close : Icons.check, size: 16),
+                  label: Text(ok ? 'Desmarcar' : 'Completar', style: const TextStyle(fontSize: 13)),
+                  style: ElevatedButton.styleFrom(backgroundColor: ok ? const Color(0xFF22C55E) : const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                ),
+              ]),
             ])),
           );
         }),

@@ -19,6 +19,7 @@ class MinutosAnticipEnum(enum.Enum):
     dos   = '2'
     cinco = '5'
     diez  = '10'
+    quince = '15'
 
 
 class Rol(Base):

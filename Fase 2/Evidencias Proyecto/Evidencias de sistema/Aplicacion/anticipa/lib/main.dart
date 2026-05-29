@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'screens/panel_profesor.dart';
 import 'screens/panel_estudiante.dart';
+import 'screens/panel_apoderado.dart';
 import 'screens/registro_screen.dart';
 import 'screens/recuperar_password_screen.dart';
 import 'constants.dart';
@@ -18,6 +19,7 @@ class AnticipaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Anticipa',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
@@ -61,47 +63,29 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        final String rol = data['rol'] ?? '';
+        final int rolId = data['rol_id_rol'] ?? 0;
         final int idUsuario = data['id_usuario'] ?? 0;
         final String nombre = data['nombre'] ?? '';
 
-// HICE UN CAMBIO ACA 
+        if (rolId == 2) {
+          Navigator.pushReplacement(context, MaterialPageRoute(
+            builder: (context) => PanelProfesor(idUsuarioProfesor: idUsuario),
+          ));
+          return;
+        }
 
-    if (rol.toLowerCase() == 'profesor') {
-
-    Navigator.pushReplacement(
-
-      context,
-
-      MaterialPageRoute(
-
-        builder: (context) => PanelProfesor(
-
-          idUsuarioProfesor: idUsuario,
-
-        ),
-
-      ),
-
-    );
-
-    return;
-  }
-
-// HASTA ACA 
-        if (rol.toLowerCase() == 'estudiante') {
+        if (rolId == 4) {
           final int idEstudiante = data['id_estudiante'] ?? 0;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => PanelEstudiante(
-                idEstudiante: idEstudiante,
-                idUsuario: idUsuario,
-                rol: rol,
-                nombreEstudiante: nombre,
-              ),
-            ),
-          );
+          Navigator.pushReplacement(context, MaterialPageRoute(
+            builder: (context) => PanelEstudiante(idEstudiante: idEstudiante, idUsuario: idUsuario, rol: data['rol'] ?? '', nombreEstudiante: nombre),
+          ));
+          return;
+        }
+
+        if (rolId == 3) {
+          Navigator.pushReplacement(context, MaterialPageRoute(
+            builder: (context) => PanelApoderado(idUsuario: idUsuario, nombre: nombre),
+          ));
           return;
         }
 

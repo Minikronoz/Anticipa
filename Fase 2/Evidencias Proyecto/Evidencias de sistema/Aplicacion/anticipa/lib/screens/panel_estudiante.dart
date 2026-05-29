@@ -26,8 +26,13 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   List<Map<String, dynamic>> _pictogramas = [];
   int _estrellas = 0;
   bool _cargando = true;
+  final Set<int> _completandoIds = {};
+  DateTime _fechaSeleccionada = DateTime.now();
 
-  static const _diasSemana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  String get _fechaFormateada => _fechaSeleccionada.toIso8601String().split('T')[0];
+
+  static const _diasSemana = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+  static const _diasLargos = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
   static const _meses = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
   @override
@@ -40,14 +45,14 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     setState(() => _cargando = true);
     try {
       final res = await Future.wait([
-        _get('${AppConstants.baseUrl}/actividades/estudiante/${widget.idEstudiante}'),
+        _get('${AppConstants.baseUrl}/actividades/estudiante/${widget.idEstudiante}?fecha=$_fechaFormateada'),
         _get('${AppConstants.baseUrl}/pictogramas/'),
         _get('${AppConstants.baseUrl}/estrellas/estudiante/${widget.idEstudiante}'),
       ]);
       setState(() {
         _actividades = res[0];
         _pictogramas = res[1];
-        _estrellas = _extraerEstrellasHoy(res[2]);
+        _estrellas = _totalEstrellas(res[2]);
         _cargando = false;
       });
     } catch (_) {
@@ -60,20 +65,15 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
   }
 
-  int _extraerEstrellasHoy(List<Map<String, dynamic>> data) {
-    final hoy = DateTime.now().toIso8601String().split('T')[0];
+  int _totalEstrellas(List<Map<String, dynamic>> data) {
+    int total = 0;
     for (final e in data) {
-      if (e['fecha'] == hoy) return e['estrellas_ganadas'] ?? 0;
+      total += (e['estrellas_ganadas'] ?? 0) as int;
     }
-    return 0;
+    return total;
   }
 
-  List<Map<String, dynamic>> get _hoy {
-    final hoy = DateTime.now().toIso8601String().split('T')[0];
-    return _actividades.where((a) => (a['fecha_actividad']?.toString() ?? '').startsWith(hoy)).toList();
-  }
-
-  int get _completadas => _hoy.where((a) => a['es_completada'] == true).length;
+  int get _completadas => _actividades.where((a) => a['es_completada'] == true).length;
 
   String? _pictoUrl(int? id) {
     if (id == null) return null;
@@ -84,15 +84,50 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   }
 
   String _fechaBonita() {
-    final ahora = DateTime.now();
-    return '${_diasSemana[ahora.weekday - 1]}, ${ahora.day} de ${_meses[ahora.month - 1]}';
+    final f = _fechaSeleccionada;
+    return '${_diasLargos[f.weekday - 1]}, ${f.day} de ${_meses[f.month - 1]}';
+  }
+
+  String _fechaLabel(DateTime d) {
+    final hoy = DateTime.now();
+    final fmt = d.toIso8601String().split('T')[0];
+    if (fmt == hoy.toIso8601String().split('T')[0]) return 'HOY';
+    final manana = hoy.add(const Duration(days: 1));
+    if (fmt == manana.toIso8601String().split('T')[0]) return 'Mañana';
+    final ayer = hoy.subtract(const Duration(days: 1));
+    if (fmt == ayer.toIso8601String().split('T')[0]) return 'Ayer';
+    return '${_diasSemana[d.weekday - 1]} ${d.day}';
+  }
+
+  List<DateTime> get _diasVisibles {
+    final dias = <DateTime>[];
+    for (int i = -3; i <= 3; i++) {
+      dias.add(_fechaSeleccionada.add(Duration(days: i)));
+    }
+    return dias;
+  }
+
+  void _moverSemana(int direccion) {
+    setState(() {
+      _fechaSeleccionada = _fechaSeleccionada.add(Duration(days: 7 * direccion));
+    });
+    _cargarTodo();
+  }
+
+  void _seleccionarDia(DateTime d) {
+    setState(() => _fechaSeleccionada = d);
+    _cargarTodo();
   }
 
   Future<void> _completar(int id) async {
+    setState(() => _completandoIds.add(id));
     try {
       final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/$id/completar'));
       if (r.statusCode == 200) await _cargarTodo();
-    } catch (_) {}
+    } catch (_) {
+    } finally {
+      setState(() => _completandoIds.remove(id));
+    }
   }
 
   @override
@@ -106,8 +141,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
       body: SafeArea(
         child: Column(children: [
           _barraSuperior(),
-          Expanded(child: _hoy.isEmpty ? _vacio() : _listaActividades()),
-          if (_hoy.isNotEmpty) _barraInferior(),
+          _tiraDias(),
+          Expanded(child: _actividades.isEmpty ? _vacio() : _listaActividades()),
+          if (_actividades.isNotEmpty) _barraInferior(),
         ]),
       ),
     );
@@ -144,10 +180,62 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       const Text('📭', style: TextStyle(fontSize: 72)),
       const SizedBox(height: 16),
-      const Text('No hay actividades para hoy', style: TextStyle(fontSize: 20, color: Color(0xFF061A40))),
+      Text('No hay actividades para este día', style: const TextStyle(fontSize: 20, color: Color(0xFF061A40))),
       const SizedBox(height: 8),
       const Text('Pídele a tu profesor o apoderado\nque te agregue actividades', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey)),
     ]));
+  }
+
+  Widget _tiraDias() {
+    final hoy = DateTime.now().toIso8601String().split('T')[0];
+    final dias = _diasVisibles;
+
+    return Container(
+      color: const Color(0xFF4F46E5),
+      padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+      child: Row(children: [
+        IconButton(
+          icon: const Icon(Icons.chevron_left, color: Colors.white70, size: 24),
+          onPressed: () => _moverSemana(-1),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32),
+        ),
+        Expanded(
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: dias.map((d) {
+              final df = d.toIso8601String().split('T')[0];
+              final seleccionado = df == _fechaFormateada;
+              final esHoy = df == hoy;
+              return GestureDetector(
+                onTap: () => _seleccionarDia(d),
+                child: Container(
+                  width: 56,
+                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  decoration: BoxDecoration(
+                    color: seleccionado ? Colors.white : Colors.white12,
+                    borderRadius: BorderRadius.circular(12),
+                    border: esHoy && !seleccionado ? Border.all(color: Colors.yellowAccent, width: 2) : null,
+                  ),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Text(_fechaLabel(d), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: seleccionado ? const Color(0xFF4F46E5) : Colors.white)),
+                    const SizedBox(height: 2),
+                    Text('${d.day}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: seleccionado ? const Color(0xFF4F46E5) : Colors.white)),
+                  ]),
+                ),
+              );
+            }).toList()),
+          ),
+        ),
+        IconButton(
+          icon: const Icon(Icons.chevron_right, color: Colors.white70, size: 24),
+          onPressed: () => _moverSemana(1),
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32),
+        ),
+      ]),
+    );
   }
 
   Widget _listaActividades() {
@@ -155,14 +243,16 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
       onRefresh: _cargarTodo,
       child: ListView.builder(
         padding: const EdgeInsets.all(16),
-        itemCount: _hoy.length,
-        itemBuilder: (_, i) => _tarjetaActividad(_hoy[i]),
+        itemCount: _actividades.length,
+        itemBuilder: (_, i) => _tarjetaActividad(_actividades[i]),
       ),
     );
   }
 
   Widget _tarjetaActividad(Map<String, dynamic> a) {
+    final id = a['id_actividad'] as int;
     final completada = a['es_completada'] == true;
+    final completando = _completandoIds.contains(id);
     final picto = _pictoUrl(a['pictograma_id_pictograma']);
     final hora = (a['hora_inicio'] ?? '').toString().substring(0, 5);
 
@@ -200,7 +290,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: ElevatedButton(
-              onPressed: () => _completar(a['id_actividad']),
+              onPressed: completando ? null : () => _completar(id),
               style: ElevatedButton.styleFrom(
                 backgroundColor: completada ? const Color(0xFF22C55E) : const Color(0xFF4F46E5),
                 foregroundColor: Colors.white,
@@ -208,9 +298,13 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               ),
               child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(completada ? Icons.check_circle : Icons.touch_app, size: 28),
-                const SizedBox(width: 10),
-                Text(completada ? '¡COMPLETADO!' : 'COMPLETAR', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                if (completando)
+                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                else ...[
+                  Icon(completada ? Icons.check_circle : Icons.star, size: 28),
+                  const SizedBox(width: 10),
+                  Text(completada ? '¡COMPLETADO!' : 'COMPLETAR', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                ],
               ]),
             ),
           ),
@@ -226,9 +320,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))]),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text('$_completadas de ${_hoy.length} completadas', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+        Text('$_completadas de ${_actividades.length} completadas', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
         const SizedBox(width: 8),
-        if (_completadas == _hoy.length && _hoy.isNotEmpty) const Text('🎉', style: TextStyle(fontSize: 28)),
+        if (_completadas == _actividades.length && _actividades.isNotEmpty) const Text('🎉', style: TextStyle(fontSize: 28)),
       ]),
     );
   }

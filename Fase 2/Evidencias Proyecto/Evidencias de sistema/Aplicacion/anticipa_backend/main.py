@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 import models
@@ -7,7 +7,7 @@ from database import engine, get_db
 import random
 import string
 from passlib.context import CryptContext
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, date
 from dotenv import load_dotenv
 from pathlib import Path
 import os
@@ -15,7 +15,29 @@ import os
 env_path = Path(__file__).parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
+from sqlalchemy import text
+
 models.Base.metadata.create_all(bind=engine)
+
+# Sincronizar secuencias SERIAL (evita UniqueViolation al insertar)
+with engine.connect() as conn:
+    conn.execute(text("""
+        DO $$
+        DECLARE
+            r RECORD;
+        BEGIN
+            FOR r IN
+                SELECT table_name, column_name
+                FROM information_schema.columns
+                WHERE table_schema = 'public'
+                  AND column_default LIKE 'nextval%'
+            LOOP
+                EXECUTE format('SELECT setval(pg_get_serial_sequence(''%I'', ''%I''), COALESCE(MAX(%I), 1)) FROM %I',
+                    r.table_name, r.column_name, r.column_name, r.table_name);
+            END LOOP;
+        END $$;
+    """))
+    conn.commit()
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -508,16 +530,31 @@ def listar_catalogo(db: Session = Depends(get_db)):
 @app.post("/actividades/", response_model=schemas.ActividadResponse,
           status_code=status.HTTP_201_CREATED, tags=["Actividades"])
 def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(get_db)):
-    nueva = models.Actividad(**actividad.model_dump())
+    datos = actividad.model_dump()
+    alerta_minutos = datos.pop('alerta_minutos', None)
+    nueva = models.Actividad(**datos)
     db.add(nueva); db.commit(); db.refresh(nueva)
+    if alerta_minutos and alerta_minutos in ('2', '5', '10', '15'):
+        db.add(models.ConfiguracionAlerta(
+            actividad_id_actividad=nueva.id_actividad,
+            minutos_anticipacion=alerta_minutos,
+        ))
+        db.commit()
     return nueva
 
 @app.get("/actividades/estudiante/{id_estudiante}",
          response_model=list[schemas.ActividadResponse], tags=["Actividades"])
-def listar_actividades_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
-    return db.query(models.Actividad).filter(
+def listar_actividades_estudiante(
+    id_estudiante: int,
+    fecha: date | None = Query(None, description="Filtrar por fecha (YYYY-MM-DD)"),
+    db: Session = Depends(get_db)
+):
+    q = db.query(models.Actividad).filter(
         models.Actividad.estudiante_id_estudiante == id_estudiante
-    ).all()
+    )
+    if fecha:
+        q = q.filter(models.Actividad.fecha_actividad == fecha)
+    return q.order_by(models.Actividad.hora_inicio.asc()).all()
 
 @app.patch("/actividades/{id_actividad}/completar",
            response_model=schemas.ActividadResponse, tags=["Actividades"])
@@ -527,7 +564,51 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
     ).first()
     if not a:
         raise HTTPException(status_code=404, detail="Actividad no encontrada.")
+
+    estaba_completada = a.es_completada
     a.es_completada = not a.es_completada
+    hoy = date.today()
+
+    if not estaba_completada:
+        # Completando: +1 estrella, +1 punto, registrar historial
+        registro = db.query(models.RegistroEstrellaDiaria).filter(
+            models.RegistroEstrellaDiaria.estudiante_id_estudiante == a.estudiante_id_estudiante,
+            models.RegistroEstrellaDiaria.fecha == hoy,
+        ).first()
+        if registro:
+            registro.estrellas_ganadas += 1
+        else:
+            db.add(models.RegistroEstrellaDiaria(
+                estudiante_id_estudiante=a.estudiante_id_estudiante,
+                fecha=hoy,
+                estrellas_ganadas=1,
+            ))
+
+        db.add(models.HistorialCumplimiento(
+            actividad_id_actividad=a.id_actividad,
+            observaciones="Actividad completada",
+        ))
+
+        est = db.query(models.Estudiante).filter(
+            models.Estudiante.id_estudiante == a.estudiante_id_estudiante
+        ).first()
+        if est:
+            est.puntos_totales += 1
+    else:
+        # Desmarcando: -1 estrella, -1 punto (mínimo 0)
+        registro = db.query(models.RegistroEstrellaDiaria).filter(
+            models.RegistroEstrellaDiaria.estudiante_id_estudiante == a.estudiante_id_estudiante,
+            models.RegistroEstrellaDiaria.fecha == hoy,
+        ).first()
+        if registro and registro.estrellas_ganadas > 0:
+            registro.estrellas_ganadas -= 1
+
+        est = db.query(models.Estudiante).filter(
+            models.Estudiante.id_estudiante == a.estudiante_id_estudiante
+        ).first()
+        if est and est.puntos_totales > 0:
+            est.puntos_totales -= 1
+
     db.commit(); db.refresh(a)
     return a
 
