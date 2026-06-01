@@ -4,6 +4,9 @@ import 'dart:convert';
 import '../constants.dart';
 import 'panel_detalle_estudiante.dart';
 
+// ═══════════════════════════════════════════════════════════
+// PANEL APODERADO — Vincular hijos, ver perfiles, gestionar rutinas
+// ═══════════════════════════════════════════════════════════
 class PanelApoderado extends StatefulWidget {
   final int idUsuario;
   final String nombre;
@@ -26,6 +29,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
     _cargarTodo();
   }
 
+  // ── Carga de hijos vinculados + cursos ──────────────────
   Future<void> _cargarTodo() async {
     setState(() { _cargando = true; _error = null; });
     try {
@@ -55,6 +59,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
     return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
   }
 
+  // ── Vincular hijo por código ────────────────────────────
   Future<void> _vincular(String codigo) async {
     final url = Uri.parse(
       '${AppConstants.baseUrl}/vinculaciones/codigo/${codigo.trim().toUpperCase()}'
@@ -115,6 +120,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
     );
   }
 
+  // ── Navegar al panel de detalle del hijo ────────────────
   void _abrirDetalle(Map<String, dynamic> hijo) {
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => PanelDetalleEstudiante(

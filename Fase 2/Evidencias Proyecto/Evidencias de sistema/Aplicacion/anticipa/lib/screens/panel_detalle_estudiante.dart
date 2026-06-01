@@ -1,3 +1,7 @@
+// ═══════════════════════════════════════════════════════════
+// PANEL DETALLE ESTUDIANTE — Gestión de actividades (profesor / apoderado)
+// Calendario día/semana/mes, CRUD, selector de pictogramas con categorías
+// ═══════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -38,6 +42,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
 
   bool get canEdit => widget.rol == 'Profesor' || widget.rol == 'Tutor / Apoderado';
 
+  // ── Carga de datos desde API ────────────────────────────
   @override
   void initState() {
     super.initState();
@@ -77,6 +82,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     return data.cast<Map<String, dynamic>?>().firstWhere((e) => e?['fecha'] == hoy, orElse: () => null);
   }
 
+  // ── CRUD: completar, eliminar, editar, crear ────────────
   Future<bool> _patch(String path) async {
     try {
       final r = await http.patch(Uri.parse('${AppConstants.baseUrl}$path'));
@@ -102,6 +108,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     return null;
   }
 
+  // ── Selector de pictogramas con categorías ───────────────
   Future<Map<String, dynamic>?> _mostrarSelectorPictograma(String? actual) async {
     final cats = <String>{'Todos'};
     for (final p in pictogramas) {
@@ -210,6 +217,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     );
   }
 
+  // ── Modal: Nueva actividad ──────────────────────────────
   Future<void> _nuevaActividad() async {
     final nombreCtl = TextEditingController();
     final horaCtl = TextEditingController(text: '09:00');
@@ -330,6 +338,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     } catch (_) { setState(() => error = 'Error al crear actividad'); }
   }
 
+  // ── Modal: Editar actividad ─────────────────────────────
   Future<void> editarActividad(Map<String, dynamic> a) async {
     final nombreCtl = TextEditingController(text: a['nombre_tarea'] ?? '');
     final horaCtl = TextEditingController(text: (a['hora_inicio'] ?? '').toString().substring(0, 5));
@@ -405,6 +414,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     } catch (_) { setState(() => error = 'Error al editar'); }
   }
 
+  // ── Widgets helpers para modales ────────────────────────
   Widget _campoTexto(String label, String placeholder, TextEditingController ctl, {String? hint}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
@@ -443,6 +453,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     ]);
   }
 
+  // ── Lógica de calendario (día/semana/mes) ───────────────
   static String _fmt(DateTime d) => d.toIso8601String().split('T')[0];
 
   List<Map<String, dynamic>> get _hoyActividades {
@@ -492,6 +503,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     return '${_diasSemanaLargo[selectedDate.weekday - 1]}, ${selectedDate.day} de ${_mesesCorto[selectedDate.month - 1]} de ${selectedDate.year}';
   }
 
+  // ── Construcción de UI ──────────────────────────────────
   @override
   Widget build(BuildContext context) {
     if (isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));

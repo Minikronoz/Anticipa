@@ -3,6 +3,10 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
 
+// ═══════════════════════════════════════════════════════════
+// PANEL ESTUDIANTE — Modo kiosko simplificado
+// Solo actividades de HOY, completar con ⭐, tira de días
+// ═══════════════════════════════════════════════════════════
 class PanelEstudiante extends StatefulWidget {
   final int idEstudiante;
   final int idUsuario;
@@ -22,6 +26,7 @@ class PanelEstudiante extends StatefulWidget {
 }
 
 class _PanelEstudianteState extends State<PanelEstudiante> {
+  // ── Estado ──────────────────────────────────────────────
   List<Map<String, dynamic>> _actividades = [];
   List<Map<String, dynamic>> _pictogramas = [];
   int _estrellas = 0;
@@ -41,6 +46,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     _cargarTodo();
   }
 
+  // ── Carga de datos desde API ────────────────────────────
   Future<void> _cargarTodo() async {
     setState(() => _cargando = true);
     try {
@@ -83,6 +89,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return null;
   }
 
+  // ── Helpers de fecha y pictogramas ──────────────────────
   String _fechaBonita() {
     final f = _fechaSeleccionada;
     return '${_diasLargos[f.weekday - 1]}, ${f.day} de ${_meses[f.month - 1]}';
@@ -99,6 +106,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return '${_diasSemana[d.weekday - 1]} ${d.day}';
   }
 
+  // ── Navegación entre días ───────────────────────────────
   List<DateTime> get _diasVisibles {
     final dias = <DateTime>[];
     for (int i = -3; i <= 3; i++) {
@@ -119,6 +127,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     _cargarTodo();
   }
 
+  // ── Completar / desmarcar actividad ─────────────────────
   Future<void> _completar(int id) async {
     setState(() => _completandoIds.add(id));
     try {
@@ -130,6 +139,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     }
   }
 
+  // ── Construcción de UI ──────────────────────────────────
   @override
   Widget build(BuildContext context) {
     if (_cargando) {
@@ -149,6 +159,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     );
   }
 
+  // Barra superior: saludo, fecha, estrellas totales
   Widget _barraSuperior() {
     return Container(
       width: double.infinity,
@@ -186,6 +197,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     ]));
   }
 
+  // Tira horizontal: navegación entre días (HOY, Mañana, etc.)
   Widget _tiraDias() {
     final hoy = DateTime.now().toIso8601String().split('T')[0];
     final dias = _diasVisibles;
@@ -249,6 +261,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     );
   }
 
+  // Tarjeta individual: pictograma grande, nombre, hora, botón completar
   Widget _tarjetaActividad(Map<String, dynamic> a) {
     final id = a['id_actividad'] as int;
     final completada = a['es_completada'] == true;
@@ -314,6 +327,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     );
   }
 
+  // Barra inferior: progreso del día (X de Y completadas)
   Widget _barraInferior() {
     return Container(
       width: double.infinity,

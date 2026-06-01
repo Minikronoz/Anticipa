@@ -9,25 +9,27 @@ from sqlalchemy.sql.sqltypes import TIMESTAMP
 from sqlalchemy.sql.expression import text
 from database import Base
 
-
+# ── Enums para alertas ────────────────────────────────────
 class TipoSonidoEnum(enum.Enum):
     suave    = 'suave'
     moderado = 'moderado'
     silencio = 'silencio'
 
 class MinutosAnticipEnum(enum.Enum):
-    dos   = '2'
-    cinco = '5'
-    diez  = '10'
+    dos    = '2'
+    cinco  = '5'
+    diez   = '10'
     quince = '15'
 
 
+# ── Tabla: Roles del sistema (Admin, Profesor, Tutor, Estudiante) ──
 class Rol(Base):
     __tablename__ = "rol"
     id_rol     = Column(Integer, primary_key=True)
     nombre_rol = Column(String(50), nullable=False, unique=True)
 
 
+# ── Tabla: Cursos académicos ──
 class Curso(Base):
     __tablename__ = "curso"
     id_curso        = Column(Integer, primary_key=True)
@@ -35,6 +37,7 @@ class Curso(Base):
     letra_academica = Column(String(1), nullable=True)
 
 
+# ── Tabla: Usuarios que inician sesión (todos los roles) ──
 class Usuario(Base):
     __tablename__ = "usuario"
     id_usuario         = Column(Integer, primary_key=True)
@@ -51,6 +54,7 @@ class Usuario(Base):
     curso  = relationship("Curso")
 
 
+# ── Tabla: Estudiantes (niños con TEA/NEE). 1:1 con Usuario ──
 class Estudiante(Base):
     __tablename__ = "estudiante"
     id_estudiante      = Column(Integer, primary_key=True)
@@ -66,6 +70,7 @@ class Estudiante(Base):
     curso_r = relationship("Curso", foreign_keys=[curso_id_curso])
 
 
+# ── Tabla: Vínculo adulto↔estudiante (N:M, con historial) ──
 class VinculacionHistorial(Base):
     __tablename__ = "vinculacion_historial"
     id_vinculo         = Column(Integer, primary_key=True)
@@ -86,6 +91,7 @@ class VinculacionHistorial(Base):
     rol        = relationship("Rol", foreign_keys=[rol_id_rol])
 
 
+# ── Tabla: Catálogo de pictogramas (ARASAAC + personalizados) ──
 class Pictograma(Base):
     __tablename__ = "pictograma"
     id_pictograma = Column(Integer, primary_key=True)
@@ -94,6 +100,7 @@ class Pictograma(Base):
     categoria     = Column(String(50), nullable=True)
 
 
+# ── Tabla: Actividades predefinidas reutilizables ──
 class CatalogoActividad(Base):
     __tablename__ = "catalogo_actividad"
     id_catalogo              = Column(Integer, primary_key=True)
@@ -102,6 +109,7 @@ class CatalogoActividad(Base):
     pictograma = relationship("Pictograma")
 
 
+# ── Tabla: Actividades/rutinas diarias asignadas a un estudiante ──
 class Actividad(Base):
     __tablename__ = "actividad"
     id_actividad                   = Column(Integer, primary_key=True)
@@ -122,6 +130,7 @@ class Actividad(Base):
     catalogo   = relationship("CatalogoActividad")
 
 
+# ── Tabla: Configuración de alerta 1:1 por actividad ──
 class ConfiguracionAlerta(Base):
     __tablename__ = "configuracion_alerta"
     id_alerta              = Column(Integer, primary_key=True)
@@ -138,6 +147,7 @@ class ConfiguracionAlerta(Base):
     actividad = relationship("Actividad")
 
 
+# ── Tabla: Registro de actividades completadas ──
 class HistorialCumplimiento(Base):
     __tablename__ = "historial_cumplimiento"
     id_log                 = Column(Integer, primary_key=True)
@@ -147,6 +157,7 @@ class HistorialCumplimiento(Base):
     actividad = relationship("Actividad")
 
 
+# ── Tabla: Recompensas canjeables con estrellas ──
 class RecompensaDisponible(Base):
     __tablename__ = "recompensa_disponible"
     id_recompensa            = Column(Integer, primary_key=True)
@@ -159,6 +170,7 @@ class RecompensaDisponible(Base):
     estudiante = relationship("Estudiante")
 
 
+# ── Tabla: Estrellas ganadas por estudiante por día ──
 class RegistroEstrellaDiaria(Base):
     __tablename__ = "registro_estrella_diaria"
     id_registro              = Column(Integer, primary_key=True)

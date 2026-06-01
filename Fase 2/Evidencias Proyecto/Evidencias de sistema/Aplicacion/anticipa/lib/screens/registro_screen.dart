@@ -1,3 +1,7 @@
+// ═══════════════════════════════════════════════════════════
+// REGISTRO — Detección de rol por dominio de email
+// Campos fecha y curso visibles solo para estudiantes
+// ═══════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -26,6 +30,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
   String? rolDetectado;
   String? codigoVinculacion;
 
+  // ── Mapeo dominio → rol ─────────────────────────────────
   static const Map<String, String> dominiosRoles = {
     'gmail.com': 'Tutor / Apoderado',
     'outlook.com': 'Tutor / Apoderado',
@@ -60,6 +65,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
 
   bool get _esEstudiante => _rolDelEmail(emailController.text) == 'Estudiante';
 
+  // ── Selector de fecha ───────────────────────────────────
   Future<void> seleccionarFecha() async {
     final DateTime? picked = await showDatePicker(
       context: context,
@@ -73,6 +79,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
     }
   }
 
+  // ── Envío del formulario al backend ─────────────────────
   Future<void> registrarUsuario() async {
     if (!_formKey.currentState!.validate()) return;
 

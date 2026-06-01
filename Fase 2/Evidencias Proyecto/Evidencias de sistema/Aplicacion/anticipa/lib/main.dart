@@ -8,9 +8,12 @@ import 'screens/registro_screen.dart';
 import 'screens/recuperar_password_screen.dart';
 import 'constants.dart';
 
+// ── Punto de entrada ──────────────────────────────────────
 void main() {
   runApp(const AnticipaApp());
 }
+
+// ── App raíz: tema, rutas, home ─────────────────────────
 
 class AnticipaApp extends StatelessWidget {
   const AnticipaApp({super.key});
@@ -27,7 +30,6 @@ class AnticipaApp extends StatelessWidget {
       routes: {
         '/': (context) => const LoginScreen(),
       },
-      home: const LoginScreen(),
     );
   }
 }
@@ -45,6 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
   String mensajeSistema = "";
   bool isLoading = false;
 
+  // ── Autenticación contra backend + navegación por rol ──────
   Future<void> hacerLogin() async {
     setState(() {
       isLoading = true;
@@ -70,6 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
         final int idUsuario = data['id_usuario'] ?? 0;
         final String nombre = data['nombre'] ?? '';
 
+        // rolId 2 = Profesor
         if (rolId == 2) {
           Navigator.pushReplacement(context, MaterialPageRoute(
             builder: (context) => PanelProfesor(idUsuarioProfesor: idUsuario),
@@ -77,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
+        // rolId 4 = Estudiante
         if (rolId == 4) {
           final int idEstudiante = data['id_estudiante'] ?? 0;
           Navigator.pushReplacement(context, MaterialPageRoute(
@@ -85,6 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
 
+        // rolId 3 = Tutor / Apoderado
         if (rolId == 3) {
           Navigator.pushReplacement(context, MaterialPageRoute(
             builder: (context) => PanelApoderado(idUsuario: idUsuario, nombre: nombre),

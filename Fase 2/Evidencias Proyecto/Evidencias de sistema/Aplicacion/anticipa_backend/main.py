@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 
+# ── Configuración inicial ──────────────────────────────────
 env_path = Path(__file__).parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -41,6 +42,7 @@ with engine.connect() as conn:
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+# ── Utilidades: hash, email, códigos ──────────────────────
 def hash_password(password: str) -> str:
     return pwd_context.hash(password)
 
@@ -92,6 +94,7 @@ def enviar_codigo_email(email: str, codigo: str, nombre: str = ""):
         print(f"Error al enviar email: {e}")
         return False
 
+# ── Detección de rol por dominio de email (registro automático) ──
 ALLOWED_DOMAINS = {
     'gmail.com': 3,
     'outlook.com': 3,

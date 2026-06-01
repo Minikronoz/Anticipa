@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import '../constants.dart';
 import 'panel_detalle_estudiante.dart';
 
 class PanelProfesor extends StatefulWidget {
@@ -16,7 +17,7 @@ class PanelProfesor extends StatefulWidget {
 }
 
 class _PanelProfesorState extends State<PanelProfesor> {
-  final String apiUrl = 'http://127.0.0.1:8000';
+  final String apiUrl = AppConstants.baseUrl;
 
   List<dynamic> estudiantes = [];
   List<dynamic> cursos = [];
