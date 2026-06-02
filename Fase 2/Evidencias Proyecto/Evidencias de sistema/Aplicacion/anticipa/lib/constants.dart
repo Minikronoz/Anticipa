@@ -9,5 +9,5 @@ class AppConstants {
   // ── Cambia esta IP por la del computador que corre uvicorn ──
   // En navegador/emulador: usa 127.0.0.1
   // En celular físico:     usa la IP local 
-  static const String baseUrl = 'http://192.168.1.14:8000';
+  static const String baseUrl = 'https://anticipa.onrender.com';
 }
