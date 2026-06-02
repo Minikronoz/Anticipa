@@ -22,6 +22,6 @@ typing_extensions==4.15.0
 uvicorn==0.46.0
 watchfiles==1.1.1
 websockets==16.0
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
 bcrypt==4.2.1
 yagmail==0.16.0
