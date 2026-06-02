@@ -55,7 +55,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
   }
 
   Future<List<Map<String, dynamic>>> _get(String url) async {
-    final r = await http.get(Uri.parse(url));
+    final r = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
     return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
   }
 
@@ -66,7 +66,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
       '?id_usuario=${widget.idUsuario}&rol_id_rol=3',
     );
     try {
-      final r = await http.post(url);
+      final r = await http.post(url).timeout(const Duration(seconds: 60));
       if (r.statusCode == 201) {
         await _cargarTodo();
         if (mounted) {

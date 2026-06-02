@@ -37,10 +37,10 @@ class _PanelProfesorState extends State<PanelProfesor> {
     });
 
     try {
-      final cursosResponse = await http.get(Uri.parse('$apiUrl/cursos/'));
+      final cursosResponse = await http.get(Uri.parse('$apiUrl/cursos/')).timeout(const Duration(seconds: 60));
       final estudiantesResponse = await http.get(
         Uri.parse('$apiUrl/estudiantes/usuario/${widget.idUsuarioProfesor}'),
-      );
+      ).timeout(const Duration(seconds: 60));
 
       if (cursosResponse.statusCode == 200 &&
           estudiantesResponse.statusCode == 200) {
@@ -92,7 +92,7 @@ class _PanelProfesorState extends State<PanelProfesor> {
                 Uri.parse(
                   '$apiUrl/vinculaciones/codigo/$codigo?id_usuario=${widget.idUsuarioProfesor}&rol_id_rol=2',
                 ),
-              );
+              ).timeout(const Duration(seconds: 60));
 
               Navigator.pop(context);
 

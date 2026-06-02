@@ -67,7 +67,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   }
 
   Future<List<Map<String, dynamic>>> _get(String url) async {
-    final r = await http.get(Uri.parse(url));
+    final r = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
     return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
   }
 
@@ -131,7 +131,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   Future<void> _completar(int id) async {
     setState(() => _completandoIds.add(id));
     try {
-      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/$id/completar'));
+      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/$id/completar')).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) await _cargarTodo();
     } catch (_) {
     } finally {

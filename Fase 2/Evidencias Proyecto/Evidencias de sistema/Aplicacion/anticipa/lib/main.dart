@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           'email': emailController.text,
           'password': passwordController.text,
         }),
-      );
+      ).timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

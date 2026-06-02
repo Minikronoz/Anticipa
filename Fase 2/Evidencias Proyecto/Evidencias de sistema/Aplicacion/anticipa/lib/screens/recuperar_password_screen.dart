@@ -37,7 +37,7 @@ class _RecuperarPasswordScreenState extends State<RecuperarPasswordScreen> {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': emailController.text.trim()}),
-      );
+      ).timeout(const Duration(seconds: 60));
 
       final data = jsonDecode(response.body);
 
@@ -75,7 +75,7 @@ class _RecuperarPasswordScreenState extends State<RecuperarPasswordScreen> {
           'codigo': codigoController.text.trim(),
           'nueva_password': passwordController.text,
         }),
-      );
+      ).timeout(const Duration(seconds: 60));
 
       final data = jsonDecode(response.body);
 

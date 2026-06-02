@@ -108,7 +108,7 @@ class _RegistroScreenState extends State<RegistroScreen> {
         url,
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
-      );
+      ).timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

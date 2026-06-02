@@ -65,17 +65,17 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   }
 
   Future<List<Map<String, dynamic>>> _fetchActividades() async {
-    final r = await http.get(Uri.parse('${AppConstants.baseUrl}/actividades/estudiante/${widget.idEstudiante}'));
+    final r = await http.get(Uri.parse('${AppConstants.baseUrl}/actividades/estudiante/${widget.idEstudiante}')).timeout(const Duration(seconds: 60));
     return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
   }
 
   Future<List<Map<String, dynamic>>> _fetchPictogramas() async {
-    final r = await http.get(Uri.parse('${AppConstants.baseUrl}/pictogramas/'));
+    final r = await http.get(Uri.parse('${AppConstants.baseUrl}/pictogramas/')).timeout(const Duration(seconds: 60));
     return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
   }
 
   Future<Map<String, dynamic>?> _fetchEstrellas() async {
-    final r = await http.get(Uri.parse('${AppConstants.baseUrl}/estrellas/estudiante/${widget.idEstudiante}'));
+    final r = await http.get(Uri.parse('${AppConstants.baseUrl}/estrellas/estudiante/${widget.idEstudiante}')).timeout(const Duration(seconds: 60));
     if (r.statusCode != 200) return null;
     final data = List<Map<String, dynamic>>.from(jsonDecode(r.body));
     final hoy = _fmt(DateTime.now());
@@ -85,7 +85,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   // ── CRUD: completar, eliminar, editar, crear ────────────
   Future<bool> _patch(String path) async {
     try {
-      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}$path'));
+      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}$path')).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) { await _cargarTodo(); return true; }
     } catch (_) { setState(() => error = 'Error de conexión'); }
     return false;
@@ -95,7 +95,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
 
   Future<void> eliminarActividad(int id) async {
     try {
-      final r = await http.delete(Uri.parse('${AppConstants.baseUrl}/actividades/$id'));
+      final r = await http.delete(Uri.parse('${AppConstants.baseUrl}/actividades/$id')).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) await _cargarTodo();
     } catch (_) { setState(() => error = 'Error al eliminar'); }
   }
@@ -333,7 +333,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     if (alertaMin != '0') body['alerta_minutos'] = alertaMin;
 
     try {
-      final r = await http.post(Uri.parse('${AppConstants.baseUrl}/actividades/'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
+      final r = await http.post(Uri.parse('${AppConstants.baseUrl}/actividades/'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body)).timeout(const Duration(seconds: 60));
       if (r.statusCode == 201) await _cargarTodo();
     } catch (_) { setState(() => error = 'Error al crear actividad'); }
   }
@@ -409,7 +409,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     };
     if (pictoElegido != null) body['pictograma_id_pictograma'] = pictoElegido!['id_pictograma'];
     try {
-      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/${a['id_actividad']}'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body));
+      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/${a['id_actividad']}'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body)).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) await _cargarTodo();
     } catch (_) { setState(() => error = 'Error al editar'); }
   }
