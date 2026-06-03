@@ -159,14 +159,13 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     );
   }
 
-  // Barra superior: saludo, fecha, estrellas totales
+  // Barra superior: saludo, fecha, estrellas totales, logout
   Widget _barraSuperior() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
       decoration: const BoxDecoration(
         color: Color(0xFF4F46E5),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: Row(children: [
         Container(
@@ -180,9 +179,18 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           Text(_fechaBonita(), style: const TextStyle(fontSize: 14, color: Colors.white70)),
         ])),
         Column(children: [
-          Row(children: List.generate(_estrellas.clamp(0, 5), (_) => const Text('⭐', style: TextStyle(fontSize: 26)))),
-          Text('$_estrellas estrellas', style: const TextStyle(fontSize: 12, color: Colors.white70)),
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            const Text('⭐', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 4),
+            Text('$_estrellas', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          ]),
+          const Text('estrellas', style: TextStyle(fontSize: 11, color: Colors.white70)),
         ]),
+        IconButton(
+          icon: const Icon(Icons.logout, color: Colors.white70, size: 22),
+          tooltip: 'Cerrar sesión',
+          onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
+        ),
       ]),
     );
   }
@@ -250,80 +258,139 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     );
   }
 
+  // ── Línea de tiempo: nodos conectados con indicadores de estado
   Widget _listaActividades() {
     return RefreshIndicator(
       onRefresh: _cargarTodo,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(12, 16, 16, 16),
         itemCount: _actividades.length,
-        itemBuilder: (_, i) => _tarjetaActividad(_actividades[i]),
+        itemBuilder: (_, i) => _nodoTimeline(_actividades[i], i, _actividades.length),
       ),
     );
   }
 
-  // Tarjeta individual: pictograma grande, nombre, hora, botón completar
-  Widget _tarjetaActividad(Map<String, dynamic> a) {
+  Widget _nodoTimeline(Map<String, dynamic> a, int index, int total) {
     final id = a['id_actividad'] as int;
     final completada = a['es_completada'] == true;
     final completando = _completandoIds.contains(id);
     final picto = _pictoUrl(a['pictograma_id_pictograma']);
     final hora = (a['hora_inicio'] ?? '').toString().substring(0, 5);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: completada ? const Color(0xFFF0FDF4) : Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: completada ? Border.all(color: const Color(0xFF22C55E), width: 3) : null,
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
-      ),
-      child: Column(children: [
-        const SizedBox(height: 16),
-        Container(
-          width: 120, height: 120,
-          decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(24)),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
-            child: picto != null
-                ? Image.network(picto, width: 100, height: 100, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 64)))
-                : const Text('📌', style: TextStyle(fontSize: 64)),
+    final esPrimero = index == 0;
+    final esUltimo = index == total - 1;
+    final anteriorCompletado = !esPrimero && _actividades[index - 1]['es_completada'] == true;
+    final siguienteCompletado = !esUltimo && _actividades[index + 1]['es_completada'] == true;
+    final colorLineaArriba = (completada && anteriorCompletado) ? const Color(0xFF22C55E) : const Color(0xFFCBD5E1);
+    final colorLineaAbajo = (completada && siguienteCompletado) ? const Color(0xFF22C55E) : const Color(0xFFCBD5E1);
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 40,
+            child: Column(
+              children: [
+                if (!esPrimero)
+                  SizedBox(
+                    height: 32,
+                    child: Center(
+                      child: Container(width: 4, color: colorLineaArriba),
+                    ),
+                  ),
+                Container(
+                  width: 36,
+                  height: 36,
+                  margin: EdgeInsets.only(top: esPrimero ? 32 : 0),
+                  decoration: BoxDecoration(
+                    color: completada ? const Color(0xFF22C55E) : const Color(0xFFF97316),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Align(
+                    alignment: Alignment(0, 0.2),
+                    child: completada
+                        ? const Icon(Icons.check, color: Colors.white, size: 22)
+                        : const Text('●', style: TextStyle(color: Colors.white, fontSize: 15)),
+                  ),
+                ),
+                if (!esUltimo)
+                  Expanded(
+                    child: Center(
+                      child: Container(width: 4, color: colorLineaAbajo),
+                    ),
+                  ),
+              ],
+            ),
           ),
-        ),
-        const SizedBox(height: 12),
-        Text(a['nombre_tarea'] ?? 'Actividad', textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: const Color(0xFF061A40), decoration: completada ? TextDecoration.lineThrough : null)),
-        const SizedBox(height: 4),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.access_time, size: 18, color: Color(0xFF4F46E5)),
-          const SizedBox(width: 4),
-          Text(hora, style: const TextStyle(fontSize: 18, color: Color(0xFF4F46E5), fontWeight: FontWeight.w600)),
-        ]),
-        const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: ElevatedButton(
-              onPressed: completando ? null : () => _completar(id),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: completada ? const Color(0xFF22C55E) : const Color(0xFF4F46E5),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: completada ? const Color(0xFFF0FDF4) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: completada ? Border.all(color: const Color(0xFF22C55E), width: 3) : null,
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
               ),
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (completando)
-                  const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
-                else ...[
-                  Icon(completada ? Icons.check_circle : Icons.star, size: 28),
-                  const SizedBox(width: 10),
-                  Text(completada ? '¡COMPLETADO!' : 'COMPLETAR', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                ],
+              child: Column(children: [
+                const SizedBox(height: 14),
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(18)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: picto != null
+                        ? Image.network(picto, width: 56, height: 56, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 40)))
+                        : const Text('📌', style: TextStyle(fontSize: 40)),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  child: Text(
+                    a['nombre_tarea'] ?? 'Actividad',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF061A40), decoration: completada ? TextDecoration.lineThrough : null),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  const Icon(Icons.access_time, size: 16, color: Color(0xFF4F46E5)),
+                  const SizedBox(width: 4),
+                  Text(hora, style: const TextStyle(fontSize: 16, color: Color(0xFF4F46E5), fontWeight: FontWeight.w600)),
+                ]),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: ElevatedButton(
+                      onPressed: completando ? null : () => _completar(id),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: completada ? const Color(0xFF22C55E) : const Color(0xFF4F46E5),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      ),
+                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                        if (completando)
+                          const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
+                        else ...[
+                          Icon(completada ? Icons.check_circle : Icons.star, size: 22),
+                          const SizedBox(width: 8),
+                          Text(completada ? '¡COMPLETADO!' : 'COMPLETAR', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ],
+                      ]),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
               ]),
             ),
           ),
-        ),
-        const SizedBox(height: 16),
-      ]),
+        ],
+      ),
     );
   }
 

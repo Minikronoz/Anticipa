@@ -238,7 +238,6 @@ class _PanelApoderadoState extends State<PanelApoderado> {
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: const BoxDecoration(
         color: Color(0xFF4F46E5),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
       ),
       child: Column(children: [
         Row(children: [
