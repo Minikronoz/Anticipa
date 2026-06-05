@@ -464,7 +464,13 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
         ),
       ),
     );
-    if (ok != true || nombreCtl.text.trim().isEmpty) return;
+    if (ok != true) return;
+    final nombre = nombreCtl.text.trim();
+    if (nombre.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El nombre de la actividad no puede estar vacío'), backgroundColor: Colors.red)); return; }
+    if (nombre.length > 100) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El nombre no puede exceder 100 caracteres'), backgroundColor: Colors.red)); return; }
+    if (!_esHoraValida(horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de inicio inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
+    if (!_esHoraValida(horaFinCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de fin inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
+    if (!_esHoraFinMayor(horaFinCtl.text, horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de fin debe ser mayor que la hora de inicio'), backgroundColor: Colors.red)); return; }
 
     final body = <String, dynamic>{
       'estudiante_id_estudiante': widget.idEstudiante,
@@ -692,9 +698,15 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       ),
     );
     if (ok != true) return;
+    final nombre = nombreCtl.text.trim();
+    if (nombre.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El nombre de la actividad no puede estar vacío'), backgroundColor: Colors.red)); return; }
+    if (nombre.length > 100) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El nombre no puede exceder 100 caracteres'), backgroundColor: Colors.red)); return; }
+    if (!_esHoraValida(horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de inicio inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
+    if (!_esHoraValida(horaFinCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de fin inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
+    if (!_esHoraFinMayor(horaFinCtl.text, horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de fin debe ser mayor que la hora de inicio'), backgroundColor: Colors.red)); return; }
 
     final body = <String, dynamic>{
-      'nombre_tarea': nombreCtl.text.trim(),
+      'nombre_tarea': nombre,
       'hora_inicio': '${horaCtl.text.trim().padRight(5, '0')}:00',
       'hora_fin': '${horaFinCtl.text.trim().padRight(5, '0')}:00',
     };
@@ -717,6 +729,23 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     final finH = (h + total ~/ 60) % 24;
     final finM = total % 60;
     return '${finH.toString().padLeft(2, '0')}:${finM.toString().padLeft(2, '0')}';
+  }
+
+  bool _esHoraValida(String h) {
+    final regex = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$');
+    if (!regex.hasMatch(h)) return false;
+    final parts = h.split(':');
+    final hour = int.parse(parts[0]);
+    final minute = int.parse(parts[1]);
+    return hour >= 0 && hour <= 23 && minute >= 0 && minute <= 59;
+  }
+
+  bool _esHoraFinMayor(String fin, String inicio) {
+    final partsFin = fin.split(':');
+    final partsInicio = inicio.split(':');
+    final finMin = int.parse(partsFin[0]) * 60 + int.parse(partsFin[1]);
+    final inicioMin = int.parse(partsInicio[0]) * 60 + int.parse(partsInicio[1]);
+    return finMin > inicioMin;
   }
 
   Widget _campoTexto(String label, String placeholder, TextEditingController ctl, {String? hint, ValueChanged<String>? onChanged}) {

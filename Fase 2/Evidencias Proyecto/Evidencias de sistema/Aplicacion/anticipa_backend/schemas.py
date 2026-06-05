@@ -1,7 +1,8 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator, field_serializer, ValidationInfo
 from typing import Optional
 from datetime import date, datetime, time
 from models import TipoSonidoEnum, MinutosAnticipEnum
+import re
 
 
 class ConfigBase(BaseModel):
@@ -37,6 +38,13 @@ class UsuarioCreate(ConfigBase):
     email:         EmailStr
     password_hash: str
     curso_id_curso: Optional[int] = None
+
+    @field_validator('password_hash')
+    @classmethod
+    def password_hash_min_length(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError('La contraseña debe tener al menos 6 caracteres')
+        return v
 
 class UsuarioResponse(ConfigBase):
     id_usuario:    int
@@ -123,6 +131,30 @@ class ActividadCreate(ConfigBase):
     fecha_actividad:                date
     alerta_minutos:                 Optional[str] = None
 
+    @field_validator('nombre_tarea')
+    @classmethod
+    def nombre_tarea_valido(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('El nombre de la actividad no puede estar vacío')
+        if len(v) > 100:
+            raise ValueError('El nombre no puede exceder 100 caracteres')
+        return v.strip()
+
+    @field_validator('alerta_minutos')
+    @classmethod
+    def alerta_minutos_valida(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and v not in ('0', '2', '5', '10', '15'):
+            raise ValueError('Los minutos de alerta deben ser 0, 2, 5, 10 o 15')
+        return v
+
+    @field_validator('hora_fin')
+    @classmethod
+    def hora_fin_mayor_hora_inicio(cls, v: time, info: ValidationInfo) -> time:
+        hora_inicio = info.data.get('hora_inicio')
+        if hora_inicio is not None and v <= hora_inicio:
+            raise ValueError('La hora de fin debe ser mayor que la hora de inicio')
+        return v
+
 class ActividadResponse(ConfigBase):
     id_actividad:                   int
     estudiante_id_estudiante:       int
@@ -143,6 +175,17 @@ class ActividadUpdate(ConfigBase):
     fecha_actividad:                Optional[date] = None
     pictograma_id_pictograma:       Optional[int]  = None
     catalogo_actividad_id_catalogo: Optional[int]  = None
+
+    @field_validator('nombre_tarea')
+    @classmethod
+    def nombre_tarea_valido(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None:
+            if not v.strip():
+                raise ValueError('El nombre de la actividad no puede estar vacío')
+            if len(v) > 100:
+                raise ValueError('El nombre no puede exceder 100 caracteres')
+            return v.strip()
+        return v
 
 
 # CONFIGURACION_ALERTA
@@ -205,10 +248,26 @@ class EstrellaResponse(ConfigBase):
 # REGISTRO CON DETECCIÓN DE ROL
 class RegistroRequest(BaseModel):
     nombre:            str
-    email:             str
+    email:             EmailStr
     password:          str
     fecha_nacimiento:  Optional[date] = None
     curso_id_curso:    Optional[int] = None
+
+    @field_validator('password')
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError('La contraseña debe tener al menos 6 caracteres')
+        return v
+
+    @field_validator('nombre')
+    @classmethod
+    def nombre_no_vacio(cls, v: str) -> str:
+        if not v or not v.strip():
+            raise ValueError('El nombre no puede estar vacío')
+        if len(v) > 100:
+            raise ValueError('El nombre no puede exceder 100 caracteres')
+        return v.strip()
 
 
 # AUTENTICACION

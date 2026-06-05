@@ -6,6 +6,7 @@ import schemas
 from database import engine, get_db
 import random
 import string
+import re
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone, date
 from dotenv import load_dotenv
@@ -312,6 +313,11 @@ def registrar_con_deteccion_rol(
             detail="Curso es obligatorio para estudiantes."
         )
 
+    if request.curso_id_curso is not None:
+        curso = db.query(models.Curso).filter(models.Curso.id_curso == request.curso_id_curso).first()
+        if not curso:
+            raise HTTPException(status_code=400, detail="El curso seleccionado no existe.")
+
     usuario = models.Usuario(
         rol_id_rol=rol_id,
         nombre=request.nombre,
@@ -448,6 +454,8 @@ def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db
           response_model=schemas.VinculacionResponse,
           status_code=status.HTTP_201_CREATED, tags=["Vinculaciones"])
 def vincular_por_codigo(codigo: str, id_usuario: int, rol_id_rol: int = 3, db: Session = Depends(get_db)):
+    if not codigo or len(codigo) != 7 or not re.match(r'^[A-Z0-9]+$', codigo.upper()):
+        raise HTTPException(status_code=400, detail="Código de vinculación inválido. Debe tener 7 caracteres alfanuméricos.")
     estudiante = db.query(models.Estudiante).filter(
         models.Estudiante.codigo_vinculacion == codigo.upper()
     ).first()
@@ -533,6 +541,21 @@ def listar_catalogo(db: Session = Depends(get_db)):
 def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(get_db)):
     datos = actividad.model_dump()
     alerta_minutos = datos.pop('alerta_minutos', None)
+
+    if datos.get('pictograma_id_pictograma') is not None:
+        picto = db.query(models.Pictograma).filter(
+            models.Pictograma.id_pictograma == datos['pictograma_id_pictograma']
+        ).first()
+        if not picto:
+            raise HTTPException(status_code=400, detail="El pictograma seleccionado no existe.")
+
+    if datos.get('catalogo_actividad_id_catalogo') is not None:
+        catalogo = db.query(models.CatalogoActividad).filter(
+            models.CatalogoActividad.id_catalogo == datos['catalogo_actividad_id_catalogo']
+        ).first()
+        if not catalogo:
+            raise HTTPException(status_code=400, detail="El catálogo de actividad no existe.")
+
     nueva = models.Actividad(**datos)
     db.add(nueva); db.commit(); db.refresh(nueva)
     if alerta_minutos and alerta_minutos in ('2', '5', '10', '15'):
@@ -621,7 +644,27 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
     ).first()
     if not a:
         raise HTTPException(status_code=404, detail="Actividad no encontrada.")
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
+
+    datos_dict = datos.model_dump(exclude_unset=True)
+
+    picto_id = datos_dict.get('pictograma_id_pictograma')
+    if picto_id is not None:
+        picto = db.query(models.Pictograma).filter(models.Pictograma.id_pictograma == picto_id).first()
+        if not picto:
+            raise HTTPException(status_code=400, detail="El pictograma seleccionado no existe.")
+
+    catalogo_id = datos_dict.get('catalogo_actividad_id_catalogo')
+    if catalogo_id is not None:
+        catalogo = db.query(models.CatalogoActividad).filter(models.CatalogoActividad.id_catalogo == catalogo_id).first()
+        if not catalogo:
+            raise HTTPException(status_code=400, detail="El catálogo de actividad no existe.")
+
+    nueva_inicio = datos_dict.get('hora_inicio', a.hora_inicio)
+    nueva_fin = datos_dict.get('hora_fin', a.hora_fin)
+    if nueva_inicio is not None and nueva_fin is not None and nueva_fin <= nueva_inicio:
+        raise HTTPException(status_code=400, detail="La hora de fin debe ser mayor que la hora de inicio.")
+
+    for campo, valor in datos_dict.items():
         setattr(a, campo, valor)
     db.commit(); db.refresh(a)
     return a
