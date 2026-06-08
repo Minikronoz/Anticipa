@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
+import '../theme/app_theme.dart';
 
 // ═══════════════════════════════════════════════════════════
 // PANEL ESTUDIANTE — Modo kiosko simplificado
@@ -12,6 +13,7 @@ class PanelEstudiante extends StatefulWidget {
   final int idUsuario;
   final String rol;
   final String nombreEstudiante;
+  final ThemeConfig themeConfig;
 
   const PanelEstudiante({
     super.key,
@@ -19,6 +21,7 @@ class PanelEstudiante extends StatefulWidget {
     required this.idUsuario,
     required this.rol,
     required this.nombreEstudiante,
+    required this.themeConfig,
   });
 
   @override
@@ -33,6 +36,8 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   bool _cargando = true;
   final Set<int> _completandoIds = {};
   DateTime _fechaSeleccionada = DateTime.now();
+
+  ThemeColors get _c => widget.themeConfig.colors;
 
   String get _fechaFormateada => _fechaSeleccionada.toIso8601String().split('T')[0];
 
@@ -147,7 +152,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FF),
+      backgroundColor: _c.background,
       body: SafeArea(
         child: Column(children: [
           _barraSuperior(),
@@ -164,8 +169,8 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 16, 8, 12),
-      decoration: const BoxDecoration(
-        color: Color(0xFF4F46E5),
+      decoration: BoxDecoration(
+        color: _c.appBar,
       ),
       child: Row(children: [
         Container(
@@ -199,9 +204,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
       const Text('📭', style: TextStyle(fontSize: 72)),
       const SizedBox(height: 16),
-      Text('No hay actividades para este día', style: const TextStyle(fontSize: 20, color: Color(0xFF061A40))),
+      Text('No hay actividades para este día', style: TextStyle(fontSize: 20, color: _c.textPrimary)),
       const SizedBox(height: 8),
-      const Text('Pídele a tu profesor o apoderado\nque te agregue actividades', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: Colors.grey)),
+      Text('Pídele a tu profesor o apoderado\nque te agregue actividades', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: _c.textSecondary)),
     ]));
   }
 
@@ -211,7 +216,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     final dias = _diasVisibles;
 
     return Container(
-      color: const Color(0xFF4F46E5),
+      color: _c.appBar,
       padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
       child: Row(children: [
         IconButton(
@@ -239,9 +244,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                     border: esHoy && !seleccionado ? Border.all(color: Colors.yellowAccent, width: 2) : null,
                   ),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(_fechaLabel(d), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: seleccionado ? const Color(0xFF4F46E5) : Colors.white)),
+                    Text(_fechaLabel(d), style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: seleccionado ? _c.primary : Colors.white)),
                     const SizedBox(height: 2),
-                    Text('${d.day}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: seleccionado ? const Color(0xFF4F46E5) : Colors.white)),
+                    Text('${d.day}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: seleccionado ? _c.primary : Colors.white)),
                   ]),
                 ),
               );
@@ -281,8 +286,8 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     final esUltimo = index == total - 1;
     final anteriorCompletado = !esPrimero && _actividades[index - 1]['es_completada'] == true;
     final siguienteCompletado = !esUltimo && _actividades[index + 1]['es_completada'] == true;
-    final colorLineaArriba = (completada && anteriorCompletado) ? const Color(0xFF22C55E) : const Color(0xFFCBD5E1);
-    final colorLineaAbajo = (completada && siguienteCompletado) ? const Color(0xFF22C55E) : const Color(0xFFCBD5E1);
+    final colorLineaArriba = (completada && anteriorCompletado) ? const Color(0xFF22C55E) : Colors.grey.shade300;
+    final colorLineaAbajo = (completada && siguienteCompletado) ? const Color(0xFF22C55E) : Colors.grey.shade300;
 
     return IntrinsicHeight(
       child: Row(
@@ -327,9 +332,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: completada ? const Color(0xFFF0FDF4) : Colors.white,
+                color: completada ? const Color(0xFFF0FDF4) : _c.card,
                 borderRadius: BorderRadius.circular(24),
-                border: completada ? Border.all(color: const Color(0xFF22C55E), width: 3) : null,
+                border: completada ? Border.all(color: const Color(0xFF22C55E), width: 3) : Border.all(color: _c.primary.withValues(alpha: 0.2)),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
               ),
               child: Column(children: [
@@ -337,7 +342,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                 Container(
                   width: 72,
                   height: 72,
-                  decoration: BoxDecoration(color: const Color(0xFFEEF2FF), borderRadius: BorderRadius.circular(18)),
+                  decoration: BoxDecoration(color: _c.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(18)),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(14),
                     child: picto != null
@@ -351,14 +356,14 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                   child: Text(
                     a['nombre_tarea'] ?? 'Actividad',
                     textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF061A40), decoration: completada ? TextDecoration.lineThrough : null),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.textPrimary, decoration: completada ? TextDecoration.lineThrough : null),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.access_time, size: 16, color: Color(0xFF4F46E5)),
+                  Icon(Icons.access_time, size: 16, color: _c.primary),
                   const SizedBox(width: 4),
-                  Text(hora, style: const TextStyle(fontSize: 16, color: Color(0xFF4F46E5), fontWeight: FontWeight.w600)),
+                  Text(hora, style: TextStyle(fontSize: 16, color: _c.primary, fontWeight: FontWeight.w600)),
                 ]),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -368,7 +373,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                     child: ElevatedButton(
                       onPressed: completando ? null : () => _completar(id),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: completada ? const Color(0xFF22C55E) : const Color(0xFF4F46E5),
+                        backgroundColor: completada ? const Color(0xFF22C55E) : _c.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -399,9 +404,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-      decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(0, -2))]),
+      decoration: BoxDecoration(color: _c.card, borderRadius: const BorderRadius.vertical(top: Radius.circular(24)), boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, -2))]),
       child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text('$_completadas de ${_actividades.length} completadas', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+        Text('$_completadas de ${_actividades.length} completadas', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _c.textPrimary)),
         const SizedBox(width: 8),
         if (_completadas == _actividades.length && _actividades.isNotEmpty) const Text('🎉', style: TextStyle(fontSize: 28)),
       ]),

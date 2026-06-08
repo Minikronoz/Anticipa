@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
+import '../theme/app_theme.dart';
 
 class PanelDetalleEstudiante extends StatefulWidget {
   final int idEstudiante;
   final int idUsuario;
   final String rol;
   final String nombreEstudiante;
+  final ThemeConfig? themeConfig;
 
   const PanelDetalleEstudiante({
     super.key,
@@ -19,6 +21,7 @@ class PanelDetalleEstudiante extends StatefulWidget {
     required this.idUsuario,
     required this.rol,
     required this.nombreEstudiante,
+    this.themeConfig,
   });
 
   @override
@@ -41,6 +44,8 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   static const _mesesCorto = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
   bool get canEdit => widget.rol == 'Profesor' || widget.rol == 'Tutor / Apoderado';
+
+  ThemeColors get _c => (widget.themeConfig ?? ThemeConfig.defaultTheme()).colors;
 
   // ── Carga de datos desde API ────────────────────────────
   @override
@@ -137,10 +142,10 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
             return Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                label: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: sel ? Colors.white : const Color(0xFF4F46E5))),
+                label: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: sel ? Colors.white : _c.primary)),
                 selected: sel,
-                selectedColor: const Color(0xFF4F46E5),
-                backgroundColor: const Color(0xFFF0F4FF),
+                selectedColor: _c.primary,
+                backgroundColor: _c.background,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                 side: BorderSide.none,
                 onSelected: (_) => setDlg(() => categoriaSel = label),
@@ -156,9 +161,9 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: sel ? const Color(0xFFEEF2FF) : const Color(0xFFF5F7FF),
+                  color: sel ? _c.primary.withValues(alpha: 0.1) : _c.background,
                   borderRadius: BorderRadius.circular(16),
-                  border: sel ? Border.all(color: const Color(0xFF4F46E5), width: 2.5) : null,
+                  border: sel ? Border.all(color: _c.primary, width: 2.5) : null,
                 ),
                 child: Column(mainAxisSize: MainAxisSize.min, children: [
                   ClipRRect(
@@ -168,7 +173,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         : const Icon(Icons.image, size: 64, color: Colors.grey),
                   ),
                   const SizedBox(height: 6),
-                  Text(p['nombre_imagen'] ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFF061A40))),
+                  Text(p['nombre_imagen'] ?? '', textAlign: TextAlign.center, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: _c.textPrimary)),
                 ]),
               ),
             );
@@ -182,7 +187,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
                 child: Column(children: [
                   Row(children: [
-                    const Text('Elegir pictograma', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+                    Text('Elegir pictograma', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _c.textPrimary)),
                     const Spacer(),
                     IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                   ]),
@@ -240,7 +245,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               padding: const EdgeInsets.all(24),
               child: SingleChildScrollView(
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text('Nueva Actividad', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+              Text('Nueva Actividad', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _c.textPrimary)),
               const SizedBox(height: 4),
               Text('para ${widget.nombreEstudiante}', style: const TextStyle(fontSize: 14, color: Colors.grey)),
               const SizedBox(height: 24),
@@ -248,7 +253,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               _campoTexto('Nombre de la actividad', 'Ej: Lavarse los dientes', nombreCtl),
               const SizedBox(height: 16),
 
-              const Text('Elegir pictograma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+              Text('Elegir pictograma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
@@ -274,7 +279,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               _campoFecha(fechaAct, (d) => setDlg(() => fechaAct = d)),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Hora inicio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+                Text('Hora inicio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
                 const SizedBox(height: 6),
                 if (!horaInicioCustom)
                   Row(children: [
@@ -300,7 +305,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         ),
                       ),
                     ),
-                    const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF061A40)))),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
                     Expanded(
                       flex: 2,
                       child: Container(
@@ -327,7 +332,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     InkWell(
                       onTap: () => setDlg(() { horaInicioCustom = true; horaInicioCustomCtl.text = horaCtl.text; }),
                       borderRadius: BorderRadius.circular(8),
-                      child: const Padding(padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 13, fontWeight: FontWeight.w600))),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
@@ -349,7 +354,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               ]),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Hora fin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+                Text('Hora fin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
                 const SizedBox(height: 6),
                 if (!horaFinCustom)
                   Row(children: [
@@ -373,7 +378,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         ),
                       ),
                     ),
-                    const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF061A40)))),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
                     Expanded(
                       flex: 2,
                       child: Container(
@@ -398,7 +403,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     InkWell(
                       onTap: () => setDlg(() { horaFinCustom = true; horaFinCustomCtl.text = horaFinCtl.text; }),
                       borderRadius: BorderRadius.circular(8),
-                      child: const Padding(padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 13, fontWeight: FontWeight.w600))),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
@@ -421,9 +426,9 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               const SizedBox(height: 16),
 
               Row(children: [
-                const Icon(Icons.notifications, size: 16, color: Color(0xFF4F46E5)),
+                Icon(Icons.notifications, size: 16, color: _c.primary),
                 const SizedBox(width: 6),
-                const Text('Anticipación de alerta', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+                Text('Anticipación de alerta', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
               ]),
               const SizedBox(height: 6),
               Container(
@@ -453,7 +458,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                 const SizedBox(width: 12),
                 Expanded(flex: 2, child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(backgroundColor: _c.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: const Text('Guardar actividad', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 )),
               ]),
@@ -508,13 +513,13 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              const Text('Editar Actividad', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+              Text('Editar Actividad', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _c.textPrimary)),
               const SizedBox(height: 24),
 
               _campoTexto('Nombre de la actividad', '', nombreCtl),
               const SizedBox(height: 16),
 
-              const Text('Elegir pictograma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+              Text('Elegir pictograma', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
               const SizedBox(height: 8),
               InkWell(
                 onTap: () async {
@@ -537,7 +542,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               ),
               const SizedBox(height: 16),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Hora inicio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+                Text('Hora inicio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
                 const SizedBox(height: 6),
                 if (!horaInicioCustom)
                   Row(children: [
@@ -563,7 +568,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         ),
                       ),
                     ),
-                    const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF061A40)))),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
                     Expanded(
                       flex: 2,
                       child: Container(
@@ -590,7 +595,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     InkWell(
                       onTap: () => setDlg(() { horaInicioCustom = true; horaInicioCustomCtl.text = horaCtl.text; }),
                       borderRadius: BorderRadius.circular(8),
-                      child: const Padding(padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 13, fontWeight: FontWeight.w600))),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
@@ -612,7 +617,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               ]),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('Hora fin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+                Text('Hora fin', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
                 const SizedBox(height: 6),
                 if (!horaFinCustom)
                   Row(children: [
@@ -636,7 +641,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         ),
                       ),
                     ),
-                    const Padding(padding: EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF061A40)))),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
                     Expanded(
                       flex: 2,
                       child: Container(
@@ -661,7 +666,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     InkWell(
                       onTap: () => setDlg(() { horaFinCustom = true; horaFinCustomCtl.text = horaFinCtl.text; }),
                       borderRadius: BorderRadius.circular(8),
-                      child: const Padding(padding: EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: Color(0xFF4F46E5), fontSize: 13, fontWeight: FontWeight.w600))),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
@@ -688,7 +693,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                 const SizedBox(width: 12),
                 Expanded(flex: 2, child: ElevatedButton(
                   onPressed: () => Navigator.pop(ctx, true),
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                  style: ElevatedButton.styleFrom(backgroundColor: _c.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
                   child: const Text('Guardar cambios', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
                 )),
               ]),
@@ -750,7 +755,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
 
   Widget _campoTexto(String label, String placeholder, TextEditingController ctl, {String? hint, ValueChanged<String>? onChanged}) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+      Text(label, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
       const SizedBox(height: 6),
       TextField(
         controller: ctl,
@@ -766,7 +771,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
 
   Widget _campoFecha(DateTime valor, ValueChanged<DateTime> onChange) {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const Text('Fecha', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF061A40))),
+      Text('Fecha', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
       const SizedBox(height: 6),
       InkWell(
         onTap: () async {
@@ -778,7 +783,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
           decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
           child: Row(children: [
-            const Icon(Icons.calendar_today, size: 18, color: Color(0xFF4F46E5)),
+            Icon(Icons.calendar_today, size: 18, color: _c.primary),
             const SizedBox(width: 10),
             Text('${valor.day.toString().padLeft(2, '0')}/${valor.month.toString().padLeft(2, '0')}/${valor.year}', style: const TextStyle(fontSize: 15)),
           ]),
@@ -844,10 +849,10 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     if (isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F4FF),
+      backgroundColor: _c.background,
       appBar: AppBar(
         title: const Text('Panel Estudiante'), centerTitle: true,
-        backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white,
+        backgroundColor: _c.appBar, foregroundColor: Colors.white,
         leading: IconButton(icon: const Icon(Icons.arrow_back, color: Colors.white), onPressed: () => Navigator.pop(context)),
       ),
       body: RefreshIndicator(
@@ -874,7 +879,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _nuevaActividad,
-        backgroundColor: const Color(0xFF4F46E5),
+        backgroundColor: _c.primary,
         foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Nueva actividad'),
@@ -885,20 +890,20 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   Widget _header() => Card(
     elevation: 2, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     child: Padding(padding: const EdgeInsets.all(20), child: Row(children: [
-      Container(width: 64, height: 64, decoration: BoxDecoration(color: const Color(0xFF4F46E5), borderRadius: BorderRadius.circular(32)), child: const Icon(Icons.person, size: 40, color: Colors.white)),
+      Container(width: 64, height: 64, decoration: BoxDecoration(color: _c.primary, borderRadius: BorderRadius.circular(32)), child: const Icon(Icons.person, size: 40, color: Colors.white)),
       const SizedBox(width: 16),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(widget.nombreEstudiante, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+        Text(widget.nombreEstudiante, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: _c.textPrimary)),
         Text('Calendario de rutinas', style: TextStyle(color: Colors.grey[600])),
       ])),
       Column(children: [
         Row(mainAxisSize: MainAxisSize.min, children: [
           const Text('⭐', style: TextStyle(fontSize: 20)),
           const SizedBox(width: 4),
-          Text('$_estrellas', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF061A40))),
+          Text('$_estrellas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.textPrimary)),
         ]),
         Text('estrellas hoy', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        Text('$_completadas/${_hoyActividades.length} completadas', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Color(0xFF4F46E5))),
+        Text('$_completadas/${_hoyActividades.length} completadas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _c.primary)),
       ]),
     ])),
   );
@@ -910,7 +915,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       final sel = calendarView == v;
       return Expanded(child: GestureDetector(
         onTap: () => setState(() => calendarView = v),
-        child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: sel ? const Color(0xFF4F46E5) : Colors.transparent, borderRadius: BorderRadius.circular(10)),
+        child: Container(padding: const EdgeInsets.symmetric(vertical: 10), decoration: BoxDecoration(color: sel ? _c.primary : Colors.transparent, borderRadius: BorderRadius.circular(10)),
           child: Text(l, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w600, color: sel ? Colors.white : Colors.grey[700])),
         ),
       ));
@@ -921,7 +926,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     elevation: 1, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       IconButton(icon: const Icon(Icons.chevron_left), onPressed: () => _avanzar(-1)),
-      Expanded(child: Text(_tituloCalendario(), textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF061A40)))),
+      Expanded(child: Text(_tituloCalendario(), textAlign: TextAlign.center, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _c.textPrimary))),
       IconButton(icon: const Icon(Icons.chevron_right), onPressed: () => _avanzar(1)),
     ])),
   );
@@ -952,13 +957,13 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           child: Container(
             width: (MediaQuery.of(context).size.width - 72) / 7, padding: const EdgeInsets.symmetric(vertical: 8),
             decoration: BoxDecoration(
-              color: sel ? const Color(0xFF4F46E5) : (isToday && !sel ? const Color(0xFFE0E7FF) : Colors.transparent),
+              color: sel ? _c.primary : (isToday && !sel ? _c.primary.withValues(alpha: 0.15) : Colors.transparent),
               borderRadius: BorderRadius.circular(8),
-              border: isToday && !sel ? Border.all(color: const Color(0xFF4F46E5), width: 1.5) : null,
+              border: isToday && !sel ? Border.all(color: _c.primary, width: 1.5) : null,
             ),
             child: Column(children: [
-              Text('${d.day}', style: TextStyle(fontSize: 14, fontWeight: isToday ? FontWeight.bold : FontWeight.normal, color: !inM ? Colors.grey[300] : sel ? Colors.white : const Color(0xFF061A40))),
-              if (c > 0) Text('$c', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sel ? Colors.white : const Color(0xFF4F46E5))),
+              Text('${d.day}', style: TextStyle(fontSize: 14, fontWeight: isToday ? FontWeight.bold : FontWeight.normal, color: !inM ? Colors.grey[300] : sel ? Colors.white : _c.textPrimary)),
+              if (c > 0) Text('$c', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: sel ? Colors.white : _c.primary)),
             ]),
           ),
         );
@@ -969,14 +974,14 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   Widget _dayCell(int day, String label, int count, bool selected, bool today) => Container(
     padding: const EdgeInsets.symmetric(vertical: 10), margin: const EdgeInsets.symmetric(horizontal: 2),
     decoration: BoxDecoration(
-      color: selected ? const Color(0xFF4F46E5) : today ? const Color(0xFFE0E7FF) : Colors.transparent,
+      color: selected ? _c.primary : today ? _c.primary.withValues(alpha: 0.15) : Colors.transparent,
       borderRadius: BorderRadius.circular(10),
-      border: today && !selected ? Border.all(color: const Color(0xFF4F46E5), width: 2) : null,
+      border: today && !selected ? Border.all(color: _c.primary, width: 2) : null,
     ),
     child: Column(children: [
       Text(label, style: TextStyle(fontSize: 11, color: selected ? Colors.white70 : Colors.grey)),
-      Text('$day', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: selected ? Colors.white : const Color(0xFF061A40))),
-      if (count > 0) Container(margin: const EdgeInsets.only(top: 2), width: 20, height: 20, decoration: BoxDecoration(color: selected ? Colors.white24 : const Color(0xFF4F46E5), borderRadius: BorderRadius.circular(10)),
+      Text('$day', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: selected ? Colors.white : _c.textPrimary)),
+      if (count > 0) Container(margin: const EdgeInsets.only(top: 2), width: 20, height: 20, decoration: BoxDecoration(color: selected ? Colors.white24 : _c.primary, borderRadius: BorderRadius.circular(10)),
         child: Center(child: Text('$count', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.white)))),
     ]),
   );
@@ -984,7 +989,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   Widget _listaActividades() {
     final lista = _hoyActividades;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('Actividades para ${selectedDate.day} de ${_mesesCorto[selectedDate.month - 1]}', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF061A40)))),
+      Padding(padding: const EdgeInsets.only(bottom: 12), child: Text('Actividades para ${selectedDate.day} de ${_mesesCorto[selectedDate.month - 1]}', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
       if (lista.isEmpty)
         Card(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)), child: const Padding(padding: EdgeInsets.all(40), child: Center(child: Text('No hay actividades para este día', style: TextStyle(fontSize: 16, color: Colors.grey)))))
       else
@@ -998,19 +1003,19 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
             color: ok ? const Color(0xFFF0FDF4) : Colors.white,
             child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
-                SizedBox(width: 50, child: Text(hora, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF4F46E5)))),
+                SizedBox(width: 50, child: Text(hora, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.primary))),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Container(
                     width: 48, height: 48,
-                    decoration: BoxDecoration(color: const Color(0xFFEEF2FF)),
+                    decoration: BoxDecoration(color: _c.primary.withValues(alpha: 0.1)),
                     child: picto?['url'] != null
                         ? Image.network(picto!['url'], width: 40, height: 40, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 26)))
                         : const Center(child: Text('📌', style: TextStyle(fontSize: 26))),
                   ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(child: Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: const Color(0xFF061A40), decoration: ok ? TextDecoration.lineThrough : null))),
+                Expanded(child: Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _c.textPrimary, decoration: ok ? TextDecoration.lineThrough : null))),
               ]),
               if (picto != null) Padding(padding: const EdgeInsets.only(left: 50, top: 2), child: Text(picto['nombre_imagen'] ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
               const SizedBox(height: 10),
@@ -1023,7 +1028,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                   onPressed: () => completarActividad(a['id_actividad']),
                   icon: Icon(ok ? Icons.close : Icons.check, size: 16),
                   label: Text(ok ? 'Desmarcar' : 'Completar', style: const TextStyle(fontSize: 13)),
-                  style: ElevatedButton.styleFrom(backgroundColor: ok ? const Color(0xFF22C55E) : const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                  style: ElevatedButton.styleFrom(backgroundColor: ok ? const Color(0xFF22C55E) : _c.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                 ),
               ]),
             ])),
