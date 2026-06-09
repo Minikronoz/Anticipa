@@ -147,6 +147,13 @@ class ActividadCreate(ConfigBase):
             raise ValueError('Los minutos de alerta deben ser 0, 2, 5, 10 o 15')
         return v
 
+    @field_validator('fecha_actividad')
+    @classmethod
+    def fecha_no_pasada(cls, v: date) -> date:
+        if v < date.today():
+            raise ValueError('No se permiten fechas pasadas')
+        return v
+
     @field_validator('hora_fin')
     @classmethod
     def hora_fin_mayor_hora_inicio(cls, v: time, info: ValidationInfo) -> time:
@@ -175,6 +182,13 @@ class ActividadUpdate(ConfigBase):
     fecha_actividad:                Optional[date] = None
     pictograma_id_pictograma:       Optional[int]  = None
     catalogo_actividad_id_catalogo: Optional[int]  = None
+
+    @field_validator('fecha_actividad')
+    @classmethod
+    def fecha_no_pasada(cls, v: Optional[date]) -> Optional[date]:
+        if v is not None and v < date.today():
+            raise ValueError('No se permiten fechas pasadas')
+        return v
 
     @field_validator('nombre_tarea')
     @classmethod

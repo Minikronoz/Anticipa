@@ -542,6 +542,13 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
     datos = actividad.model_dump()
     alerta_minutos = datos.pop('alerta_minutos', None)
 
+    hoy = date.today()
+    if actividad.fecha_actividad < hoy:
+        raise HTTPException(status_code=400, detail="No se pueden crear actividades en fechas pasadas.")
+    ahora = datetime.now().time()
+    if actividad.fecha_actividad == hoy and actividad.hora_inicio < ahora:
+        raise HTTPException(status_code=400, detail="No se pueden crear actividades con hora en el pasado.")
+
     if datos.get('pictograma_id_pictograma') is not None:
         picto = db.query(models.Pictograma).filter(
             models.Pictograma.id_pictograma == datos['pictograma_id_pictograma']
@@ -646,6 +653,16 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
         raise HTTPException(status_code=404, detail="Actividad no encontrada.")
 
     datos_dict = datos.model_dump(exclude_unset=True)
+
+    nueva_fecha = datos_dict.get('fecha_actividad', a.fecha_actividad)
+    nueva_inicio = datos_dict.get('hora_inicio', a.hora_inicio)
+
+    hoy = date.today()
+    if nueva_fecha < hoy:
+        raise HTTPException(status_code=400, detail="No se pueden mover actividades a fechas pasadas.")
+    ahora = datetime.now().time()
+    if nueva_fecha == hoy and nueva_inicio is not None and nueva_inicio < ahora:
+        raise HTTPException(status_code=400, detail="No se pueden asignar horas en el pasado.")
 
     picto_id = datos_dict.get('pictograma_id_pictograma')
     if picto_id is not None:

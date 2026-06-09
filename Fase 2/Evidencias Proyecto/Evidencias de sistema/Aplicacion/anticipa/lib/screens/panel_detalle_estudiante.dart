@@ -224,15 +224,16 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   // ── Modal: Nueva actividad ──────────────────────────────
   Future<void> _nuevaActividad() async {
     final nombreCtl = TextEditingController();
-    final horaCtl = TextEditingController(text: '09:00');
-    final horaFinCtl = TextEditingController(text: '09:05');
+    final horaIni = _horaActualRedondeada();
+    final horaCtl = TextEditingController(text: horaIni);
+    final horaFinCtl = TextEditingController(text: _sumar5Min(horaIni));
     Map<String, dynamic>? pictoElegido;
     DateTime fechaAct = selectedDate;
     String alertaMin = '5';
     bool horaInicioCustom = false;
-    final horaInicioCustomCtl = TextEditingController(text: '09:00');
+    final horaInicioCustomCtl = TextEditingController(text: horaIni);
     bool horaFinCustom = false;
-    final horaFinCustomCtl = TextEditingController(text: '09:05');
+    final horaFinCustomCtl = TextEditingController(text: _sumar5Min(horaIni));
 
     final ok = await showDialog<bool>(
       context: context,
@@ -276,7 +277,18 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               ),
               const SizedBox(height: 16),
 
-              _campoFecha(fechaAct, (d) => setDlg(() => fechaAct = d)),
+              _campoFecha(fechaAct, (d) => setDlg(() {
+                  fechaAct = d;
+                  if (_esHoy(d)) {
+                    final horaActual = _horaActualRedondeada();
+                    final horaActualInt = int.parse(horaActual.substring(0, 2));
+                    final horaIniInt = int.parse(horaCtl.text.substring(0, 2));
+                    if (horaIniInt < horaActualInt || (horaIniInt == horaActualInt && horaCtl.text.substring(3, 5).compareTo(horaActual.substring(3, 5)) < 0)) {
+                      horaCtl.text = horaActual;
+                      horaFinCtl.text = _sumar5Min(horaActual);
+                    }
+                  }
+                })),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Hora inicio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
@@ -290,13 +302,17 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: horaCtl.text.substring(0, 2),
+                            value: _horasDisponibles(fechaAct).contains(horaCtl.text.substring(0, 2)) ? horaCtl.text.substring(0, 2) : _horasDisponibles(fechaAct).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _horas.map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _horasDisponibles(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
-                                horaCtl.text = '$v:${horaCtl.text.substring(3, 5)}';
+                                final minsDisp = _minutosDisponibles(fechaAct, v);
+                                final currentMin = horaCtl.text.substring(3, 5);
+                                final newMin = minsDisp.contains(currentMin) ? currentMin : minsDisp.first;
+                                horaCtl.text = '$v:$newMin';
                                 horaFinCtl.text = _sumar5Min(horaCtl.text);
                                 horaFinCustom = false;
                               });
@@ -313,11 +329,12 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _minutos.contains(horaCtl.text.substring(3, 5)) ? horaCtl.text.substring(3, 5) : _minutos.first,
+                            value: _minutosDisponibles(fechaAct, horaCtl.text.substring(0, 2)).contains(horaCtl.text.substring(3, 5)) ? horaCtl.text.substring(3, 5) : _minutosDisponibles(fechaAct, horaCtl.text.substring(0, 2)).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _minutos.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosDisponibles(fechaAct, horaCtl.text.substring(0, 2)).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
                                 horaCtl.text = '${horaCtl.text.substring(0, 2)}:$v';
                                 horaFinCtl.text = _sumar5Min(horaCtl.text);
@@ -365,13 +382,17 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: horaFinCtl.text.substring(0, 2),
+                            value: _horasDisponibles(fechaAct).contains(horaFinCtl.text.substring(0, 2)) ? horaFinCtl.text.substring(0, 2) : _horasDisponibles(fechaAct).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _horas.map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _horasDisponibles(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
-                                horaFinCtl.text = '$v:${horaFinCtl.text.substring(3, 5)}';
+                                final minsDisp = _minutosDisponibles(fechaAct, v);
+                                final currentMin = horaFinCtl.text.substring(3, 5);
+                                final newMin = minsDisp.contains(currentMin) ? currentMin : minsDisp.first;
+                                horaFinCtl.text = '$v:$newMin';
                               });
                             },
                           ),
@@ -386,11 +407,12 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _minutos.contains(horaFinCtl.text.substring(3, 5)) ? horaFinCtl.text.substring(3, 5) : _minutos.first,
+                            value: _minutosDisponibles(fechaAct, horaFinCtl.text.substring(0, 2)).contains(horaFinCtl.text.substring(3, 5)) ? horaFinCtl.text.substring(3, 5) : _minutosDisponibles(fechaAct, horaFinCtl.text.substring(0, 2)).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _minutos.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosDisponibles(fechaAct, horaFinCtl.text.substring(0, 2)).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
                                 horaFinCtl.text = '${horaFinCtl.text.substring(0, 2)}:$v';
                               });
@@ -505,6 +527,14 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     bool horaFinCustom = false;
     final horaFinCustomCtl = TextEditingController(text: (a['hora_fin'] ?? '').toString().substring(0, 5));
 
+    DateTime fechaAct;
+    try {
+      final fechaStr = a['fecha_actividad']?.toString() ?? '';
+      fechaAct = DateTime.parse(fechaStr.split('T')[0]);
+    } catch (_) {
+      fechaAct = DateTime.now();
+    }
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => StatefulBuilder(
@@ -553,13 +583,17 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: horaCtl.text.substring(0, 2),
+                            value: _horasDisponibles(fechaAct).contains(horaCtl.text.substring(0, 2)) ? horaCtl.text.substring(0, 2) : _horasDisponibles(fechaAct).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _horas.map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _horasDisponibles(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
-                                horaCtl.text = '$v:${horaCtl.text.substring(3, 5)}';
+                                final minsDisp = _minutosDisponibles(fechaAct, v);
+                                final currentMin = horaCtl.text.substring(3, 5);
+                                final newMin = minsDisp.contains(currentMin) ? currentMin : minsDisp.first;
+                                horaCtl.text = '$v:$newMin';
                                 horaFinCtl.text = _sumar5Min(horaCtl.text);
                                 horaFinCustom = false;
                               });
@@ -576,11 +610,12 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _minutos.contains(horaCtl.text.substring(3, 5)) ? horaCtl.text.substring(3, 5) : _minutos.first,
+                            value: _minutosDisponibles(fechaAct, horaCtl.text.substring(0, 2)).contains(horaCtl.text.substring(3, 5)) ? horaCtl.text.substring(3, 5) : _minutosDisponibles(fechaAct, horaCtl.text.substring(0, 2)).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _minutos.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosDisponibles(fechaAct, horaCtl.text.substring(0, 2)).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
                                 horaCtl.text = '${horaCtl.text.substring(0, 2)}:$v';
                                 horaFinCtl.text = _sumar5Min(horaCtl.text);
@@ -628,13 +663,17 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: horaFinCtl.text.substring(0, 2),
+                            value: _horasDisponibles(fechaAct).contains(horaFinCtl.text.substring(0, 2)) ? horaFinCtl.text.substring(0, 2) : _horasDisponibles(fechaAct).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _horas.map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _horasDisponibles(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
-                                horaFinCtl.text = '$v:${horaFinCtl.text.substring(3, 5)}';
+                                final minsDisp = _minutosDisponibles(fechaAct, v);
+                                final currentMin = horaFinCtl.text.substring(3, 5);
+                                final newMin = minsDisp.contains(currentMin) ? currentMin : minsDisp.first;
+                                horaFinCtl.text = '$v:$newMin';
                               });
                             },
                           ),
@@ -649,11 +688,12 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _minutos.contains(horaFinCtl.text.substring(3, 5)) ? horaFinCtl.text.substring(3, 5) : _minutos.first,
+                            value: _minutosDisponibles(fechaAct, horaFinCtl.text.substring(0, 2)).contains(horaFinCtl.text.substring(3, 5)) ? horaFinCtl.text.substring(3, 5) : _minutosDisponibles(fechaAct, horaFinCtl.text.substring(0, 2)).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _minutos.map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosDisponibles(fechaAct, horaFinCtl.text.substring(0, 2)).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
+                              if (v == null) return;
                               setDlg(() {
                                 horaFinCtl.text = '${horaFinCtl.text.substring(0, 2)}:$v';
                               });
@@ -709,6 +749,14 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     if (!_esHoraValida(horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de inicio inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
     if (!_esHoraValida(horaFinCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de fin inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
     if (!_esHoraFinMayor(horaFinCtl.text, horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de fin debe ser mayor que la hora de inicio'), backgroundColor: Colors.red)); return; }
+    if (_esHoy(fechaAct)) {
+      final ahora = DateTime.now();
+      final horaActualMin = ahora.hour * 60 + ahora.minute;
+      final horaInicioMin = int.parse(horaCtl.text.substring(0, 2)) * 60 + int.parse(horaCtl.text.substring(3, 5));
+      final horaFinMin = int.parse(horaFinCtl.text.substring(0, 2)) * 60 + int.parse(horaFinCtl.text.substring(3, 5));
+      if (horaInicioMin < horaActualMin) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de inicio no puede ser pasada'), backgroundColor: Colors.red)); return; }
+      if (horaFinMin < horaActualMin) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de fin no puede ser pasada'), backgroundColor: Colors.red)); return; }
+    }
 
     final body = <String, dynamic>{
       'nombre_tarea': nombre,
@@ -734,6 +782,53 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     final finH = (h + total ~/ 60) % 24;
     final finM = total % 60;
     return '${finH.toString().padLeft(2, '0')}:${finM.toString().padLeft(2, '0')}';
+  }
+
+  String _horaActualRedondeada() {
+    final now = DateTime.now();
+    final minutes = now.minute;
+    final rounded = ((minutes ~/ 5) + 1) * 5;
+    final totalMinutes = rounded >= 60 ? 0 : minutes + (5 - minutes % 5);
+    final h = (now.hour + (rounded >= 60 ? 1 : 0)) % 24;
+    final m = rounded >= 60 ? 0 : rounded;
+    return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+  }
+
+  bool _esHoy(DateTime fecha) {
+    final now = DateTime.now();
+    return fecha.year == now.year && fecha.month == now.month && fecha.day == now.day;
+  }
+
+  bool _esPasado(DateTime fecha) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(fecha.year, fecha.month, fecha.day);
+    return target.isBefore(today);
+  }
+
+  bool _esActividadPasada(Map<String, dynamic> a) {
+    final fechaStr = a['fecha_actividad']?.toString();
+    if (fechaStr == null) return false;
+    try {
+      final fecha = DateTime.parse(fechaStr.split('T')[0]);
+      return _esPasado(fecha);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  List<String> _horasDisponibles(DateTime fecha) {
+    if (!_esHoy(fecha)) return _horas;
+    final now = DateTime.now();
+    return _horas.where((h) => int.parse(h) >= now.hour).toList();
+  }
+
+  List<String> _minutosDisponibles(DateTime fecha, String hora) {
+    if (!_esHoy(fecha)) return _minutos;
+    final now = DateTime.now();
+    final horaInt = int.tryParse(hora) ?? 0;
+    if (horaInt > now.hour) return _minutos;
+    return _minutos.where((m) => int.parse(m) >= (horaInt == now.hour ? (now.minute ~/ 5) * 5 : 0)).toList();
   }
 
   bool _esHoraValida(String h) {
@@ -775,7 +870,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       const SizedBox(height: 6),
       InkWell(
         onTap: () async {
-          final picked = await showDatePicker(context: context, initialDate: valor, firstDate: DateTime(2020), lastDate: DateTime(2030), helpText: 'Selecciona la fecha');
+          final picked = await showDatePicker(context: context, initialDate: valor, firstDate: DateTime.now(), lastDate: DateTime(2030), helpText: 'Selecciona la fecha');
           if (picked != null) onChange(picked);
         },
         child: Container(
@@ -877,13 +972,15 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           if (error.isNotEmpty) ...[const SizedBox(height: 12), Center(child: Text(error, style: const TextStyle(color: Colors.red)))],
         ]),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _nuevaActividad,
-        backgroundColor: _c.primary,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('Nueva actividad'),
-      ),
+      floatingActionButton: (!canEdit || _esPasado(selectedDate))
+          ? const SizedBox.shrink()
+          : FloatingActionButton.extended(
+              onPressed: _nuevaActividad,
+              backgroundColor: _c.primary,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Nueva actividad'),
+            ),
     );
   }
 
@@ -996,6 +1093,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
         ...lista.map((a) {
           final picto = _pictograma(a['pictograma_id_pictograma']);
           final ok = a['es_completada'] == true;
+          final esPasado = _esActividadPasada(a);
           final hora = (a['hora_inicio'] ?? '').toString().substring(0, 5);
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
@@ -1015,20 +1113,23 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Expanded(child: Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _c.textPrimary, decoration: ok ? TextDecoration.lineThrough : null))),
+                Expanded(child: Row(children: [
+                  Expanded(child: Text(a['nombre_tarea'] ?? 'Sin nombre', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _c.textPrimary, decoration: ok ? TextDecoration.lineThrough : null))),
+                  if (esPasado) const Padding(padding: EdgeInsets.only(left: 6), child: Icon(Icons.lock, size: 16, color: Colors.grey)),
+                ])),
               ]),
               if (picto != null) Padding(padding: const EdgeInsets.only(left: 50, top: 2), child: Text(picto['nombre_imagen'] ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
               const SizedBox(height: 10),
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                if (canEdit) ...[
+                if (canEdit && !esPasado) ...[
                   IconButton(icon: const Icon(Icons.edit, size: 20, color: Colors.blueGrey), tooltip: 'Editar', padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36), onPressed: () => editarActividad(a)),
                   IconButton(icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent), tooltip: 'Eliminar', padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36), onPressed: () => _confirmarEliminar(a)),
                 ],
                 ElevatedButton.icon(
-                  onPressed: () => completarActividad(a['id_actividad']),
+                  onPressed: esPasado ? null : () => completarActividad(a['id_actividad']),
                   icon: Icon(ok ? Icons.close : Icons.check, size: 16),
                   label: Text(ok ? 'Desmarcar' : 'Completar', style: const TextStyle(fontSize: 13)),
-                  style: ElevatedButton.styleFrom(backgroundColor: ok ? const Color(0xFF22C55E) : _c.primary, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+                  style: ElevatedButton.styleFrom(backgroundColor: esPasado ? Colors.grey : (ok ? const Color(0xFF22C55E) : _c.primary), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
                 ),
               ]),
             ])),
