@@ -286,3 +286,5 @@ class CambiarPasswordRequest(BaseModel):
     email:          str
     codigo:         str
     nueva_password: str
+
+
