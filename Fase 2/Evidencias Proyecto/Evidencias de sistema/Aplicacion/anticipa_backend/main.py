@@ -12,6 +12,12 @@ from datetime import datetime, timedelta, timezone, date
 from dotenv import load_dotenv
 from pathlib import Path
 import os
+from admin import router as admin_router
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/admin", StaticFiles(directory="static/admin", html=True), name="admin")
+
+
 
 # ── Configuración inicial ──────────────────────────────────
 env_path = Path(__file__).parent / '.env'
@@ -117,7 +123,9 @@ app = FastAPI(
     title="API Anticipa",
     description="Backend para la aplicación de rutinas visuales para niños con TEA.",
     version="2.0.0"
+    
 )
+app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 
 app.add_middleware(
     CORSMiddleware,

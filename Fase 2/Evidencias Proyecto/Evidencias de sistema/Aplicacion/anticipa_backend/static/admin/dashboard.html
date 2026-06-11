@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Anticipa Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar navbar-dark" style="background-color: #061A40;">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1">Anticipa - Panel Admin</span>
+            <button class="btn btn-outline-light btn-sm" onclick="logout()">Cerrar sesión</button>
+        </div>
+    </nav>
+    <div class="container mt-4">
+        <h2>Usuarios</h2>
+        <div class="mb-3">
+            <input type="text" id="buscar" class="form-control" placeholder="Buscar por nombre o email..." oninput="filtrarUsuarios()">
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Admin</th>
+                        <th>Curso</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuarios"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Editar -->
+    <div class="modal fade" id="modalEditar" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Editar Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editId">
+                    <div class="mb-2">
+                        <label>Nombre</label>
+                        <input type="text" id="editNombre" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label>Email</label>
+                        <input type="email" id="editEmail" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label>Rol (1=Admin, 2=Profesor, 3=Apoderado, 4=Estudiante)</label>
+                        <input type="number" id="editRol" class="form-control">
+                    </div>
+                    <div class="mb-2">
+                        <label>¿Es Admin?</label>
+                        <input type="checkbox" id="editAdmin">
+                    </div>
+                    <div class="mb-2">
+                        <label>Nueva Contraseña (dejar vacío para no cambiar)</label>
+                        <input type="password" id="editPassword" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarUsuario()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
