@@ -1,127 +1,410 @@
 const API = 'https://anticipa.onrender.com';
 
 let usuarios = [];
-let sesion = null;
 
 function getSesion() {
     const data = localStorage.getItem('adminSesion');
     return data ? JSON.parse(data) : null;
 }
 
+function nombreRol(id) {
+    switch (id) {
+        case 1:
+            return 'Administrador';
+        case 2:
+            return 'Profesor';
+        case 3:
+            return 'Tutor';
+        case 4:
+            return 'Estudiante';
+        default:
+            return 'Desconocido';
+    }
+}
+
+// =========================
+// LOGIN
+// =========================
+
 async function login(e) {
     e.preventDefault();
+
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const error = document.getElementById('error');
 
+    error.classList.add('d-none');
+
     try {
+
         const res = await fetch(`${API}/admin/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                email,
+                password
+            })
         });
+
+        const data = await res.json();
+
         if (!res.ok) {
-            const data = await res.json();
-            error.textContent = data.detail || 'Error';
+            error.textContent =
+                data.detail || 'Credenciales incorrectas';
             error.classList.remove('d-none');
             return;
         }
-        const data = await res.json();
-        localStorage.setItem('adminSesion', JSON.stringify(data));
+
+        localStorage.setItem(
+            'adminSesion',
+            JSON.stringify(data)
+        );
+
         window.location.href = 'dashboard.html';
+
     } catch (err) {
-        error.textContent = 'Error de conexión';
+
+        error.textContent =
+            'Error de conexión con el servidor';
+
         error.classList.remove('d-none');
     }
 }
 
+// =========================
+// USUARIOS
+// =========================
+
 async function cargarUsuarios() {
-    const res = await fetch(`${API}/admin/usuarios/`);
-    usuarios = await res.json();
-    renderTabla(usuarios);
+
+    try {
+
+        const res = await fetch(
+            `${API}/admin/usuarios/`
+        );
+
+        if (!res.ok) {
+            throw new Error('Error al obtener usuarios');
+        }
+
+        usuarios = await res.json();
+
+        renderTabla(usuarios);
+
+        actualizarMetricas();
+
+    } catch (err) {
+
+        console.error(err);
+
+        alert(
+            'No fue posible cargar los usuarios'
+        );
+    }
 }
 
 function renderTabla(lista) {
-    const tbody = document.getElementById('tablaUsuarios');
+
+    const tbody =
+        document.getElementById('tablaUsuarios');
+
+    if (!tbody) return;
+
     tbody.innerHTML = lista.map(u => `
         <tr>
             <td>${u.id_usuario}</td>
             <td>${u.nombre}</td>
             <td>${u.email}</td>
-            <td>${u.rol_id_rol}</td>
+            <td>${nombreRol(u.rol_id_rol)}</td>
             <td>${u.es_admin ? '✅' : '❌'}</td>
             <td>${u.curso_id_curso || '-'}</td>
             <td>
-                <button class="btn btn-sm btn-primary" onclick="abrirEditar(${u.id_usuario})">✏️</button>
-                <button class="btn btn-sm btn-danger" onclick="eliminarUsuario(${u.id_usuario})">🗑️</button>
+                <button
+                    class="btn btn-sm btn-primary"
+                    onclick="abrirEditar(${u.id_usuario})"
+                >
+                    ✏️
+                </button>
+
+                <button
+                    class="btn btn-sm btn-danger"
+                    onclick="eliminarUsuario(${u.id_usuario})"
+                >
+                    🗑️
+                </button>
             </td>
         </tr>
     `).join('');
 }
 
 function filtrarUsuarios() {
-    const texto = document.getElementById('buscar').value.toLowerCase();
-    const filtrados = usuarios.filter(u =>
-        u.nombre.toLowerCase().includes(texto) ||
-        u.email.toLowerCase().includes(texto)
-    );
+
+    const texto =
+        document
+            .getElementById('buscar')
+            .value
+            .toLowerCase();
+
+    const filtrados =
+        usuarios.filter(u =>
+            u.nombre.toLowerCase().includes(texto) ||
+            u.email.toLowerCase().includes(texto)
+        );
+
     renderTabla(filtrados);
 }
 
+// =========================
+// MÉTRICAS
+// =========================
+
+function actualizarMetricas() {
+
+    const estudiantes =
+        usuarios.filter(
+            u => u.rol_id_rol === 4
+        ).length;
+
+    const profesores =
+        usuarios.filter(
+            u => u.rol_id_rol === 2
+        ).length;
+
+    const tutores =
+        usuarios.filter(
+            u => u.rol_id_rol === 3
+        ).length;
+
+    const admins =
+        usuarios.filter(
+            u => u.es_admin
+        ).length;
+
+    const totalUsuarios =
+        usuarios.length;
+
+    if (document.getElementById('totalUsuarios'))
+        document.getElementById('totalUsuarios').innerText =
+            totalUsuarios;
+
+    if (document.getElementById('totalEstudiantes'))
+        document.getElementById('totalEstudiantes').innerText =
+            estudiantes;
+
+    if (document.getElementById('totalProfesores'))
+        document.getElementById('totalProfesores').innerText =
+            profesores;
+
+    if (document.getElementById('totalTutores'))
+        document.getElementById('totalTutores').innerText =
+            tutores;
+
+    if (document.getElementById('totalAdmins'))
+        document.getElementById('totalAdmins').innerText =
+            admins;
+}
+
+// =========================
+// EDITAR
+// =========================
+
 function abrirEditar(id) {
-    const u = usuarios.find(x => x.id_usuario === id);
-    document.getElementById('editId').value = u.id_usuario;
-    document.getElementById('editNombre').value = u.nombre;
-    document.getElementById('editEmail').value = u.email;
-    document.getElementById('editRol').value = u.rol_id_rol;
-    document.getElementById('editAdmin').checked = u.es_admin;
-    document.getElementById('editPassword').value = '';
-    new bootstrap.Modal(document.getElementById('modalEditar')).show();
+
+    const u =
+        usuarios.find(
+            usuario => usuario.id_usuario === id
+        );
+
+    if (!u) return;
+
+    document.getElementById('editId').value =
+        u.id_usuario;
+
+    document.getElementById('editNombre').value =
+        u.nombre;
+
+    document.getElementById('editEmail').value =
+        u.email;
+
+    document.getElementById('editRol').value =
+        u.rol_id_rol;
+
+    document.getElementById('editAdmin').checked =
+        u.es_admin;
+
+    document.getElementById('editPassword').value =
+        '';
+
+    new bootstrap.Modal(
+        document.getElementById('modalEditar')
+    ).show();
 }
 
 async function guardarUsuario() {
-    const id = document.getElementById('editId').value;
+
+    const id =
+        document.getElementById('editId').value;
+
     const datos = {};
-    const nombre = document.getElementById('editNombre').value;
-    const email = document.getElementById('editEmail').value;
-    const rol = document.getElementById('editRol').value;
-    const admin = document.getElementById('editAdmin').checked;
-    const password = document.getElementById('editPassword').value;
+
+    const nombre =
+        document.getElementById('editNombre').value;
+
+    const email =
+        document.getElementById('editEmail').value;
+
+    const rol =
+        document.getElementById('editRol').value;
+
+    const admin =
+        document.getElementById('editAdmin').checked;
+
+    const password =
+        document.getElementById('editPassword').value;
 
     if (nombre) datos.nombre = nombre;
-    if (email) datos.email = email;
-    if (rol) datos.rol_id_rol = parseInt(rol);
-    datos.es_admin = admin;
-    if (password) datos.password = password;
 
-    await fetch(`${API}/admin/usuarios/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(datos)
-    });
-    bootstrap.Modal.getInstance(document.getElementById('modalEditar')).hide();
-    cargarUsuarios();
+    if (email) datos.email = email;
+
+    if (rol)
+        datos.rol_id_rol = parseInt(rol);
+
+    datos.es_admin = admin;
+
+    if (password)
+        datos.password = password;
+
+    try {
+
+        const res = await fetch(
+            `${API}/admin/usuarios/${id}`,
+            {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+                body: JSON.stringify(datos)
+            }
+        );
+
+        if (!res.ok) {
+            throw new Error();
+        }
+
+        bootstrap.Modal
+            .getInstance(
+                document.getElementById('modalEditar')
+            )
+            .hide();
+
+        await cargarUsuarios();
+
+    } catch (err) {
+
+        alert(
+            'No fue posible actualizar el usuario'
+        );
+    }
 }
+
+// =========================
+// ELIMINAR
+// =========================
 
 async function eliminarUsuario(id) {
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
-    await fetch(`${API}/admin/usuarios/${id}`, { method: 'DELETE' });
-    cargarUsuarios();
+
+    const confirmar = confirm(
+        '¿Estás seguro de eliminar este usuario?'
+    );
+
+    if (!confirmar) return;
+
+    try {
+
+        const res = await fetch(
+            `${API}/admin/usuarios/${id}`,
+            {
+                method: 'DELETE'
+            }
+        );
+
+        if (!res.ok) {
+            throw new Error();
+        }
+
+        await cargarUsuarios();
+
+    } catch (err) {
+
+        alert(
+            'No fue posible eliminar el usuario'
+        );
+    }
 }
+
+// =========================
+// LOGOUT
+// =========================
 
 function logout() {
-    localStorage.removeItem('adminSesion');
-    window.location.href = 'index.html';
+
+    localStorage.removeItem(
+        'adminSesion'
+    );
+
+    window.location.href =
+        'index.html';
 }
 
-// Inicializar
-document.addEventListener('DOMContentLoaded', () => {
-    if (window.location.pathname.endsWith('dashboard.html')) {
-        if (!getSesion()) { window.location.href = 'index.html'; return; }
-        cargarUsuarios();
+// =========================
+// INICIALIZACIÓN
+// =========================
+
+document.addEventListener(
+    'DOMContentLoaded',
+    () => {
+
+        const ruta =
+            window.location.pathname;
+
+        if (
+            ruta.endsWith('dashboard.html')
+        ) {
+
+            if (!getSesion()) {
+
+                window.location.href =
+                    'index.html';
+
+                return;
+            }
+
+            cargarUsuarios();
+        }
+
+        if (
+            ruta.endsWith('index.html') ||
+            ruta.endsWith('/admin/') ||
+            ruta.endsWith('/admin')
+        ) {
+
+            if (getSesion()) {
+
+                window.location.href =
+                    'dashboard.html';
+
+                return;
+            }
+
+            document
+                .getElementById('loginForm')
+                ?.addEventListener(
+                    'submit',
+                    login
+                );
+        }
     }
-    if (window.location.pathname.endsWith('index.html') || window.location.pathname === '/admin/') {
-        if (getSesion()) { window.location.href = 'dashboard.html'; return; }
-        document.getElementById('loginForm')?.addEventListener('submit', login);
-    }
-});
+);
