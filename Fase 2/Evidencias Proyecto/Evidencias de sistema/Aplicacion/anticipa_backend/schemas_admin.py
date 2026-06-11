@@ -20,3 +20,11 @@ class UsuarioUpdate(BaseModel):
     curso_id_curso: Optional[int] = None
     es_admin: Optional[bool] = None
     password: Optional[str] = None
+
+class UsuarioCreate(BaseModel):
+    nombre: str
+    email: str
+    password: str
+    rol_id_rol: int
+    es_admin: bool = False
+    curso_id_curso: int | None = None

@@ -1,3 +1,313 @@
-body { font-family: 'Segoe UI', sans-serif; }
-.table { margin-top: 20px; }
-.container { max-width: 1100px; }
+/* ==========================
+   GENERAL
+========================== */
+
+body{
+    margin:0;
+    padding:0;
+    font-family:'Segoe UI',sans-serif;
+    background:#F4F7FC;
+    color:#2C3E50;
+}
+
+/* ==========================
+   LAYOUT
+========================== */
+
+.wrapper{
+    display:flex;
+    min-height:100vh;
+}
+
+/* ==========================
+   SIDEBAR
+========================== */
+
+.sidebar{
+    width:260px;
+    background:#061A40;
+    color:white;
+    display:flex;
+    flex-direction:column;
+    justify-content:space-between;
+    position:fixed;
+    left:0;
+    top:0;
+    bottom:0;
+    box-shadow:4px 0 15px rgba(0,0,0,.15);
+}
+
+.logo-area{
+    padding:30px 25px;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+
+.logo-area h3{
+    margin:0;
+    font-weight:700;
+}
+
+.logo-area span{
+    color:#9FB3D1;
+    font-size:.9rem;
+}
+
+.menu{
+    list-style:none;
+    padding:20px 0;
+    margin:0;
+}
+
+.menu li{
+    margin-bottom:5px;
+}
+
+.menu li a{
+    color:#D6E0F0;
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    padding:14px 25px;
+    transition:.3s;
+    font-size:15px;
+}
+
+.menu li a:hover{
+    background:#0B2A66;
+    color:white;
+}
+
+.menu li.active a{
+    background:#0D47A1;
+    color:white;
+    border-left:5px solid #42A5F5;
+}
+
+.logout{
+    padding:20px;
+}
+
+/* ==========================
+   CONTENIDO
+========================== */
+
+.content{
+    margin-left:260px;
+    width:100%;
+    padding:30px;
+}
+
+.topbar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:25px;
+}
+
+/* ==========================
+   KPI CARDS
+========================== */
+
+.dashboard-card{
+    border:none;
+    border-radius:18px;
+    box-shadow:0 6px 20px rgba(0,0,0,.08);
+    transition:.3s;
+    overflow:hidden;
+}
+
+.dashboard-card:hover{
+    transform:translateY(-4px);
+}
+
+.dashboard-card .card-body{
+    text-align:center;
+    padding:25px;
+}
+
+.dashboard-card h2{
+    font-size:2rem;
+    font-weight:700;
+    margin-top:15px;
+    margin-bottom:5px;
+}
+
+.dashboard-card span{
+    color:#7F8C8D;
+    font-size:14px;
+}
+
+.card-icon{
+    width:60px;
+    height:60px;
+    border-radius:50%;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    color:white;
+    font-size:24px;
+    margin:auto;
+}
+
+/* ==========================
+   TARJETAS
+========================== */
+
+.card{
+    border:none !important;
+    border-radius:18px;
+    box-shadow:0 4px 15px rgba(0,0,0,.06);
+}
+
+.card-header{
+    border:none;
+    background:white !important;
+    font-weight:600;
+    padding:18px;
+}
+
+/* ==========================
+   TABLAS
+========================== */
+
+.table{
+    margin-bottom:0;
+}
+
+.table thead{
+    background:#EEF3FB;
+}
+
+.table th{
+    font-weight:600;
+    color:#34495E;
+}
+
+.table tbody tr:hover{
+    background:#F8FBFF;
+}
+
+/* ==========================
+   BOTONES
+========================== */
+
+.btn-primary{
+    background:#1565C0;
+    border:none;
+}
+
+.btn-primary:hover{
+    background:#0D47A1;
+}
+
+.btn-danger{
+    border:none;
+}
+
+.btn-outline-light:hover{
+    color:#061A40;
+}
+
+/* ==========================
+   FORMULARIOS
+========================== */
+
+.form-control{
+    border-radius:10px;
+    border:1px solid #DDE5F0;
+}
+
+.form-control:focus{
+    border-color:#1565C0;
+    box-shadow:0 0 0 .15rem rgba(21,101,192,.15);
+}
+
+/* ==========================
+   MODALES
+========================== */
+
+.modal-content{
+    border:none;
+    border-radius:18px;
+}
+
+.modal-header{
+    border-bottom:none;
+}
+
+.modal-footer{
+    border-top:none;
+}
+
+/* ==========================
+   LISTAS
+========================== */
+
+.list-group-item{
+    border:none;
+    border-bottom:1px solid #EEF2F7;
+}
+
+/* ==========================
+   CHARTS
+========================== */
+
+canvas{
+    max-height:320px;
+}
+
+/* ==========================
+   SCROLLBAR
+========================== */
+
+::-webkit-scrollbar{
+    width:8px;
+}
+
+::-webkit-scrollbar-track{
+    background:#EAEFF5;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#AAB7C4;
+    border-radius:10px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#7F8C8D;
+}
+
+/* ==========================
+   RESPONSIVE
+========================== */
+
+@media(max-width:992px){
+
+    .sidebar{
+        width:80px;
+    }
+
+    .sidebar .logo-area span,
+    .sidebar .menu li a span{
+        display:none;
+    }
+
+    .content{
+        margin-left:80px;
+    }
+}
+
+@media(max-width:768px){
+
+    .content{
+        padding:15px;
+    }
+
+    .topbar{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:10px;
+    }
+
+}

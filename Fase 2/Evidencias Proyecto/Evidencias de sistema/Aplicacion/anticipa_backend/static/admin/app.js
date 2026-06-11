@@ -164,47 +164,112 @@ function actualizarMetricas() {
 
     const estudiantes =
         usuarios.filter(
-            u => u.rol_id_rol === 4
+            u => Number(u.rol_id_rol) === 4
         ).length;
 
     const profesores =
         usuarios.filter(
-            u => u.rol_id_rol === 2
+            u => Number(u.rol_id_rol) === 2
         ).length;
 
     const tutores =
         usuarios.filter(
-            u => u.rol_id_rol === 3
+            u => Number(u.rol_id_rol) === 3
         ).length;
 
     const admins =
         usuarios.filter(
-            u => u.es_admin
+            u => u.es_admin === true
         ).length;
 
-    const totalUsuarios =
+    document.getElementById('totalUsuarios').textContent =
         usuarios.length;
 
-    if (document.getElementById('totalUsuarios'))
-        document.getElementById('totalUsuarios').innerText =
-            totalUsuarios;
+    document.getElementById('totalEstudiantes').textContent =
+        estudiantes;
 
-    if (document.getElementById('totalEstudiantes'))
-        document.getElementById('totalEstudiantes').innerText =
-            estudiantes;
+    document.getElementById('totalProfesores').textContent =
+        profesores;
 
-    if (document.getElementById('totalProfesores'))
-        document.getElementById('totalProfesores').innerText =
-            profesores;
+    document.getElementById('totalTutores').textContent =
+        tutores;
 
-    if (document.getElementById('totalTutores'))
-        document.getElementById('totalTutores').innerText =
-            tutores;
-
-    if (document.getElementById('totalAdmins'))
-        document.getElementById('totalAdmins').innerText =
-            admins;
+    document.getElementById('totalAdmins').textContent =
+        admins;
 }
+
+
+// =========================
+// CREAR USUARIO
+// =========================
+
+async function crearUsuario() {
+
+    const datos = {
+
+        nombre:
+            document.getElementById('nuevoNombre').value,
+
+        email:
+            document.getElementById('nuevoEmail').value,
+
+        password:
+            document.getElementById('nuevoPassword').value,
+
+        rol_id_rol:
+            parseInt(
+                document.getElementById('nuevoRol').value
+            ),
+
+        es_admin:
+            parseInt(
+                document.getElementById('nuevoRol').value
+            ) === 1
+    };
+
+    try {
+
+        const res = await fetch(
+            `${API}/admin/usuarios`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type':
+                        'application/json'
+                },
+                body: JSON.stringify(datos)
+            }
+        );
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            alert(data.detail);
+            return;
+        }
+
+        bootstrap.Modal
+            .getInstance(
+                document.getElementById('modalCrear')
+            )
+            .hide();
+
+        document.getElementById('nuevoNombre').value = '';
+        document.getElementById('nuevoEmail').value = '';
+        document.getElementById('nuevoPassword').value = '';
+
+        await cargarUsuarios();
+
+        alert('Usuario creado correctamente');
+
+    } catch (err) {
+
+        alert(
+            'Error al crear usuario'
+        );
+    }
+}
+
 
 // =========================
 // EDITAR
@@ -371,7 +436,8 @@ document.addEventListener(
             window.location.pathname;
 
         if (
-            ruta.endsWith('dashboard.html')
+            ruta.includes('dashboard.html') ||
+            ruta.includes('usuarios.html')
         ) {
 
             if (!getSesion()) {
