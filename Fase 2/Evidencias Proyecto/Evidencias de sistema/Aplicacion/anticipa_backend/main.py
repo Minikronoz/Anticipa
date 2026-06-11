@@ -14,8 +14,7 @@ from pathlib import Path
 import os
 from admin import router as admin_router
 
-from fastapi.staticfiles import StaticFiles
-app.mount("/admin", StaticFiles(directory="static/admin", html=True), name="admin")
+
 
 
 
@@ -757,3 +756,8 @@ def listar_estrellas(id_estudiante: int, db: Session = Depends(get_db)):
     return db.query(models.RegistroEstrellaDiaria).filter(
         models.RegistroEstrellaDiaria.estudiante_id_estudiante == id_estudiante
     ).all()
+
+
+from fastapi.staticfiles import StaticFiles
+app.mount("/admin", StaticFiles(directory="static/admin", html=True), name="admin")
+app.include_router(admin_router, prefix="/admin", tags=["Admin"])
