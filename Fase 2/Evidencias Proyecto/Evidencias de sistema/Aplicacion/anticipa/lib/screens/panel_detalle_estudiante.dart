@@ -3,6 +3,7 @@
 // Calendario día/semana/mes, CRUD, selector de pictogramas con categorías
 // ═══════════════════════════════════════════════════════════
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
@@ -206,7 +207,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     child: filtrar().isEmpty
                         ? const Center(child: Text('Sin pictogramas', style: TextStyle(color: Colors.grey)))
                         : GridView.builder(
-                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 120, childAspectRatio: 0.85, crossAxisSpacing: 10, mainAxisSpacing: 10),
+                            gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 120, childAspectRatio: 0.60, crossAxisSpacing: 10, mainAxisSpacing: 10),
                             itemCount: filtrar().length,
                             itemBuilder: (_, i) => tarjeta(filtrar()[i]),
                           ),
@@ -231,9 +232,13 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     DateTime fechaAct = selectedDate;
     String alertaMin = '5';
     bool horaInicioCustom = false;
-    final horaInicioCustomCtl = TextEditingController(text: horaIni);
+    String customHoraIni = horaIni.substring(0, 2);
+    String customMinIni = horaIni.substring(3, 5);
     bool horaFinCustom = false;
-    final horaFinCustomCtl = TextEditingController(text: _sumar5Min(horaIni));
+    String customHoraFin = _sumar5Min(horaIni).substring(0, 2);
+    String customMinFin = _sumar5Min(horaIni).substring(3, 5);
+    bool customAlerta = false;
+    final customAlertaCtl = TextEditingController();
 
     final ok = await showDialog<bool>(
       context: context,
@@ -347,27 +352,59 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     ),
                     const SizedBox(width: 6),
                     InkWell(
-                      onTap: () => setDlg(() { horaInicioCustom = true; horaInicioCustomCtl.text = horaCtl.text; }),
+                      onTap: () => setDlg(() { horaInicioCustom = true; customHoraIni = horaCtl.text.substring(0, 2); customMinIni = horaCtl.text.substring(3, 5); }),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
-                  TextField(
-                    controller: horaInicioCustomCtl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Ej: 08:53',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 20),
-                        tooltip: 'Volver a selector',
-                        onPressed: () => setDlg(() { horaInicioCustom = false; horaCtl.text = horaInicioCustomCtl.text; }),
+                  Row(children: [
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _horasOtro(fechaAct).contains(customHoraIni) ? customHoraIni : _horasOtro(fechaAct).first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _horasOtro(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customHoraIni = v; horaCtl.text = '$v:$customMinIni'; });
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                    onChanged: (v) => setDlg(() => horaCtl.text = v),
-                  ),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _todosMinutos().contains(customMinIni) ? customMinIni : _todosMinutos().first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customMinIni = v; horaCtl.text = '$customHoraIni:$v'; });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () => setDlg(() { horaInicioCustom = false; horaCtl.text = '$customHoraIni:$customMinIni'; }),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                    ),
+                  ]),
               ]),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -423,27 +460,59 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     ),
                     const SizedBox(width: 6),
                     InkWell(
-                      onTap: () => setDlg(() { horaFinCustom = true; horaFinCustomCtl.text = horaFinCtl.text; }),
+                      onTap: () => setDlg(() { horaFinCustom = true; customHoraFin = horaFinCtl.text.substring(0, 2); customMinFin = horaFinCtl.text.substring(3, 5); }),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
-                  TextField(
-                    controller: horaFinCustomCtl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Ej: 08:53',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 20),
-                        tooltip: 'Volver a selector',
-                        onPressed: () => setDlg(() { horaFinCustom = false; horaFinCtl.text = horaFinCustomCtl.text; }),
+                  Row(children: [
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _horasOtro(fechaAct).contains(customHoraFin) ? customHoraFin : _horasOtro(fechaAct).first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _horasOtro(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customHoraFin = v; horaFinCtl.text = '$v:$customMinFin'; });
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                    onChanged: (v) => setDlg(() => horaFinCtl.text = v),
-                  ),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _todosMinutos().contains(customMinFin) ? customMinFin : _todosMinutos().first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customMinFin = v; horaFinCtl.text = '$customHoraFin:$v'; });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () => setDlg(() { horaFinCustom = false; horaFinCtl.text = '$customHoraFin:$customMinFin'; }),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                    ),
+                  ]),
               ]),
               const SizedBox(height: 16),
 
@@ -453,26 +522,58 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                 Text('Anticipación de alerta', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
               ]),
               const SizedBox(height: 6),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: alertaMin,
-                    isExpanded: true,
-                    borderRadius: BorderRadius.circular(12),
-                    items: const [
-                      DropdownMenuItem(value: '0', child: Text('Sin alerta')),
-                      DropdownMenuItem(value: '2', child: Text('2 minutos')),
-                      DropdownMenuItem(value: '5', child: Text('5 minutos')),
-                      DropdownMenuItem(value: '10', child: Text('10 minutos')),
-                      DropdownMenuItem(value: '15', child: Text('15 minutos')),
-                    ],
-                    onChanged: (v) => setDlg(() => alertaMin = v ?? '5'),
+              if (!customAlerta)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: alertaMin,
+                      isExpanded: true,
+                      borderRadius: BorderRadius.circular(12),
+                      items: const [
+                        DropdownMenuItem(value: '0', child: Text('Sin alerta')),
+                        DropdownMenuItem(value: '2', child: Text('2 minutos')),
+                        DropdownMenuItem(value: '5', child: Text('5 minutos')),
+                        DropdownMenuItem(value: '10', child: Text('10 minutos')),
+                        DropdownMenuItem(value: '15', child: Text('15 minutos')),
+                        DropdownMenuItem(value: '_custom', child: Text('Otro (personalizado)')),
+                      ],
+                      onChanged: (v) {
+                        if (v == null) return;
+                        setDlg(() {
+                          if (v == '_custom') { customAlerta = true; customAlertaCtl.text = ''; }
+                          else { alertaMin = v; }
+                        });
+                      },
+                    ),
                   ),
-                ),
-              ),
+                )
+              else
+                Row(children: [
+                  Expanded(
+                    child: TextField(
+                      controller: customAlertaCtl,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      decoration: InputDecoration(
+                        hintText: 'Ej: 3',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        suffixText: 'minutos',
+                        suffixStyle: TextStyle(color: _c.textSecondary, fontSize: 14),
+                      ),
+                      onChanged: (v) => setDlg(() {}),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => setDlg(() { customAlerta = false; }),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12), child: Text('Cancelar', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                  ),
+                ]),
               const SizedBox(height: 24),
 
               Row(children: [
@@ -498,6 +599,14 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     if (!_esHoraValida(horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de inicio inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
     if (!_esHoraValida(horaFinCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Hora de fin inválida (use formato HH:MM)'), backgroundColor: Colors.red)); return; }
     if (!_esHoraFinMayor(horaFinCtl.text, horaCtl.text)) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de fin debe ser mayor que la hora de inicio'), backgroundColor: Colors.red)); return; }
+    if (_esHoy(fechaAct)) {
+      final ahora = DateTime.now();
+      final ahoraMin = ahora.hour * 60 + ahora.minute;
+      final iniMin = int.parse(horaCtl.text.substring(0, 2)) * 60 + int.parse(horaCtl.text.substring(3, 5));
+      final finMin = int.parse(horaFinCtl.text.substring(0, 2)) * 60 + int.parse(horaFinCtl.text.substring(3, 5));
+      if (iniMin < ahoraMin) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de inicio no puede ser pasada'), backgroundColor: Colors.red)); return; }
+      if (finMin < ahoraMin) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La hora de fin no puede ser pasada'), backgroundColor: Colors.red)); return; }
+    }
 
     final body = <String, dynamic>{
       'estudiante_id_estudiante': widget.idEstudiante,
@@ -508,24 +617,37 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       'fecha_actividad': _fmt(fechaAct),
     };
     if (pictoElegido != null) body['pictograma_id_pictograma'] = pictoElegido!['id_pictograma'];
-    if (alertaMin != '0') body['alerta_minutos'] = alertaMin;
+    if (customAlerta) {
+      final customVal = customAlertaCtl.text.trim();
+      if (customVal.isEmpty) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ingresa los minutos de anticipación'), backgroundColor: Colors.red)); return; }
+      final customInt = int.tryParse(customVal) ?? 0;
+      if (customInt > 480) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La alerta no puede exceder 480 minutos (8 horas)'), backgroundColor: Colors.red)); return; }
+      body['alerta_minutos'] = customVal;
+    } else if (alertaMin != '0') {
+      body['alerta_minutos'] = alertaMin;
+    }
 
     try {
       final r = await http.post(Uri.parse('${AppConstants.baseUrl}/actividades/'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body)).timeout(const Duration(seconds: 60));
       if (r.statusCode == 201) await _cargarTodo();
-    } catch (_) { setState(() => error = 'Error al crear actividad'); }
+      else ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error ${r.statusCode}: No se pudo crear la actividad'), backgroundColor: Colors.red));
+    } catch (_) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al crear actividad'), backgroundColor: Colors.red)); }
   }
 
   // ── Modal: Editar actividad ─────────────────────────────
   Future<void> editarActividad(Map<String, dynamic> a) async {
     final nombreCtl = TextEditingController(text: a['nombre_tarea'] ?? '');
-    final horaCtl = TextEditingController(text: (a['hora_inicio'] ?? '').toString().substring(0, 5));
-    final horaFinCtl = TextEditingController(text: (a['hora_fin'] ?? '').toString().substring(0, 5));
+    final horaIniRaw = _safeTime(a['hora_inicio'], '00:00');
+    final horaFinRaw = _safeTime(a['hora_fin'], '00:05');
+    final horaCtl = TextEditingController(text: horaIniRaw);
+    final horaFinCtl = TextEditingController(text: horaFinRaw);
     Map<String, dynamic>? pictoElegido = _pictoSeleccionado(a['pictograma_id_pictograma']);
     bool horaInicioCustom = false;
-    final horaInicioCustomCtl = TextEditingController(text: (a['hora_inicio'] ?? '').toString().substring(0, 5));
+    String customHoraIni = horaIniRaw.substring(0, 2);
+    String customMinIni = horaIniRaw.substring(3, 5);
     bool horaFinCustom = false;
-    final horaFinCustomCtl = TextEditingController(text: (a['hora_fin'] ?? '').toString().substring(0, 5));
+    String customHoraFin = horaFinRaw.substring(0, 2);
+    String customMinFin = horaFinRaw.substring(3, 5);
 
     DateTime fechaAct;
     try {
@@ -628,27 +750,59 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     ),
                     const SizedBox(width: 6),
                     InkWell(
-                      onTap: () => setDlg(() { horaInicioCustom = true; horaInicioCustomCtl.text = horaCtl.text; }),
+                      onTap: () => setDlg(() { horaInicioCustom = true; customHoraIni = horaCtl.text.substring(0, 2); customMinIni = horaCtl.text.substring(3, 5); }),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
-                  TextField(
-                    controller: horaInicioCustomCtl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Ej: 08:53',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 20),
-                        tooltip: 'Volver a selector',
-                        onPressed: () => setDlg(() { horaInicioCustom = false; horaCtl.text = horaInicioCustomCtl.text; }),
+                  Row(children: [
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _horasOtro(fechaAct).contains(customHoraIni) ? customHoraIni : _horasOtro(fechaAct).first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _horasOtro(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customHoraIni = v; horaCtl.text = '$v:$customMinIni'; });
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                    onChanged: (v) => setDlg(() => horaCtl.text = v),
-                  ),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _todosMinutos().contains(customMinIni) ? customMinIni : _todosMinutos().first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customMinIni = v; horaCtl.text = '$customHoraIni:$v'; });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () => setDlg(() { horaInicioCustom = false; horaCtl.text = '$customHoraIni:$customMinIni'; }),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                    ),
+                  ]),
               ]),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -704,27 +858,59 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                     ),
                     const SizedBox(width: 6),
                     InkWell(
-                      onTap: () => setDlg(() { horaFinCustom = true; horaFinCustomCtl.text = horaFinCtl.text; }),
+                      onTap: () => setDlg(() { horaFinCustom = true; customHoraFin = horaFinCtl.text.substring(0, 2); customMinFin = horaFinCtl.text.substring(3, 5); }),
                       borderRadius: BorderRadius.circular(8),
                       child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
                     ),
                   ])
                 else
-                  TextField(
-                    controller: horaFinCustomCtl,
-                    keyboardType: TextInputType.datetime,
-                    decoration: InputDecoration(
-                      hintText: 'Ej: 08:53',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      suffixIcon: IconButton(
-                        icon: const Icon(Icons.arrow_drop_down_circle_outlined, size: 20),
-                        tooltip: 'Volver a selector',
-                        onPressed: () => setDlg(() { horaFinCustom = false; horaFinCtl.text = horaFinCustomCtl.text; }),
+                  Row(children: [
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _horasOtro(fechaAct).contains(customHoraFin) ? customHoraFin : _horasOtro(fechaAct).first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _horasOtro(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customHoraFin = v; horaFinCtl.text = '$v:$customMinFin'; });
+                            },
+                          ),
+                        ),
                       ),
                     ),
-                    onChanged: (v) => setDlg(() => horaFinCtl.text = v),
-                  ),
+                    Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Text(':', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary))),
+                    Expanded(
+                      flex: 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _todosMinutos().contains(customMinFin) ? customMinFin : _todosMinutos().first,
+                            isExpanded: true,
+                            borderRadius: BorderRadius.circular(12),
+                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            onChanged: (v) {
+                              if (v == null) return;
+                              setDlg(() { customMinFin = v; horaFinCtl.text = '$customHoraFin:$v'; });
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    InkWell(
+                      onTap: () => setDlg(() { horaFinCustom = false; horaFinCtl.text = '$customHoraFin:$customMinFin'; }),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12), child: Text('Otro', style: TextStyle(color: _c.primary, fontSize: 13, fontWeight: FontWeight.w600))),
+                    ),
+                  ]),
               ]),
               const SizedBox(height: 24),
 
@@ -766,8 +952,9 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     if (pictoElegido != null) body['pictograma_id_pictograma'] = pictoElegido!['id_pictograma'];
     try {
       final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/${a['id_actividad']}'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body)).timeout(const Duration(seconds: 60));
-      if (r.statusCode == 200) await _cargarTodo();
-    } catch (_) { setState(() => error = 'Error al editar'); }
+      if (r.statusCode == 200) { await _cargarTodo(); }
+      else { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error ${r.statusCode}: No se pudo editar la actividad'), backgroundColor: Colors.red)); }
+    } catch (_) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al editar actividad'), backgroundColor: Colors.red)); }
   }
 
   // ── Widgets helpers para modales ────────────────────────
@@ -788,7 +975,6 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     final now = DateTime.now();
     final minutes = now.minute;
     final rounded = ((minutes ~/ 5) + 1) * 5;
-    final totalMinutes = rounded >= 60 ? 0 : minutes + (5 - minutes % 5);
     final h = (now.hour + (rounded >= 60 ? 1 : 0)) % 24;
     final m = rounded >= 60 ? 0 : rounded;
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
@@ -831,6 +1017,22 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     return _minutos.where((m) => int.parse(m) >= (horaInt == now.hour ? (now.minute ~/ 5) * 5 : 0)).toList();
   }
 
+  List<String> _horasOtro(DateTime fecha) {
+    if (!_esHoy(fecha)) return _horas;
+    final now = DateTime.now();
+    return _horas.where((h) => int.parse(h) >= now.hour).toList();
+  }
+
+  List<String> _todosMinutos() {
+    return ['00','01','02','03','04','05','06','07','08','09','10','11','12','13','14','15','16','17','18','19','20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44','45','46','47','48','49','50','51','52','53','54','55','56','57','58','59'];
+  }
+
+  String _safeTime(String? value, String fallback) {
+    final v = (value ?? '').toString().trim();
+    if (v.length < 5) return fallback;
+    return '${v.substring(0, 2)}:${v.substring(3, 5)}';
+  }
+
   bool _esHoraValida(String h) {
     final regex = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$');
     if (!regex.hasMatch(h)) return false;
@@ -870,7 +1072,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
       const SizedBox(height: 6),
       InkWell(
         onTap: () async {
-          final picked = await showDatePicker(context: context, initialDate: valor, firstDate: DateTime.now(), lastDate: DateTime(2030), helpText: 'Selecciona la fecha');
+          final picked = await showDatePicker(context: context, initialDate: valor, firstDate: DateTime.now(), lastDate: DateTime(2030), helpText: 'Selecciona la fecha', locale: const Locale('es', 'CL'));
           if (picked != null) onChange(picked);
         },
         child: Container(
@@ -1094,7 +1296,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           final picto = _pictograma(a['pictograma_id_pictograma']);
           final ok = a['es_completada'] == true;
           final esPasado = _esActividadPasada(a);
-          final hora = (a['hora_inicio'] ?? '').toString().substring(0, 5);
+          final hora = _safeTime(a['hora_inicio'], '--:--');
           return Card(
             margin: const EdgeInsets.only(bottom: 12),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: ok ? const BorderSide(color: Color(0xFF22C55E), width: 2) : BorderSide.none),

@@ -556,6 +556,13 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
     if actividad.fecha_actividad == hoy and actividad.hora_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden crear actividades con hora en el pasado.")
 
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == datos['estudiante_id_estudiante']).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante seleccionado no existe.")
+    usu = db.query(models.Usuario).filter(models.Usuario.id_usuario == datos['usuario_id_usuario']).first()
+    if not usu:
+        raise HTTPException(status_code=400, detail="El usuario seleccionado no existe.")
+
     if datos.get('pictograma_id_pictograma') is not None:
         picto = db.query(models.Pictograma).filter(
             models.Pictograma.id_pictograma == datos['pictograma_id_pictograma']
@@ -572,12 +579,19 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
 
     nueva = models.Actividad(**datos)
     db.add(nueva); db.commit(); db.refresh(nueva)
-    if alerta_minutos and alerta_minutos in ('2', '5', '10', '15'):
-        db.add(models.ConfiguracionAlerta(
-            actividad_id_actividad=nueva.id_actividad,
-            minutos_anticipacion=alerta_minutos,
-        ))
-        db.commit()
+    if alerta_minutos:
+        try:
+            mins = int(alerta_minutos)
+            if mins < 0 or mins > 480:
+                raise HTTPException(status_code=400, detail="Los minutos de alerta deben estar entre 0 y 480.")
+            if mins > 0:
+                db.add(models.ConfiguracionAlerta(
+                    actividad_id_actividad=nueva.id_actividad,
+                    minutos_anticipacion=str(mins),
+                ))
+                db.commit()
+        except (ValueError, TypeError):
+            pass
     return nueva
 
 @app.get("/actividades/estudiante/{id_estudiante}",
@@ -670,6 +684,12 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
     ahora = datetime.now().time()
     if nueva_fecha == hoy and nueva_inicio is not None and nueva_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden asignar horas en el pasado.")
+
+    est_id = datos_dict.get('estudiante_id_estudiante')
+    if est_id is not None:
+        est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == est_id).first()
+        if not est:
+            raise HTTPException(status_code=400, detail="El estudiante seleccionado no existe.")
 
     picto_id = datos_dict.get('pictograma_id_pictograma')
     if picto_id is not None:
