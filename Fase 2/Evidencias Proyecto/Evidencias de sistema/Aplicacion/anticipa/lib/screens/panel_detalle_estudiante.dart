@@ -85,7 +85,8 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     final r = await http.get(Uri.parse('${AppConstants.baseUrl}/estrellas/estudiante/${widget.idEstudiante}')).timeout(const Duration(seconds: 60));
     if (r.statusCode != 200) return null;
     final data = List<Map<String, dynamic>>.from(jsonDecode(r.body));
-    return data.cast<Map<String, dynamic>?>().firstWhere((e) => e?['fecha'] == _hoyUtc, orElse: () => null);
+    final total = data.fold<int>(0, (sum, e) => sum + (e['estrellas_ganadas'] ?? 0) as int);
+    return {'estrellas_ganadas': total};
   }
 
   // ── CRUD: completar, eliminar, editar, crear ────────────
@@ -240,6 +241,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     String customMinFin = _sumar5Min(horaIni).substring(3, 5);
     bool customAlerta = false;
     final customAlertaCtl = TextEditingController();
+    final rootCtx = context;
 
     final ok = await showDialog<bool>(
       context: context,
@@ -294,7 +296,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                       horaFinCtl.text = _sumar5Min(horaActual);
                     }
                   }
-                })),
+                }), rootCtx),
               const SizedBox(height: 12),
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text('Hora inicio', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
@@ -1067,13 +1069,14 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     ]);
   }
 
-  Widget _campoFecha(DateTime valor, ValueChanged<DateTime> onChange) {
+  Widget _campoFecha(DateTime valor, ValueChanged<DateTime> onChange, [BuildContext? pickerContext]) {
+    final ctx = pickerContext ?? context;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text('Fecha', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: _c.textPrimary)),
       const SizedBox(height: 6),
       InkWell(
         onTap: () async {
-          final picked = await showDatePicker(context: context, initialDate: valor, firstDate: DateTime.now(), lastDate: DateTime(2030), helpText: 'Selecciona la fecha', locale: const Locale('es', 'CL'));
+          final picked = await showDatePicker(context: ctx, initialDate: valor, firstDate: DateTime.now(), lastDate: DateTime(2030), helpText: 'Selecciona la fecha', locale: const Locale('es', 'CL'));
           if (picked != null) onChange(picked);
         },
         child: Container(
@@ -1092,7 +1095,6 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
 
   // ── Lógica de calendario (día/semana/mes) ───────────────
   static String _fmt(DateTime d) => d.toIso8601String().split('T')[0];
-  static String get _hoyUtc => DateTime.now().toUtc().toIso8601String().split('T')[0];
 
   List<Map<String, dynamic>> get _hoyActividades {
     final f = _fmt(selectedDate);
@@ -1217,7 +1219,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           const SizedBox(width: 4),
           Text('$_estrellas', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.textPrimary)),
         ]),
-        Text('estrellas hoy', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text('estrellas en total', style: const TextStyle(fontSize: 12, color: Colors.grey)),
         Text('$_completadas/${_hoyActividades.length} completadas', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: _c.primary)),
       ]),
     ])),
