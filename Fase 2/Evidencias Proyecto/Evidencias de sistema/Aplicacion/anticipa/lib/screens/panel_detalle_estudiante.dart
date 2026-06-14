@@ -1161,7 +1161,22 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           Row(children: [
             Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.emoji_events, size: 18), label: const Text('Recompensas'))),
             const SizedBox(width: 12),
-            Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.assessment, size: 18), label: const Text('Reportes'))),
+            // aca hice un cambio para hacer funcionar boton reportes 
+            Expanded(
+    child: OutlinedButton.icon(
+      onPressed: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ReporteEstudianteScreen(
+              idEstudiante: widget.idEstudiante,
+              nombreEstudiante: widget.nombreEstudiante,
+            ),
+          ),
+        );
+      },
+      // hasta aca
+            icon: const Icon(Icons.assessment, size: 18), label: const Text('Reportes'))),
           ]),
           const SizedBox(height: 16),
           _selectorVista(),
