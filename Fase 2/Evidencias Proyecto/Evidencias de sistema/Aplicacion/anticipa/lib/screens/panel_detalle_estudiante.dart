@@ -8,6 +8,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
 import '../theme/app_theme.dart';
+import 'reporte_estudiante_screen.dart';
 
 class PanelDetalleEstudiante extends StatefulWidget {
   final int idEstudiante;
