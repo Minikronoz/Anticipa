@@ -147,19 +147,25 @@ function actualizarMetricas() {
             u => Number(u.rol_id_rol) === 3
         ).length;
 
-
     const totalUsuarios =
-        document.getElementById('totalUsuarios');
+        document.getElementById(
+            'totalUsuarios'
+        );
 
     const totalEstudiantes =
-        document.getElementById('totalEstudiantes');
+        document.getElementById(
+            'totalEstudiantes'
+        );
 
     const totalProfesores =
-        document.getElementById('totalProfesores');
+        document.getElementById(
+            'totalProfesores'
+        );
 
     const totalTutores =
-        document.getElementById('totalTutores');
-
+        document.getElementById(
+            'totalTutores'
+        );
 
     if (totalUsuarios)
         totalUsuarios.textContent =
@@ -176,10 +182,6 @@ function actualizarMetricas() {
     if (totalTutores)
         totalTutores.textContent =
             tutores;
-
-    if (totalAdmins)
-        totalAdmins.textContent =
-            admins;
 }
 
 // =========================
