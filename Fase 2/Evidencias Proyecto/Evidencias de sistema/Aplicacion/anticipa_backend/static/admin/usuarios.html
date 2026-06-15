@@ -11,308 +11,191 @@
     <link rel="stylesheet" href="styles.css">
 
     <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 
 <body>
 
-    <div class="wrapper">
+<div class="wrapper">
 
-        <!-- SIDEBAR -->
+    <!-- SIDEBAR -->
 
-        <aside class="sidebar">
+    <aside class="sidebar">
 
-            <div class="sidebar-header">
-                <h3>🧩 Anticipa</h3>
-                <span>Panel Administrativo</span>
-            </div>
+        <div class="sidebar-header">
+            <h3>🧩 Anticipa</h3>
+            <span>Panel Administrativo</span>
+        </div>
 
-            <ul class="sidebar-menu">
+        <ul class="sidebar-menu">
 
-                <li>
-                    <a href="dashboard.html">
-                        <i class="fas fa-chart-line"></i>
-                        Dashboard
-                    </a>
-                </li>
+            <li>
+                <a href="dashboard.html">
+                    <i class="fas fa-chart-line"></i>
+                    Dashboard
+                </a>
+            </li>
 
-                <li class="active">
-                    <a href="usuarios.html">
-                        <i class="fas fa-users"></i>
-                        Usuarios
-                    </a>
-                </li>
+            <li class="active">
+                <a href="usuarios.html">
+                    <i class="fas fa-users"></i>
+                    Usuarios
+                </a>
+            </li>
 
-                <li>
-                    <a href="desregulaciones.html">
-                        <i class="fas fa-heart-pulse"></i>
-                        Desregulaciones
-                    </a>
-                </li>
+            <li>
+                <a href="desregulaciones.html">
+                    <i class="fas fa-heart-pulse"></i>
+                    Desregulaciones
+                </a>
+            </li>
 
-                <li>
-                    <a href="cursos.html">
-                        <i class="fas fa-school"></i>
-                        Cursos
-                    </a>
-                </li>
+            <li>
+                <a href="cursos.html">
+                    <i class="fas fa-school"></i>
+                    Cursos
+                </a>
+            </li>
 
-                <li>
-                    <a href="reportes.html">
-                        <i class="fas fa-file-lines"></i>
-                        Reportes
-                    </a>
-                </li>
+            <li>
+                <a href="reportes.html">
+                    <i class="fas fa-file-lines"></i>
+                    Reportes
+                </a>
+            </li>
 
-            </ul>
+        </ul>
 
-            <div class="sidebar-footer">
+        <div class="sidebar-footer">
 
-                <button
-                    class="btn btn-danger w-100"
-                    onclick="logout()">
+            <button
+                class="btn btn-danger w-100"
+                onclick="logout()">
 
-                    Cerrar Sesión
+                Cerrar Sesión
 
-                </button>
+            </button>
 
-            </div>
+        </div>
 
-        </aside>
+    </aside>
 
-        <!-- MAIN -->
+    <!-- MAIN -->
 
-        <main class="main-content">
+    <main class="main-content">
 
-            <div class="page-header">
+        <div class="page-header">
 
-                <div>
+            <div>
 
-                    <h2>
-                        Gestión de Usuarios
-                    </h2>
+                <h2>Gestión de Usuarios</h2>
 
-                    <p class="text-muted">
-                        Administración completa de usuarios registrados
-                    </p>
-
-                </div>
-
-                <button
-                    class="btn btn-primary"
-                    data-bs-toggle="modal"
-                    data-bs-target="#modalCrear">
-
-                    <i class="fas fa-user-plus"></i>
-                    Nuevo Usuario
-
-                </button>
+                <p class="text-muted">
+                    Administración completa de usuarios registrados
+                </p>
 
             </div>
 
-            <!-- MÉTRICAS -->
+            <button
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#modalCrear">
 
-            <div class="row g-4 mb-4">
+                <i class="fas fa-user-plus"></i>
+                Nuevo Usuario
 
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <h3 id="totalUsuarios">0</h3>
-                        <span>Total Usuarios</span>
-                    </div>
+            </button>
+
+        </div>
+
+        <!-- MÉTRICAS -->
+
+        <div class="row g-4 mb-4">
+
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalUsuarios">0</h3>
+                    <span>Total Usuarios</span>
                 </div>
-
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <h3 id="totalEstudiantes">0</h3>
-                        <span>Estudiantes</span>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <h3 id="totalProfesores">0</h3>
-                        <span>Profesores</span>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="metric-card">
-                        <h3 id="totalTutores">0</h3>
-                        <span>Tutores</span>
-                    </div>
-                </div>
-
             </div>
 
-            <!-- TABLA -->
-
-            <div class="card shadow-sm border-0">
-
-                <div class="card-header bg-white">
-
-                    <div class="row align-items-center">
-
-                        <div class="col-md-6">
-                            <h5 class="mb-0">
-                                Usuarios Registrados
-                            </h5>
-                        </div>
-
-                        <div class="col-md-6">
-
-                            <input
-                                type="text"
-                                id="buscar"
-                                class="form-control"
-                                placeholder="Buscar usuario..."
-                                oninput="filtrarUsuarios()">
-
-                        </div>
-
-                    </div>
-
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalEstudiantes">0</h3>
+                    <span>Estudiantes</span>
                 </div>
-
-                <div class="card-body">
-
-                    <div class="table-responsive">
-
-                        <table class="table table-hover align-middle">
-
-                            <thead>
-
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nombre</th>
-                                    <th>Email</th>
-                                    <th>Rol</th>
-                                    <th>Admin</th>
-                                    <th>Curso</th>
-                                    <th>Acciones</th>
-                                </tr>
-
-                            </thead>
-
-                            <tbody id="tablaUsuarios">
-
-                            </tbody>
-
-                        </table>
-
-                    </div>
-
-                </div>
-
             </div>
 
-        </main>
-
-    </div>
-
-    <!-- MODAL CREAR -->
-
-    <div class="modal fade" id="modalCrear">
-
-        <div class="modal-dialog">
-
-            <div class="modal-content">
-
-                <div class="modal-header">
-
-                    <h5>
-                        Crear Usuario
-                    </h5>
-
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal">
-                    </button>
-
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalProfesores">0</h3>
+                    <span>Profesores</span>
                 </div>
+            </div>
 
-                <div class="modal-body">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalTutores">0</h3>
+                    <span>Tutores</span>
+                </div>
+            </div>
 
-                    <div class="mb-3">
+        </div>
 
-                        <label>Nombre</label>
+        <!-- TABLA -->
+
+        <div class="card shadow-sm border-0">
+
+            <div class="card-header bg-white">
+
+                <div class="row align-items-center">
+
+                    <div class="col-md-6">
+
+                        <h5 class="mb-0">
+                            Usuarios Registrados
+                        </h5>
+
+                    </div>
+
+                    <div class="col-md-6">
 
                         <input
                             type="text"
-                            id="nuevoNombre"
-                            class="form-control">
-
-                    </div>
-
-                    <div class="mb-3">
-
-                        <label>Email</label>
-
-                        <input
-                            type="email"
-                            id="nuevoEmail"
-                            class="form-control">
-
-                    </div>
-
-                    <div class="mb-3">
-
-                        <label>Contraseña</label>
-
-                        <input
-                            type="password"
-                            id="nuevoPassword"
-                            class="form-control">
-
-                    </div>
-
-                    <div class="mb-3">
-
-                        <label>Rol</label>
-
-                        <select
-                            id="nuevoRol"
-                            class="form-select">
-
-                            <option value="1">
-                                Administrador
-                            </option>
-
-                            <option value="2">
-                                Profesor
-                            </option>
-
-                            <option value="3">
-                                Tutor
-                            </option>
-
-                            <option value="4">
-                                Estudiante
-                            </option>
-
-                        </select>
+                            id="buscar"
+                            class="form-control"
+                            placeholder="Buscar usuario..."
+                            onkeyup="filtrarUsuarios()">
 
                     </div>
 
                 </div>
 
-                <div class="modal-footer">
+            </div>
 
-                    <button
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
+            <div class="card-body">
 
-                        Cancelar
+                <div class="table-responsive">
 
-                    </button>
+                    <table class="table table-hover align-middle">
 
-                    <button
-                        class="btn btn-primary"
-                        onclick="crearUsuario()">
+                        <thead>
 
-                        Crear Usuario
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Email</th>
+                                <th>Rol</th>
+                                <th>Curso</th>
+                                <th>Acciones</th>
+                            </tr>
 
-                    </button>
+                        </thead>
+
+                        <tbody id="tablaUsuarios">
+
+                        </tbody>
+
+                    </table>
 
                 </div>
 
@@ -320,82 +203,81 @@
 
         </div>
 
-    </div>
+    </main>
 
-    <!-- MODAL EDITAR -->
+</div>
 
-    <div class="modal fade" id="modalEditar">
+<!-- MODAL CREAR -->
 
-        <div class="modal-dialog">
+<div class="modal fade" id="modalCrear">
 
-            <div class="modal-content">
+    <div class="modal-dialog">
 
-                <div class="modal-header">
+        <div class="modal-content">
 
-                    <h5 class="modal-title">
-                        Editar Usuario
-                    </h5>
+            <div class="modal-header">
 
-                    <button
-                        type="button"
-                        class="btn-close"
-                        data-bs-dismiss="modal">
-                    </button>
+                <h5>Crear Usuario</h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="mb-3">
+                    <label>Nombre</label>
+                    <input type="text" id="nuevoNombre" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" id="nuevoEmail" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label>Contraseña</label>
+                    <input type="password" id="nuevoPassword" class="form-control">
+                </div>
+
+                <div class="mb-3">
+
+                    <label>Rol</label>
+
+                    <select id="nuevoRol" class="form-select">
+
+                        <option value="1">Administrador</option>
+                        <option value="2">Profesor</option>
+                        <option value="3">Tutor</option>
+                        <option value="4">Estudiante</option>
+
+                    </select>
 
                 </div>
 
-                <div class="modal-body">
+            </div>
 
-                    <input type="hidden" id="editId">
+            <div class="modal-footer">
 
-                    <div class="mb-3">
-                        <label>Nombre</label>
-                        <input type="text" id="editNombre" class="form-control">
-                    </div>
+                <button
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
 
-                    <div class="mb-3">
-                        <label>Email</label>
-                        <input type="email" id="editEmail" class="form-control">
-                    </div>
+                    Cancelar
 
-                    <div class="mb-3">
-                        <label>Rol</label>
-                        <input type="number" id="editRol" class="form-control">
-                    </div>
+                </button>
 
-                    <div class="form-check mb-3">
-                        <input type="checkbox" id="editAdmin" class="form-check-input">
-                        <label class="form-check-label">
-                            Es administrador
-                        </label>
-                    </div>
+                <button
+                    class="btn btn-primary"
+                    onclick="crearUsuario()">
 
-                    <div class="mb-3">
-                        <label>Nueva contraseña</label>
-                        <input type="password" id="editPassword" class="form-control">
-                    </div>
+                    Crear Usuario
 
-                </div>
-
-                <div class="modal-footer">
-
-                    <button
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-
-                        Cancelar
-
-                    </button>
-
-                    <button
-                        class="btn btn-primary"
-                        onclick="guardarUsuario()">
-
-                        Guardar
-
-                    </button>
-
-                </div>
+                </button>
 
             </div>
 
@@ -403,10 +285,114 @@
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</div>
 
-    <script src="app.js"></script>
+<!-- MODAL EDITAR -->
+
+<div class="modal fade" id="modalEditar">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 class="modal-title">
+                    Editar Usuario
+                </h5>
+
+                <button
+                    type="button"
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <input type="hidden" id="editId">
+
+                <div class="mb-3">
+                    <label>Nombre</label>
+                    <input type="text" id="editNombre" class="form-control">
+                </div>
+
+                <div class="mb-3">
+                    <label>Email</label>
+                    <input type="email" id="editEmail" class="form-control">
+                </div>
+
+                <div class="mb-3">
+
+                    <label>Rol</label>
+
+                    <select id="editRol" class="form-select">
+
+                        <option value="1">Administrador</option>
+                        <option value="2">Profesor</option>
+                        <option value="3">Tutor</option>
+                        <option value="4">Estudiante</option>
+
+                    </select>
+
+                </div>
+
+                <div class="form-check mb-3">
+
+                    <input
+                        type="checkbox"
+                        id="editAdmin"
+                        class="form-check-input">
+
+                    <label class="form-check-label">
+                        Es administrador
+                    </label>
+
+                </div>
+
+                <div class="mb-3">
+
+                    <label>Nueva contraseña</label>
+
+                    <input
+                        type="password"
+                        id="editPassword"
+                        class="form-control">
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
+
+                    Cancelar
+
+                </button>
+
+                <button
+                    class="btn btn-primary"
+                    onclick="guardarUsuario()">
+
+                    Guardar
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script src="usuarios.js"></script>
 
 </body>
-
 </html>

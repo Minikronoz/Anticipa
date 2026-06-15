@@ -124,7 +124,6 @@ app = FastAPI(
     version="2.0.0"
     
 )
-app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -759,5 +758,10 @@ def listar_estrellas(id_estudiante: int, db: Session = Depends(get_db)):
 
 
 from fastapi.staticfiles import StaticFiles
-app.mount("/admin", StaticFiles(directory="static/admin", html=True), name="admin")
+app.mount(
+    "/panel",
+    StaticFiles(directory="static/admin", html=True),
+    name="panel"
+)
+
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])

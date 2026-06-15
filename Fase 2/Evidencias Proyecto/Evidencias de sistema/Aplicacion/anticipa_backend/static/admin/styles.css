@@ -35,34 +35,40 @@ body{
     top:0;
     bottom:0;
     box-shadow:4px 0 15px rgba(0,0,0,.15);
+    z-index:1000;
 }
 
-.logo-area{
+/* HEADER */
+
+.sidebar-header{
     padding:30px 25px;
     border-bottom:1px solid rgba(255,255,255,.08);
 }
 
-.logo-area h3{
+.sidebar-header h3{
     margin:0;
     font-weight:700;
+    font-size:2rem;
 }
 
-.logo-area span{
+.sidebar-header span{
     color:#9FB3D1;
     font-size:.9rem;
 }
 
-.menu{
+/* MENU */
+
+.sidebar-menu{
     list-style:none;
     padding:20px 0;
     margin:0;
 }
 
-.menu li{
+.sidebar-menu li{
     margin-bottom:5px;
 }
 
-.menu li a{
+.sidebar-menu li a{
     color:#D6E0F0;
     text-decoration:none;
     display:flex;
@@ -73,18 +79,20 @@ body{
     font-size:15px;
 }
 
-.menu li a:hover{
+.sidebar-menu li a:hover{
     background:#0B2A66;
     color:white;
 }
 
-.menu li.active a{
+.sidebar-menu li.active a{
     background:#0D47A1;
     color:white;
     border-left:5px solid #42A5F5;
 }
 
-.logout{
+/* FOOTER */
+
+.sidebar-footer{
     padding:20px;
 }
 
@@ -92,19 +100,37 @@ body{
    CONTENIDO
 ========================== */
 
-.content{
+.main-content{
     margin-left:260px;
-    width:100%;
+    width:calc(100% - 260px);
     padding:30px;
+    min-height:100vh;
 }
 
-.topbar{
+.page-header{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:25px;
+    margin-bottom:30px;
 }
 
+.metric-card{
+    background:white;
+    border-radius:18px;
+    padding:25px;
+    text-align:center;
+    box-shadow:0 4px 15px rgba(0,0,0,.06);
+}
+
+.metric-card h3{
+    font-size:2rem;
+    font-weight:700;
+    margin:0;
+}
+
+.metric-card span{
+    color:#7F8C8D;
+}
 /* ==========================
    KPI CARDS
 ========================== */
@@ -288,26 +314,33 @@ canvas{
         width:80px;
     }
 
-    .sidebar .logo-area span,
-    .sidebar .menu li a span{
+    .sidebar-header span{
         display:none;
     }
 
-    .content{
+    .sidebar-menu li a{
+        justify-content:center;
+    }
+
+    .sidebar-menu li a i{
+        margin:0;
+    }
+
+    .main-content{
         margin-left:80px;
+        width:calc(100% - 80px);
     }
 }
 
 @media(max-width:768px){
 
-    .content{
+    .main-content{
         padding:15px;
     }
 
-    .topbar{
+    .page-header{
         flex-direction:column;
         align-items:flex-start;
-        gap:10px;
+        gap:15px;
     }
-
 }
