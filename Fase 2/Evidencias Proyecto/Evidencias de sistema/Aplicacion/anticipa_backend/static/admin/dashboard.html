@@ -7,391 +7,300 @@
     <title>Anticipa | Dashboard</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-
     <link rel="stylesheet" href="styles.css">
-
 </head>
 
 <body>
 
-    <div class="wrapper">
+<div class="wrapper">
 
-        <!-- SIDEBAR -->
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
 
-        <aside class="sidebar">
+        <div class="sidebar-header">
+            <h3>🧩 Anticipa</h3>
+            <span>Administración</span>
+        </div>
 
-            <div class="logo-area">
+        <ul class="sidebar-menu">
 
-                <h3>
-                    🧩 Anticipa
-                </h3>
+            <li class="active">
+                <a href="dashboard.html">
+                    <i class="bi bi-speedometer2"></i>
+                    Dashboard
+                </a>
+            </li>
 
-                <span>
-                    Administración
-                </span>
+            <li>
+                <a href="usuarios.html">
+                    <i class="bi bi-people-fill"></i>
+                    Gestión Usuarios
+                </a>
+            </li>
 
+            <li>
+                <a href="estudiantes.html">
+                    <i class="bi bi-person-vcard"></i>
+                    Estudiantes
+                </a>
+            </li>
+
+            <li>
+                <a href="desregulaciones.html">
+                    <i class="bi bi-graph-up-arrow"></i>
+                    Desregulaciones
+                </a>
+            </li>
+
+            <li>
+                <a href="reportes.html">
+                    <i class="bi bi-file-earmark-bar-graph"></i>
+                    Reportes
+                </a>
+            </li>
+
+        </ul>
+
+        <div class="sidebar-footer">
+            <button class="btn btn-danger w-100" onclick="logout()">
+                <i class="bi bi-box-arrow-right"></i>
+                Cerrar Sesión
+            </button>
+        </div>
+
+    </aside>
+
+    <!-- CONTENIDO -->
+    <main class="main-content">
+
+        <!-- HEADER -->
+        <div class="page-header">
+
+            <div>
+                <h2 class="fw-bold mb-0">
+                    Dashboard General
+                </h2>
+
+                <small class="text-muted">
+                    Resumen general del sistema Anticipa
+                </small>
             </div>
 
-            <ul class="menu">
+        </div>
 
-                <li class="active">
-                    <a href="dashboard.html">
-                        <i class="bi bi-speedometer2"></i>
-                        Dashboard
-                    </a>
-                </li>
+        <!-- KPI -->
+        <div class="row g-4">
 
-                <li>
-                    <a href="usuarios.html">
-                        <i class="bi bi-people-fill"></i>
-                        Gestión Usuarios
-                    </a>
-                </li>
+            <div class="col-xl-3 col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-body">
 
-                <li>
-                    <a href="estudiantes.html">
-                        <i class="bi bi-person-vcard"></i>
-                        Estudiantes
-                    </a>
-                </li>
+                        <div class="card-icon bg-primary">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
 
-                <li>
-                    <a href="desregulaciones.html">
-                        <i class="bi bi-graph-up-arrow"></i>
-                        Desregulaciones
-                    </a>
-                </li>
+                        <h2 id="totalUsuarios">0</h2>
 
-                <li>
-                    <a href="#">
-                        <i class="bi bi-file-earmark-bar-graph"></i>
-                        Reportes
-                    </a>
-                </li>
+                        <span>Usuarios Totales</span>
 
-            </ul>
-
-            <div class="logout">
-
-                <button
-                    class="btn btn-danger w-100"
-                    onclick="logout()">
-
-                    <i class="bi bi-box-arrow-right"></i>
-                    Cerrar Sesión
-
-                </button>
-
+                    </div>
+                </div>
             </div>
 
-        </aside>
+            <div class="col-xl-3 col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-body">
 
-        <!-- CONTENIDO -->
+                        <div class="card-icon bg-success">
+                            <i class="bi bi-mortarboard-fill"></i>
+                        </div>
 
-        <main class="content">
+                        <h2 id="totalEstudiantes">0</h2>
 
-            <!-- HEADER -->
+                        <span>Estudiantes</span>
 
-            <div class="topbar">
+                    </div>
+                </div>
+            </div>
 
-                <div>
+            <div class="col-xl-3 col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-body">
 
-                    <h2 class="fw-bold mb-0">
-                        Dashboard General
-                    </h2>
+                        <div class="card-icon bg-warning">
+                            <i class="bi bi-person-workspace"></i>
+                        </div>
 
-                    <small class="text-muted">
-                        Resumen general del sistema Anticipa
-                    </small>
+                        <h2 id="totalProfesores">0</h2>
+
+                        <span>Profesores</span>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6">
+                <div class="card dashboard-card">
+                    <div class="card-body">
+
+                        <div class="card-icon bg-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+
+                        <h2 id="desregulaciones">0</h2>
+
+                        <span>Desregulaciones</span>
+
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- GRÁFICOS -->
+        <div class="row mt-4 g-4">
+
+            <div class="col-xl-6">
+                <div class="card">
+
+                    <div class="card-header">
+                        Distribución de Usuarios
+                    </div>
+
+                    <div class="card-body">
+                        <canvas id="graficoRoles"></canvas>
+                    </div>
 
                 </div>
-
             </div>
 
-            <!-- KPI -->
+            <div class="col-xl-6">
+                <div class="card">
 
-            <div class="row g-4 mt-2">
+                    <div class="card-header">
+                        Evolución Desregulaciones
+                    </div>
 
-                <div class="col-md-3">
+                    <div class="card-body">
+                        <canvas id="graficoDesregulacion"></canvas>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ACCESOS RÁPIDOS -->
+        <div class="row mt-4 g-4">
+
+            <div class="col-lg-3 col-md-6">
+
+                <a href="usuarios.html" class="text-decoration-none">
 
                     <div class="card dashboard-card">
-
                         <div class="card-body">
 
                             <div class="card-icon bg-primary">
                                 <i class="bi bi-people-fill"></i>
                             </div>
 
-                            <h2 id="totalUsuarios">0</h2>
+                            <h5 class="mt-3">Gestión Usuarios</h5>
 
-                            <span>
-                                Usuarios Totales
-                            </span>
+                            <small class="text-muted">
+                                Administrar usuarios
+                            </small>
 
                         </div>
-
                     </div>
 
-                </div>
+                </a>
 
-                <div class="col-md-3">
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+
+                <a href="estudiantes.html" class="text-decoration-none">
 
                     <div class="card dashboard-card">
-
                         <div class="card-body">
 
                             <div class="card-icon bg-success">
                                 <i class="bi bi-mortarboard-fill"></i>
                             </div>
 
-                            <h2 id="totalEstudiantes">0</h2>
+                            <h5 class="mt-3">Estudiantes</h5>
 
-                            <span>
-                                Estudiantes
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="col-md-3">
-
-                    <div class="card dashboard-card">
-
-                        <div class="card-body">
-
-                            <div class="card-icon bg-warning">
-                                <i class="bi bi-person-workspace"></i>
-                            </div>
-
-                            <h2 id="totalProfesores">0</h2>
-
-                            <span>
-                                Profesores
-                            </span>
+                            <small class="text-muted">
+                                Gestionar estudiantes
+                            </small>
 
                         </div>
-
                     </div>
 
-                </div>
+                </a>
 
-                <div class="col-md-3">
+            </div>
+
+            <div class="col-lg-3 col-md-6">
+
+                <a href="desregulaciones.html" class="text-decoration-none">
 
                     <div class="card dashboard-card">
-
                         <div class="card-body">
 
                             <div class="card-icon bg-danger">
                                 <i class="bi bi-exclamation-triangle-fill"></i>
                             </div>
 
-                            <h2 id="desregulaciones">0</h2>
+                            <h5 class="mt-3">Desregulaciones</h5>
 
-                            <span>
-                                Desregulaciones
-                            </span>
+                            <small class="text-muted">
+                                Registrar incidencias
+                            </small>
 
                         </div>
-
                     </div>
 
-                </div>
+                </a>
 
             </div>
 
-            <!-- GRAFICOS -->
+            <div class="col-lg-3 col-md-6">
 
-            <div class="row mt-4">
+                <a href="reportes.html" class="text-decoration-none">
 
-                <div class="col-lg-6">
-
-                    <div class="card shadow-sm border-0">
-
-                        <div class="card-header bg-white">
-
-                            <h5 class="mb-0">
-                                Distribución de Usuarios
-                            </h5>
-
-                        </div>
-
+                    <div class="card dashboard-card">
                         <div class="card-body">
 
-                            <canvas
-                                id="graficoRoles"
-                                height="250">
-                            </canvas>
+                            <div class="card-icon bg-warning">
+                                <i class="bi bi-bar-chart-fill"></i>
+                            </div>
+
+                            <h5 class="mt-3">Reportes</h5>
+
+                            <small class="text-muted">
+                                Estadísticas del sistema
+                            </small>
 
                         </div>
-
                     </div>
 
-                </div>
-
-                <div class="col-lg-6">
-
-                    <div class="card shadow-sm border-0">
-
-                        <div class="card-header bg-white">
-
-                            <h5 class="mb-0">
-                                Evolución Desregulaciones
-                            </h5>
-
-                        </div>
-
-                        <div class="card-body">
-
-                            <canvas
-                                id="graficoDesregulacion"
-                                height="250">
-                            </canvas>
-
-                        </div>
-
-                    </div>
-
-                </div>
+                </a>
 
             </div>
 
-            <!-- RESUMEN -->
+        </div>
 
-<!-- ACCESOS RAPIDOS -->
-
-<div class="row mt-4 g-4">
-
-    <div class="col-md-3">
-
-        <a href="usuarios.html" class="text-decoration-none">
-
-            <div class="card dashboard-card">
-
-                <div class="card-body">
-
-                    <div class="card-icon bg-primary">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
-
-                    <h5 class="mt-3">
-                        Gestión Usuarios
-                    </h5>
-
-                    <small class="text-muted">
-                        Administrar usuarios
-                    </small>
-
-                </div>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <a href="estudiantes.html" class="text-decoration-none">
-
-            <div class="card dashboard-card">
-
-                <div class="card-body">
-
-                    <div class="card-icon bg-success">
-                        <i class="bi bi-mortarboard-fill"></i>
-                    </div>
-
-                    <h5 class="mt-3">
-                        Estudiantes
-                    </h5>
-
-                    <small class="text-muted">
-                        Gestionar estudiantes
-                    </small>
-
-                </div>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <a href="desregulaciones.html" class="text-decoration-none">
-
-            <div class="card dashboard-card">
-
-                <div class="card-body">
-
-                    <div class="card-icon bg-danger">
-                        <i class="bi bi-exclamation-triangle-fill"></i>
-                    </div>
-
-                    <h5 class="mt-3">
-                        Desregulaciones
-                    </h5>
-
-                    <small class="text-muted">
-                        Registrar incidencias
-                    </small>
-
-                </div>
-
-            </div>
-
-        </a>
-
-    </div>
-
-    <div class="col-md-3">
-
-        <a href="reportes.html" class="text-decoration-none">
-
-            <div class="card dashboard-card">
-
-                <div class="card-body">
-
-                    <div class="card-icon bg-warning">
-                        <i class="bi bi-bar-chart-fill"></i>
-                    </div>
-
-                    <h5 class="mt-3">
-                        Reportes
-                    </h5>
-
-                    <small class="text-muted">
-                        Estadísticas del sistema
-                    </small>
-
-                </div>
-
-            </div>
-
-        </a>
-
-    </div>
+    </main>
 
 </div>
 
-        </main>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script src="app.js"></script>
-
-    <script src="charts.js"></script>
+<script src="app.js"></script>
+<script src="charts.js"></script>
 
 </body>
-
 </html>
