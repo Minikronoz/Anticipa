@@ -25,17 +25,25 @@ body{
 
 .sidebar{
     width:260px;
+    min-width:260px;
+    max-width:260px;
+
     background:#061A40;
     color:white;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
+
     position:fixed;
     left:0;
     top:0;
     bottom:0;
+
     box-shadow:4px 0 15px rgba(0,0,0,.15);
     z-index:1000;
+
+    overflow-y:auto;
+    overflow-x:hidden;
 }
 
 /* HEADER */
@@ -308,31 +316,40 @@ canvas{
    RESPONSIVE
 ========================== */
 
-@media(max-width:992px){
+@media (max-width: 992px) {
 
     .sidebar{
-        width:80px;
+        width:260px;
+        min-width:260px;
+        max-width:260px;
+        left:-260px;
+        transition:0.3s ease;
     }
 
-    .sidebar-header span{
-        display:none;
-    }
-
-    .sidebar-menu li a{
-        justify-content:center;
-    }
-
-    .sidebar-menu li a i{
-        margin:0;
+    .sidebar.show{
+        left:0;
     }
 
     .main-content{
-        margin-left:80px;
-        width:calc(100% - 80px);
+        margin-left:0;
+        width:100%;
+    }
+
+    .sidebar-header h3{
+        font-size:1.6rem;
+        white-space:nowrap;
+    }
+
+    .sidebar-header span{
+        white-space:nowrap;
+    }
+
+    .sidebar-menu li a{
+        white-space:nowrap;
     }
 }
 
-@media(max-width:768px){
+@media (max-width: 768px) {
 
     .main-content{
         padding:15px;
@@ -342,5 +359,10 @@ canvas{
         flex-direction:column;
         align-items:flex-start;
         gap:15px;
+    }
+
+    .card canvas{
+        width:100% !important;
+        height:auto !important;
     }
 }
