@@ -59,8 +59,13 @@ class _PanelApoderadoState extends State<PanelApoderado> {
   }
 
   Future<List<Map<String, dynamic>>> _get(String url) async {
-    final r = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
-    return r.statusCode == 200 ? List<Map<String, dynamic>>.from(jsonDecode(r.body)) : [];
+    try {
+      final r = await http.get(Uri.parse(url)).timeout(const Duration(seconds: 60));
+      if (r.statusCode != 200) return [];
+      return List<Map<String, dynamic>>.from(jsonDecode(r.body));
+    } catch (_) {
+      return [];
+    }
   }
 
   // ── Vincular hijo por código ────────────────────────────
@@ -80,8 +85,12 @@ class _PanelApoderadoState extends State<PanelApoderado> {
         }
         return;
       }
-      final data = jsonDecode(r.body);
-      throw data['detail'] ?? 'Error al vincular';
+      String msg = 'Error al vincular';
+      try {
+        final data = jsonDecode(r.body);
+        if (data is Map) msg = data['detail']?.toString() ?? msg;
+      } catch (_) { }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,9 +135,23 @@ class _PanelApoderadoState extends State<PanelApoderado> {
 
   // ── Navegar al panel de detalle del hijo ────────────────
   void _abrirDetalle(Map<String, dynamic> hijo) {
+    final idEstRaw = hijo['id_estudiante'];
+    if (idEstRaw == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: estudiante sin ID'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    final idEst = idEstRaw is int ? idEstRaw : int.tryParse(idEstRaw.toString()) ?? 0;
+    if (idEst == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: ID de estudiante inválido'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     Navigator.push(context, MaterialPageRoute(
       builder: (_) => PanelDetalleEstudiante(
-        idEstudiante: hijo['id_estudiante'],
+        idEstudiante: idEst,
         idUsuario: widget.idUsuario,
         rol: 'Tutor / Apoderado',
         nombreEstudiante: hijo['nombre'] ?? '',

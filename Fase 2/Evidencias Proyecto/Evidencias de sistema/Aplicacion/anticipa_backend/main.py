@@ -110,7 +110,10 @@ ALLOWED_DOMAINS = {
 }
 
 def detectar_rol_por_email(email: str) -> int:
-    domain = email.split('@')[1].lower()
+    try:
+        domain = email.split('@')[1].lower()
+    except (IndexError, ValueError):
+        raise HTTPException(status_code=400, detail="Formato de correo inválido.")
     if domain not in ALLOWED_DOMAINS:
         raise HTTPException(
             status_code=400,
@@ -195,7 +198,7 @@ def solicitar_codigo_recuperacion(
     if enviar_codigo_email(usuario.email, codigo, usuario.nombre):
         return {"mensaje": "Código enviado a tu correo electrónico."}
     else:
-        return {"mensaje": f"[DEV] Código generado: {codigo}"}
+        return {"mensaje": "No se pudo enviar el correo. Intenta más tarde."}
 
 
 @app.post("/auth/verificar-codigo", tags=["Autenticación"])
@@ -385,6 +388,10 @@ def obtener_usuario(id_usuario: int, db: Session = Depends(get_db)):
 @app.post("/estudiantes/", response_model=schemas.EstudianteResponse,
           status_code=status.HTTP_201_CREATED, tags=["Estudiantes"])
 def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends(get_db)):
+    if estudiante.curso_id_curso is not None:
+        curso = db.query(models.Curso).filter(models.Curso.id_curso == estudiante.curso_id_curso).first()
+        if not curso:
+            raise HTTPException(status_code=400, detail="El curso no existe.")
     datos = estudiante.model_dump()
     while True:
         codigo = generar_codigo_vinculacion()
@@ -445,6 +452,15 @@ def actualizar_estudiante(
 @app.post("/vinculaciones/", response_model=schemas.VinculacionResponse,
           status_code=status.HTTP_201_CREATED, tags=["Vinculaciones"])
 def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db)):
+    usu = db.query(models.Usuario).filter(models.Usuario.id_usuario == v.usuario_id_usuario).first()
+    if not usu:
+        raise HTTPException(status_code=400, detail="El usuario no existe.")
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == v.id_estudiante).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante no existe.")
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == v.rol_id_rol).first()
+    if not rol:
+        raise HTTPException(status_code=400, detail="El rol no existe.")
     existente = db.query(models.VinculacionHistorial).filter(
         models.VinculacionHistorial.usuario_id_usuario == v.usuario_id_usuario,
         models.VinculacionHistorial.id_estudiante      == v.id_estudiante,
@@ -462,6 +478,12 @@ def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db
 def vincular_por_codigo(codigo: str, id_usuario: int, rol_id_rol: int = 3, db: Session = Depends(get_db)):
     if not codigo or len(codigo) != 7 or not re.match(r'^[A-Z0-9]+$', codigo.upper()):
         raise HTTPException(status_code=400, detail="Código de vinculación inválido. Debe tener 7 caracteres alfanuméricos.")
+    usu = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
+    if not usu:
+        raise HTTPException(status_code=400, detail="El usuario no existe.")
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == rol_id_rol).first()
+    if not rol:
+        raise HTTPException(status_code=400, detail="El rol no existe.")
     estudiante = db.query(models.Estudiante).filter(
         models.Estudiante.codigo_vinculacion == codigo.upper()
     ).first()
@@ -493,6 +515,7 @@ def listar_vinculaciones(id_usuario: int, db: Session = Depends(get_db)):
            response_model=schemas.VinculacionResponse, tags=["Vinculaciones"])
 def desvincular(
     id_vinculo: int,
+    id_usuario: int,
     motivo: str = "Desvinculación manual",
     db: Session = Depends(get_db)
 ):
@@ -501,6 +524,8 @@ def desvincular(
     ).first()
     if not v:
         raise HTTPException(status_code=404, detail="Vínculo no encontrado.")
+    if v.usuario_id_usuario != id_usuario:
+        raise HTTPException(status_code=403, detail="No tienes permiso para desvincular este estudiante.")
     if v.fecha_termino:
         raise HTTPException(status_code=409, detail="Este vínculo ya está inactivo.")
     v.fecha_termino = datetime.now(timezone.utc)
@@ -530,6 +555,10 @@ def listar_pictogramas(db: Session = Depends(get_db)):
 @app.post("/catalogo/", response_model=schemas.CatalogoResponse,
           status_code=status.HTTP_201_CREATED, tags=["Catálogo"])
 def crear_catalogo(catalogo: schemas.CatalogoCreate, db: Session = Depends(get_db)):
+    if catalogo.pictograma_id_pictograma is not None:
+        picto = db.query(models.Pictograma).filter(models.Pictograma.id_pictograma == catalogo.pictograma_id_pictograma).first()
+        if not picto:
+            raise HTTPException(status_code=400, detail="El pictograma no existe.")
     nuevo = models.CatalogoActividad(**catalogo.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
@@ -555,6 +584,13 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
     if actividad.fecha_actividad == hoy and actividad.hora_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden crear actividades con hora en el pasado.")
 
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == datos['estudiante_id_estudiante']).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante seleccionado no existe.")
+    usu = db.query(models.Usuario).filter(models.Usuario.id_usuario == datos['usuario_id_usuario']).first()
+    if not usu:
+        raise HTTPException(status_code=400, detail="El usuario seleccionado no existe.")
+
     if datos.get('pictograma_id_pictograma') is not None:
         picto = db.query(models.Pictograma).filter(
             models.Pictograma.id_pictograma == datos['pictograma_id_pictograma']
@@ -571,12 +607,19 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
 
     nueva = models.Actividad(**datos)
     db.add(nueva); db.commit(); db.refresh(nueva)
-    if alerta_minutos and alerta_minutos in ('2', '5', '10', '15'):
-        db.add(models.ConfiguracionAlerta(
-            actividad_id_actividad=nueva.id_actividad,
-            minutos_anticipacion=alerta_minutos,
-        ))
-        db.commit()
+    if alerta_minutos:
+        try:
+            mins = int(alerta_minutos)
+            if mins < 0 or mins > 480:
+                raise HTTPException(status_code=400, detail="Los minutos de alerta deben estar entre 0 y 480.")
+            if mins > 0:
+                db.add(models.ConfiguracionAlerta(
+                    actividad_id_actividad=nueva.id_actividad,
+                    minutos_anticipacion=str(mins),
+                ))
+                db.commit()
+        except (ValueError, TypeError):
+            pass
     return nueva
 
 @app.get("/actividades/estudiante/{id_estudiante}",
@@ -670,6 +713,12 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
     if nueva_fecha == hoy and nueva_inicio is not None and nueva_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden asignar horas en el pasado.")
 
+    est_id = datos_dict.get('estudiante_id_estudiante')
+    if est_id is not None:
+        est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == est_id).first()
+        if not est:
+            raise HTTPException(status_code=400, detail="El estudiante seleccionado no existe.")
+
     picto_id = datos_dict.get('pictograma_id_pictograma')
     if picto_id is not None:
         picto = db.query(models.Pictograma).filter(models.Pictograma.id_pictograma == picto_id).first()
@@ -709,6 +758,9 @@ def eliminar_actividad(id_actividad: int, db: Session = Depends(get_db)):
 @app.post("/historial/", response_model=schemas.HistorialResponse,
           status_code=status.HTTP_201_CREATED, tags=["Historial"])
 def registrar_cumplimiento(historial: schemas.HistorialCreate, db: Session = Depends(get_db)):
+    act = db.query(models.Actividad).filter(models.Actividad.id_actividad == historial.actividad_id_actividad).first()
+    if not act:
+        raise HTTPException(status_code=400, detail="La actividad no existe.")
     nuevo = models.HistorialCumplimiento(**historial.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
@@ -727,6 +779,9 @@ def historial_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
 @app.post("/recompensas/", response_model=schemas.RecompensaResponse,
           status_code=status.HTTP_201_CREATED, tags=["Recompensas"])
 def crear_recompensa(recompensa: schemas.RecompensaCreate, db: Session = Depends(get_db)):
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == recompensa.estudiante_id_estudiante).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante no existe.")
     nueva = models.RecompensaDisponible(**recompensa.model_dump())
     db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
@@ -745,6 +800,9 @@ def listar_recompensas(id_estudiante: int, db: Session = Depends(get_db)):
 @app.post("/estrellas/", response_model=schemas.EstrellaResponse,
           status_code=status.HTTP_201_CREATED, tags=["Estrellas"])
 def registrar_estrellas(estrella: schemas.EstrellaCreate, db: Session = Depends(get_db)):
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == estrella.estudiante_id_estudiante).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante no existe.")
     nuevo = models.RegistroEstrellaDiaria(**estrella.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
