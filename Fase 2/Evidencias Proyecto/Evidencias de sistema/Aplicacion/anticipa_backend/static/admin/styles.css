@@ -392,3 +392,8 @@ canvas{
     margin-left:0 !important;
     margin-right:0 !important;
 }
+
+#graficoAlumno,
+#graficoImpacto{
+    height:300px !important;
+}

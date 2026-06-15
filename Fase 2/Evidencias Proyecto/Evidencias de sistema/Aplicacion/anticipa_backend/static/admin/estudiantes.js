@@ -207,17 +207,14 @@ document.getElementById("totalRiesgo").textContent =
 estudiantes.filter(x=>x.estado==="Riesgo").length;
 
 new Chart(document.getElementById("graficoCursos"),{
-
-type:"bar",
-
-data:{
-labels:["5°A","5°B","6°A","6°B","7°A","7°B"],
-datasets:[{
-label:"Desregulaciones",
-data:[35,39,28,37,17,33]
-}]
-}
-
+    type:"bar",
+    data:{
+        labels:["5°A","5°B","6°A","6°B","7°A","7°B"],
+        datasets:[{
+            label:"Desregulaciones",
+            data:[35,39,28,37,17,33]
+        }]
+    }
 });
 
 new Chart(document.getElementById("graficoTendencia"),{
@@ -262,27 +259,23 @@ if(graficoAlumno){
 graficoAlumno.destroy();
 }
 
-graficoAlumno =
-new Chart(
+graficoAlumno = new Chart(
 document.getElementById("graficoAlumno"),
 {
-type:"line",
-data:{
-labels:[
-"Ene",
-"Feb",
-"Mar",
-"Abr",
-"May",
-"Jun"
-],
-datasets:[{
-label:"Desregulaciones",
-data:datos,
-borderWidth:3,
-tension:.3
-}]
-}
+    type:"line",
+    data:{
+        labels:["Ene","Feb","Mar","Abr","May","Jun"],
+        datasets:[{
+            label:"Desregulaciones",
+            data:datos,
+            borderWidth:3,
+            tension:0.3
+        }]
+    },
+    options:{
+        responsive:true,
+        maintainAspectRatio:false
+    }
 });
 
 if(graficoImpacto){
