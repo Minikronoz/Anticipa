@@ -147,6 +147,27 @@ estado:"Riesgo"
 
 ];
 
+const historial = {
+
+1:[15,12,10,8,5,3],
+2:[22,21,19,18,17,18],
+3:[10,8,7,6,5,4],
+4:[12,14,17,19,20,22],
+5:[14,12,10,9,8,7],
+6:[10,10,9,9,10,10],
+7:[18,17,16,15,15,15],
+8:[15,13,12,11,10,9],
+9:[9,8,7,6,5,4],
+10:[15,16,17,18,19,20],
+11:[11,10,9,8,7,6],
+12:[14,14,13,12,11,11],
+13:[8,7,6,5,4,3],
+14:[18,17,16,15,14,14],
+15:[12,11,10,9,8,8],
+16:[18,19,21,22,24,25]
+
+};
+
 const tabla = document.getElementById("tablaEstudiantes");
 
 estudiantes.forEach(e => {
@@ -160,8 +181,12 @@ tabla.innerHTML += `
 <td>${e.semana}</td>
 <td>${e.estado}</td>
 <td>
-<button class="btn btn-primary btn-sm">
+<button
+class="btn btn-primary btn-sm"
+onclick="verEstudiante(${e.id})">
+
 Ver
+
 </button>
 </td>
 </tr>
@@ -209,3 +234,107 @@ fill:false
 }
 
 });
+
+let graficoAlumno = null;
+let graficoImpacto = null;
+
+function verEstudiante(id){
+
+const alumno =
+estudiantes.find(x=>x.id===id);
+
+const datos =
+historial[id];
+
+document.getElementById("tituloEstudiante").innerHTML =
+`${alumno.nombre} - ${alumno.curso}`;
+
+document.getElementById("datoHoy").innerHTML =
+Math.floor(Math.random()*2);
+
+document.getElementById("datoSemana").innerHTML =
+alumno.semana;
+
+document.getElementById("datoMes").innerHTML =
+alumno.total;
+
+if(graficoAlumno){
+graficoAlumno.destroy();
+}
+
+graficoAlumno =
+new Chart(
+document.getElementById("graficoAlumno"),
+{
+type:"line",
+data:{
+labels:[
+"Ene",
+"Feb",
+"Mar",
+"Abr",
+"May",
+"Jun"
+],
+datasets:[{
+label:"Desregulaciones",
+data:datos,
+borderWidth:3,
+tension:.3
+}]
+}
+});
+
+if(graficoImpacto){
+graficoImpacto.destroy();
+}
+
+graficoImpacto =
+new Chart(
+document.getElementById("graficoImpacto"),
+{
+type:"bar",
+data:{
+labels:[
+"Antes Anticipa",
+"Actual"
+],
+datasets:[{
+label:"Incidentes",
+data:[
+datos[0],
+datos[5]
+]
+}]
+}
+});
+
+const cambio =
+Math.round(
+((datos[5]-datos[0])/
+datos[0])*100
+);
+
+let mensaje="";
+
+if(cambio<0){
+
+mensaje =
+`El estudiante presenta una mejora de ${Math.abs(cambio)}% desde el inicio del seguimiento.`;
+
+}
+else{
+
+mensaje =
+`Se detecta un aumento de ${cambio}% en las desregulaciones. Se recomienda intervención temprana.`;
+
+}
+
+document.getElementById("observacion").innerHTML =
+mensaje;
+
+new bootstrap.Modal(
+document.getElementById("modalEstudiante")
+).show();
+
+}

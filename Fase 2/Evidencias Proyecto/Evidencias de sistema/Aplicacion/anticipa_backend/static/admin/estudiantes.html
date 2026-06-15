@@ -234,6 +234,132 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="estudiantes.js"></script>
+<div class="modal fade" id="modalEstudiante">
 
+    <div class="modal-dialog modal-xl">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+
+                <h5 id="tituloEstudiante">
+                    Ficha Estudiante
+                </h5>
+
+                <button
+                    class="btn-close"
+                    data-bs-dismiss="modal">
+                </button>
+
+            </div>
+
+            <div class="modal-body">
+
+                <div class="row mb-4">
+
+                    <div class="col-md-4">
+
+                        <div class="metric-card">
+
+                            <h3 id="datoHoy">0</h3>
+
+                            <span>
+                                Hoy
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="metric-card">
+
+                            <h3 id="datoSemana">0</h3>
+
+                            <span>
+                                Semana
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-4">
+
+                        <div class="metric-card">
+
+                            <h3 id="datoMes">0</h3>
+
+                            <span>
+                                Mes
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="row">
+
+                    <div class="col-lg-6">
+
+                        <div class="card">
+
+                            <div class="card-header">
+                                Evolución Mensual
+                            </div>
+
+                            <div class="card-body">
+
+                                <canvas id="graficoAlumno"></canvas>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-lg-6">
+
+                        <div class="card">
+
+                            <div class="card-header">
+                                Antes vs Después Anticipa
+                            </div>
+
+                            <div class="card-body">
+
+                                <canvas id="graficoImpacto"></canvas>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="mt-4">
+
+                    <h5>
+                        Observación Automática
+                    </h5>
+
+                    <div
+                        id="observacion"
+                        class="alert alert-success">
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
 </body>
 </html>
