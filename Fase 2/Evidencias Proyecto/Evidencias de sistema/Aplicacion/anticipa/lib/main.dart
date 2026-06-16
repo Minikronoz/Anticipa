@@ -135,6 +135,7 @@ class _LoginScreenState extends State<LoginScreen> {
               rol: data['rol'] ?? '',
               nombreEstudiante: nombre,
               themeConfig: widget.themeConfig,
+              onThemeChanged: widget.onThemeChanged,
             ),
           ));
           return;
@@ -142,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (rolId == 3) {
           Navigator.pushReplacement(context, MaterialPageRoute(
-            builder: (context) => PanelApoderado(idUsuario: idUsuario, nombre: nombre, themeConfig: widget.themeConfig),
+            builder: (context) => PanelApoderado(idUsuario: idUsuario, nombre: nombre),
           ));
           return;
         }

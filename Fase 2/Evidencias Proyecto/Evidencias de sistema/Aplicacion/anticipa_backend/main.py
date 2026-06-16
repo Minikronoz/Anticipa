@@ -672,18 +672,22 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
     a.es_completada = not a.es_completada
     hoy = datetime.now(CHILE_TZ).date()
 
+    if a.fecha_actividad < hoy:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="No se pueden completar actividades de días pasados.")
+
     if not estaba_completada:
         # Completando: +1 estrella, +1 punto, registrar historial
         registro = db.query(models.RegistroEstrellaDiaria).filter(
             models.RegistroEstrellaDiaria.estudiante_id_estudiante == a.estudiante_id_estudiante,
-            models.RegistroEstrellaDiaria.fecha == hoy,
+            models.RegistroEstrellaDiaria.fecha == a.fecha_actividad,
         ).first()
         if registro:
             registro.estrellas_ganadas += 1
         else:
             db.add(models.RegistroEstrellaDiaria(
                 estudiante_id_estudiante=a.estudiante_id_estudiante,
-                fecha=hoy,
+                fecha=a.fecha_actividad,
                 estrellas_ganadas=1,
             ))
 
@@ -701,7 +705,7 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
         # Desmarcando: -1 estrella, -1 punto (mínimo 0)
         registro = db.query(models.RegistroEstrellaDiaria).filter(
             models.RegistroEstrellaDiaria.estudiante_id_estudiante == a.estudiante_id_estudiante,
-            models.RegistroEstrellaDiaria.fecha == hoy,
+            models.RegistroEstrellaDiaria.fecha == a.fecha_actividad,
         ).first()
         if registro and registro.estrellas_ganadas > 0:
             registro.estrellas_ganadas -= 1
