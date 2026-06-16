@@ -168,9 +168,14 @@ const historial = {
 
 };
 
-const tabla = document.getElementById("tablaEstudiantes");
+function cargarTabla(lista){
 
-estudiantes.forEach(e => {
+const tabla =
+document.getElementById("tablaEstudiantes");
+
+tabla.innerHTML = "";
+
+lista.forEach(e=>{
 
 tabla.innerHTML += `
 <tr>
@@ -181,6 +186,7 @@ tabla.innerHTML += `
 <td>${e.semana}</td>
 <td>${e.estado}</td>
 <td>
+
 <button
 class="btn btn-primary btn-sm"
 onclick="verEstudiante(${e.id})">
@@ -188,12 +194,156 @@ onclick="verEstudiante(${e.id})">
 Ver
 
 </button>
+
 </td>
 </tr>
 `;
 
 });
 
+}
+function cargarCursos(){
+
+const select =
+document.getElementById("filtroCurso");
+
+const cursos = [
+...new Set(
+estudiantes.map(e=>e.curso)
+)
+].sort();
+
+cursos.forEach(curso=>{
+
+select.innerHTML += `
+<option value="${curso}">
+${curso}
+</option>
+`;
+
+});
+
+}
+
+function aplicarFiltros(){
+
+const texto =
+document.getElementById("buscar")
+.value
+.toLowerCase();
+
+const curso =
+document.getElementById("filtroCurso")
+.value;
+
+const diagnostico =
+document.getElementById("filtroDiagnostico")
+.value;
+
+const estado =
+document.getElementById("filtroEstado")
+.value;
+
+const orden =
+document.getElementById("ordenarPor")
+.value;
+
+let resultado = [...estudiantes];
+
+resultado = resultado.filter(e=>{
+
+const coincideNombre =
+e.nombre.toLowerCase()
+.includes(texto);
+
+const coincideCurso =
+curso === "" ||
+e.curso === curso;
+
+const coincideDiagnostico =
+diagnostico === "" ||
+e.diagnostico === diagnostico;
+
+const coincideEstado =
+estado === "" ||
+e.estado === estado;
+
+return (
+coincideNombre &&
+coincideCurso &&
+coincideDiagnostico &&
+coincideEstado
+);
+
+});
+
+switch(orden){
+
+case "totalDesc":
+resultado.sort(
+(a,b)=>b.total-a.total
+);
+break;
+
+case "totalAsc":
+resultado.sort(
+(a,b)=>a.total-b.total
+);
+break;
+
+case "semanaDesc":
+resultado.sort(
+(a,b)=>b.semana-a.semana
+);
+break;
+
+case "semanaAsc":
+resultado.sort(
+(a,b)=>a.semana-b.semana
+);
+break;
+
+}
+
+cargarTabla(resultado);
+
+}
+document
+.getElementById("buscar")
+.addEventListener(
+"input",
+aplicarFiltros
+);
+
+document
+.getElementById("filtroCurso")
+.addEventListener(
+"change",
+aplicarFiltros
+);
+
+document
+.getElementById("filtroDiagnostico")
+.addEventListener(
+"change",
+aplicarFiltros
+);
+
+document
+.getElementById("filtroEstado")
+.addEventListener(
+"change",
+aplicarFiltros
+);
+
+document
+.getElementById("ordenarPor")
+.addEventListener(
+"change",
+aplicarFiltros
+);
+cargarCursos();
+cargarTabla(estudiantes);
 document.getElementById("totalEstudiantes").textContent =
 estudiantes.length;
 
