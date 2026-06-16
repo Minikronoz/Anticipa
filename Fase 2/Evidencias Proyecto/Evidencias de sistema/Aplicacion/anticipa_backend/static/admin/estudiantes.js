@@ -184,7 +184,19 @@ tabla.innerHTML += `
 <td>${e.diagnostico}</td>
 <td>${e.total}</td>
 <td>${e.semana}</td>
-<td>${e.estado}</td>
+<<td>
+
+<span class="badge ${
+e.estado==="Riesgo"
+? "bg-danger"
+: e.estado==="Estable"
+? "bg-warning text-dark"
+: "bg-success"
+}">
+${e.estado}
+</span>
+
+</td>
 <td>
 
 <button
@@ -308,42 +320,47 @@ break;
 cargarTabla(resultado);
 
 }
-document
-.getElementById("buscar")
-.addEventListener(
-"input",
-aplicarFiltros
-);
+document.addEventListener("DOMContentLoaded",()=>{
 
-document
-.getElementById("filtroCurso")
-.addEventListener(
-"change",
-aplicarFiltros
-);
+    cargarCursos();
+    cargarTabla(estudiantes);
 
-document
-.getElementById("filtroDiagnostico")
-.addEventListener(
-"change",
-aplicarFiltros
-);
+    document
+    .getElementById("buscar")
+    .addEventListener(
+        "input",
+        aplicarFiltros
+    );
 
-document
-.getElementById("filtroEstado")
-.addEventListener(
-"change",
-aplicarFiltros
-);
+    document
+    .getElementById("filtroCurso")
+    .addEventListener(
+        "change",
+        aplicarFiltros
+    );
 
-document
-.getElementById("ordenarPor")
-.addEventListener(
-"change",
-aplicarFiltros
-);
-cargarCursos();
-cargarTabla(estudiantes);
+    document
+    .getElementById("filtroDiagnostico")
+    .addEventListener(
+        "change",
+        aplicarFiltros
+    );
+
+    document
+    .getElementById("filtroEstado")
+    .addEventListener(
+        "change",
+        aplicarFiltros
+    );
+
+    document
+    .getElementById("ordenarPor")
+    .addEventListener(
+        "change",
+        aplicarFiltros
+    );
+
+});
 document.getElementById("totalEstudiantes").textContent =
 estudiantes.length;
 
