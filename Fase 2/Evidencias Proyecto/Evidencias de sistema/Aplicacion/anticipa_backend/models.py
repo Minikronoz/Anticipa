@@ -184,3 +184,56 @@ class RegistroEstrellaDiaria(Base):
         UniqueConstraint('estudiante_id_estudiante', 'fecha', name='unq_estudiante_fecha'),
     )
     estudiante = relationship("Estudiante")
+
+
+class EncuestaDiaria(Base):
+    __tablename__ = "encuesta_diaria"
+
+    id_encuesta = Column(Integer, primary_key=True)
+
+    estudiante_id_estudiante = Column(
+        Integer,
+        ForeignKey("estudiante.id_estudiante", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    fecha = Column(
+        Date,
+        nullable=False,
+        server_default=text("CURRENT_DATE")
+    )
+
+    tuvo_desregulacion = Column(
+        Boolean,
+        nullable=False
+    )
+
+    cantidad = Column(
+        Integer,
+        nullable=True
+    )
+
+    motivo = Column(
+        String(100),
+        nullable=True
+    )
+
+    otro_motivo = Column(
+        Text,
+        nullable=True
+    )
+
+    observacion = Column(
+        Text,
+        nullable=True
+    )
+
+    estudiante = relationship("Estudiante")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "estudiante_id_estudiante",
+            "fecha",
+            name="unq_encuesta_por_dia"
+        ),
+    )
