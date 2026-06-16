@@ -25,44 +25,58 @@ body{
 
 .sidebar{
     width:260px;
+    min-width:260px;
+    max-width:260px;
+
     background:#061A40;
     color:white;
     display:flex;
     flex-direction:column;
     justify-content:space-between;
+
     position:fixed;
     left:0;
     top:0;
     bottom:0;
+
     box-shadow:4px 0 15px rgba(0,0,0,.15);
+    z-index:1000;
+
+    overflow-y:auto;
+    overflow-x:hidden;
 }
 
-.logo-area{
+/* HEADER */
+
+.sidebar-header{
     padding:30px 25px;
     border-bottom:1px solid rgba(255,255,255,.08);
 }
 
-.logo-area h3{
+.sidebar-header h3{
     margin:0;
     font-weight:700;
+    font-size:2rem;
 }
 
-.logo-area span{
+.sidebar-header span{
     color:#9FB3D1;
     font-size:.9rem;
 }
 
-.menu{
+/* MENU */
+
+.sidebar-menu{
     list-style:none;
     padding:20px 0;
     margin:0;
 }
 
-.menu li{
+.sidebar-menu li{
     margin-bottom:5px;
 }
 
-.menu li a{
+.sidebar-menu li a{
     color:#D6E0F0;
     text-decoration:none;
     display:flex;
@@ -73,18 +87,20 @@ body{
     font-size:15px;
 }
 
-.menu li a:hover{
+.sidebar-menu li a:hover{
     background:#0B2A66;
     color:white;
 }
 
-.menu li.active a{
+.sidebar-menu li.active a{
     background:#0D47A1;
     color:white;
     border-left:5px solid #42A5F5;
 }
 
-.logout{
+/* FOOTER */
+
+.sidebar-footer{
     padding:20px;
 }
 
@@ -92,19 +108,37 @@ body{
    CONTENIDO
 ========================== */
 
-.content{
+.main-content{
     margin-left:260px;
-    width:100%;
+    width:calc(100% - 260px);
     padding:30px;
+    min-height:100vh;
 }
 
-.topbar{
+.page-header{
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:25px;
+    margin-bottom:30px;
 }
 
+.metric-card{
+    background:white;
+    border-radius:18px;
+    padding:25px;
+    text-align:center;
+    box-shadow:0 4px 15px rgba(0,0,0,.06);
+}
+
+.metric-card h3{
+    font-size:2rem;
+    font-weight:700;
+    margin:0;
+}
+
+.metric-card span{
+    color:#7F8C8D;
+}
 /* ==========================
    KPI CARDS
 ========================== */
@@ -282,32 +316,84 @@ canvas{
    RESPONSIVE
 ========================== */
 
-@media(max-width:992px){
+@media (max-width: 992px) {
 
     .sidebar{
-        width:80px;
+        width:260px;
+        min-width:260px;
+        max-width:260px;
+        left:-260px;
+        transition:0.3s ease;
     }
 
-    .sidebar .logo-area span,
-    .sidebar .menu li a span{
-        display:none;
+    .sidebar.show{
+        left:0;
     }
 
-    .content{
-        margin-left:80px;
+    .main-content{
+        margin-left:0;
+        width:100%;
+    }
+
+    .sidebar-header h3{
+        font-size:1.6rem;
+        white-space:nowrap;
+    }
+
+    .sidebar-header span{
+        white-space:nowrap;
+    }
+
+    .sidebar-menu li a{
+        white-space:nowrap;
     }
 }
 
-@media(max-width:768px){
+@media (max-width: 768px) {
 
-    .content{
+    .main-content{
         padding:15px;
     }
 
-    .topbar{
+    .page-header{
         flex-direction:column;
         align-items:flex-start;
-        gap:10px;
+        gap:15px;
     }
 
+    .card canvas{
+        width:100% !important;
+        height:auto !important;
+    }
+}
+
+/* FORZAR ESPACIO PARA EL SIDEBAR */
+
+.sidebar{
+    width:260px !important;
+}
+
+.main-content{
+    margin-left:260px !important;
+    width:calc(100% - 260px) !important;
+    overflow-x:hidden;
+}
+
+.card{
+    width:100%;
+}
+
+canvas{
+    width:100% !important;
+    max-width:100%;
+}
+
+.row{
+    margin-left:0 !important;
+    margin-right:0 !important;
+}
+
+#graficoAlumno,
+#graficoImpacto{
+    height:300px !important;
 }

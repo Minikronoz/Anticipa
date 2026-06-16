@@ -110,7 +110,10 @@ ALLOWED_DOMAINS = {
 }
 
 def detectar_rol_por_email(email: str) -> int:
-    domain = email.split('@')[1].lower()
+    try:
+        domain = email.split('@')[1].lower()
+    except (IndexError, ValueError):
+        raise HTTPException(status_code=400, detail="Formato de correo inválido.")
     if domain not in ALLOWED_DOMAINS:
         raise HTTPException(
             status_code=400,
@@ -124,7 +127,6 @@ app = FastAPI(
     version="2.0.0"
     
 )
-app.include_router(admin_router, prefix="/admin", tags=["Admin"])
 
 app.add_middleware(
     CORSMiddleware,
@@ -196,7 +198,7 @@ def solicitar_codigo_recuperacion(
     if enviar_codigo_email(usuario.email, codigo, usuario.nombre):
         return {"mensaje": "Código enviado a tu correo electrónico."}
     else:
-        return {"mensaje": f"[DEV] Código generado: {codigo}"}
+        return {"mensaje": "No se pudo enviar el correo. Intenta más tarde."}
 
 
 @app.post("/auth/verificar-codigo", tags=["Autenticación"])
@@ -386,6 +388,10 @@ def obtener_usuario(id_usuario: int, db: Session = Depends(get_db)):
 @app.post("/estudiantes/", response_model=schemas.EstudianteResponse,
           status_code=status.HTTP_201_CREATED, tags=["Estudiantes"])
 def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends(get_db)):
+    if estudiante.curso_id_curso is not None:
+        curso = db.query(models.Curso).filter(models.Curso.id_curso == estudiante.curso_id_curso).first()
+        if not curso:
+            raise HTTPException(status_code=400, detail="El curso no existe.")
     datos = estudiante.model_dump()
     while True:
         codigo = generar_codigo_vinculacion()
@@ -446,6 +452,15 @@ def actualizar_estudiante(
 @app.post("/vinculaciones/", response_model=schemas.VinculacionResponse,
           status_code=status.HTTP_201_CREATED, tags=["Vinculaciones"])
 def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db)):
+    usu = db.query(models.Usuario).filter(models.Usuario.id_usuario == v.usuario_id_usuario).first()
+    if not usu:
+        raise HTTPException(status_code=400, detail="El usuario no existe.")
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == v.id_estudiante).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante no existe.")
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == v.rol_id_rol).first()
+    if not rol:
+        raise HTTPException(status_code=400, detail="El rol no existe.")
     existente = db.query(models.VinculacionHistorial).filter(
         models.VinculacionHistorial.usuario_id_usuario == v.usuario_id_usuario,
         models.VinculacionHistorial.id_estudiante      == v.id_estudiante,
@@ -463,6 +478,12 @@ def crear_vinculacion(v: schemas.VinculacionCreate, db: Session = Depends(get_db
 def vincular_por_codigo(codigo: str, id_usuario: int, rol_id_rol: int = 3, db: Session = Depends(get_db)):
     if not codigo or len(codigo) != 7 or not re.match(r'^[A-Z0-9]+$', codigo.upper()):
         raise HTTPException(status_code=400, detail="Código de vinculación inválido. Debe tener 7 caracteres alfanuméricos.")
+    usu = db.query(models.Usuario).filter(models.Usuario.id_usuario == id_usuario).first()
+    if not usu:
+        raise HTTPException(status_code=400, detail="El usuario no existe.")
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == rol_id_rol).first()
+    if not rol:
+        raise HTTPException(status_code=400, detail="El rol no existe.")
     estudiante = db.query(models.Estudiante).filter(
         models.Estudiante.codigo_vinculacion == codigo.upper()
     ).first()
@@ -494,6 +515,7 @@ def listar_vinculaciones(id_usuario: int, db: Session = Depends(get_db)):
            response_model=schemas.VinculacionResponse, tags=["Vinculaciones"])
 def desvincular(
     id_vinculo: int,
+    id_usuario: int,
     motivo: str = "Desvinculación manual",
     db: Session = Depends(get_db)
 ):
@@ -502,6 +524,8 @@ def desvincular(
     ).first()
     if not v:
         raise HTTPException(status_code=404, detail="Vínculo no encontrado.")
+    if v.usuario_id_usuario != id_usuario:
+        raise HTTPException(status_code=403, detail="No tienes permiso para desvincular este estudiante.")
     if v.fecha_termino:
         raise HTTPException(status_code=409, detail="Este vínculo ya está inactivo.")
     v.fecha_termino = datetime.now(timezone.utc)
@@ -531,6 +555,10 @@ def listar_pictogramas(db: Session = Depends(get_db)):
 @app.post("/catalogo/", response_model=schemas.CatalogoResponse,
           status_code=status.HTTP_201_CREATED, tags=["Catálogo"])
 def crear_catalogo(catalogo: schemas.CatalogoCreate, db: Session = Depends(get_db)):
+    if catalogo.pictograma_id_pictograma is not None:
+        picto = db.query(models.Pictograma).filter(models.Pictograma.id_pictograma == catalogo.pictograma_id_pictograma).first()
+        if not picto:
+            raise HTTPException(status_code=400, detail="El pictograma no existe.")
     nuevo = models.CatalogoActividad(**catalogo.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
@@ -730,6 +758,9 @@ def eliminar_actividad(id_actividad: int, db: Session = Depends(get_db)):
 @app.post("/historial/", response_model=schemas.HistorialResponse,
           status_code=status.HTTP_201_CREATED, tags=["Historial"])
 def registrar_cumplimiento(historial: schemas.HistorialCreate, db: Session = Depends(get_db)):
+    act = db.query(models.Actividad).filter(models.Actividad.id_actividad == historial.actividad_id_actividad).first()
+    if not act:
+        raise HTTPException(status_code=400, detail="La actividad no existe.")
     nuevo = models.HistorialCumplimiento(**historial.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
@@ -748,6 +779,9 @@ def historial_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
 @app.post("/recompensas/", response_model=schemas.RecompensaResponse,
           status_code=status.HTTP_201_CREATED, tags=["Recompensas"])
 def crear_recompensa(recompensa: schemas.RecompensaCreate, db: Session = Depends(get_db)):
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == recompensa.estudiante_id_estudiante).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante no existe.")
     nueva = models.RecompensaDisponible(**recompensa.model_dump())
     db.add(nueva); db.commit(); db.refresh(nueva)
     return nueva
@@ -766,6 +800,9 @@ def listar_recompensas(id_estudiante: int, db: Session = Depends(get_db)):
 @app.post("/estrellas/", response_model=schemas.EstrellaResponse,
           status_code=status.HTTP_201_CREATED, tags=["Estrellas"])
 def registrar_estrellas(estrella: schemas.EstrellaCreate, db: Session = Depends(get_db)):
+    est = db.query(models.Estudiante).filter(models.Estudiante.id_estudiante == estrella.estudiante_id_estudiante).first()
+    if not est:
+        raise HTTPException(status_code=400, detail="El estudiante no existe.")
     nuevo = models.RegistroEstrellaDiaria(**estrella.model_dump())
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
@@ -779,5 +816,10 @@ def listar_estrellas(id_estudiante: int, db: Session = Depends(get_db)):
 
 
 from fastapi.staticfiles import StaticFiles
-app.mount("/admin", StaticFiles(directory="static/admin", html=True), name="admin")
+app.mount(
+    "/panel",
+    StaticFiles(directory="static/admin", html=True),
+    name="panel"
+)
+
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])

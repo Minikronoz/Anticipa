@@ -66,7 +66,8 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
         _estrellas = _totalEstrellas(res[2]);
         _cargando = false;
       });
-    } catch (_) {
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al cargar datos'), backgroundColor: Colors.red));
       setState(() => _cargando = false);
     }
   }
@@ -138,9 +139,11 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     try {
       final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/$id/completar')).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) await _cargarTodo();
+      else if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('No se pudo completar'), backgroundColor: Colors.red));
     } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error al completar actividad'), backgroundColor: Colors.red));
     } finally {
-      setState(() => _completandoIds.remove(id));
+      if (mounted) setState(() => _completandoIds.remove(id));
     }
   }
 
@@ -276,11 +279,15 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   }
 
   Widget _nodoTimeline(Map<String, dynamic> a, int index, int total) {
-    final id = a['id_actividad'] as int;
+    final idRaw = a['id_actividad'];
+    if (idRaw == null) return const SizedBox.shrink();
+    final id = idRaw is int ? idRaw : int.tryParse(idRaw.toString()) ?? 0;
+    if (id == 0) return const SizedBox.shrink();
     final completada = a['es_completada'] == true;
     final completando = _completandoIds.contains(id);
     final picto = _pictoUrl(a['pictograma_id_pictograma']);
-    final hora = (a['hora_inicio'] ?? '').toString().substring(0, 5);
+    final horaRaw = (a['hora_inicio']?.toString() ?? '');
+    final hora = horaRaw.length >= 5 ? horaRaw.substring(0, 5) : '--:--';
 
     final esPrimero = index == 0;
     final esUltimo = index == total - 1;
