@@ -48,7 +48,6 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
   // Default colors (no theme customization for this role)
   static const _bg   = Color(0xFFF5F7FF);
   static const _appB = Color(0xFF061A40);
-  static const _card = Color(0xFFFFFFFF);
   static const _prim = Color(0xFF4F46E5);
   static const _txtP = Color(0xFF061A40);
   static const _txtS = Color(0xFF6B7280);

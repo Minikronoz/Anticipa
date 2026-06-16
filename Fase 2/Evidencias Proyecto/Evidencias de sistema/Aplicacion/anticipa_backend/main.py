@@ -412,8 +412,6 @@ def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
-from sqlalchemy.orm import selectinload
-
 @app.get("/estudiantes/")
 def listar_estudiantes(db: Session = Depends(get_db)):
 
@@ -723,10 +721,10 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
     hoy = datetime.now(CHILE_TZ).date()
 
     if a.fecha_actividad < hoy:
-    raise HTTPException(
-        status_code=400,
-        detail="No se pueden completar actividades de días pasados."
-    )
+        raise HTTPException(
+            status_code=400,
+            detail="No se pueden completar actividades de días pasados."
+        )
 
     if not estaba_completada:
         # Completando: +1 estrella, +1 punto, registrar historial
@@ -810,7 +808,6 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
         if not catalogo:
             raise HTTPException(status_code=400, detail="El catálogo de actividad no existe.")
 
-    nueva_inicio = datos_dict.get('hora_inicio', a.hora_inicio)
     nueva_fin = datos_dict.get('hora_fin', a.hora_fin)
     if nueva_inicio is not None and nueva_fin is not None and nueva_fin <= nueva_inicio:
         raise HTTPException(status_code=400, detail="La hora de fin debe ser mayor que la hora de inicio.")
@@ -1234,75 +1231,6 @@ def descargar_reporte_pdf(id_estudiante: int, db: Session = Depends(get_db)):
         media_type="application/pdf",
         headers={"Content-Disposition": f"inline; filename=reporte_{id_estudiante}.pdf"}
     )
-
-def descargar_reporte_pdf(...):
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
-    estilos = getSampleStyleSheet()
-    contenido = []
-
-    contenido.append(
-        Paragraph(
-            "Reporte Anticipa",
-            estilos["Title"]
-        )
-    )
-
-    contenido.append(Spacer(1,12))
-
-    contenido.append(
-        Paragraph(
-            f"Estudiante: {estudiante.nombre}",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            f"Puntos Totales: {estudiante.puntos_totales}",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            f"Actividades Totales: {total_actividades}",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            f"Actividades Completadas: {completadas}",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            f"Estrellas Ganadas: {total_estrellas}",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            f"Desregulaciones Detectadas: {total_desregulaciones}",
-            estilos["Normal"]
-        )
-    )
-
-    doc.build(contenido)
-
-buffer.seek(0)
-
-return StreamingResponse(
-    buffer,
-    media_type="application/pdf",
-    headers={
-        "Content-Disposition": f"inline; filename=reporte_{id_estudiante}.pdf"
-    }
-)
 
 @app.get("/reportes/detalle-estudiante/{id}")
 def detalle_estudiante(id: int, db: Session = Depends(get_db)):
