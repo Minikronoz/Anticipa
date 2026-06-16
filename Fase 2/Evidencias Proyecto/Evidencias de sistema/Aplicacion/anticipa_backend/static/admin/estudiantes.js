@@ -402,136 +402,68 @@ fill:false
 let graficoAlumno = null;
 let graficoImpacto = null;
 
-async function verEstudiante(id){
+function verEstudiante(id){
 
-try{
-
-const response = await fetch(
-`http://localhost:8000/reportes/detalle-estudiante/${id}`
-);
-
-const alumno = await response.json();
+fetch(`http://localhost:8000/reportes/detalle-estudiante/${id}`)
+.then(res => res.json())
+.then(datos => {
 
 document.getElementById("tituloEstudiante").innerHTML =
-`${alumno.nombre} - ${alumno.curso}`;
+`${datos.nombre} - ${datos.curso}`;
 
-document.getElementById("datoHoy").innerHTML =
-alumno.hoy;
+document.getElementById("datoHoy").innerHTML = datos.hoy;
+document.getElementById("datoSemana").innerHTML = datos.semana;
+document.getElementById("datoMes").innerHTML = datos.mes;
 
-document.getElementById("datoSemana").innerHTML =
-alumno.semana;
+// destruir gráficos si existen
+if(graficoAlumno) graficoAlumno.destroy();
+if(graficoImpacto) graficoImpacto.destroy();
 
-document.getElementById("datoMes").innerHTML =
-alumno.mes;
-
-const datos = alumno.historial;
-
-if(graficoAlumno){
-graficoAlumno.destroy();
-}
-
+// gráfico evolución
 graficoAlumno = new Chart(
 document.getElementById("graficoAlumno"),
 {
 type:"line",
 data:{
-labels:[
-"Ene",
-"Feb",
-"Mar",
-"Abr",
-"May",
-"Jun"
-],
+labels:["Ene","Feb","Mar","Abr","May","Jun"],
 datasets:[{
 label:"Desregulaciones",
-data:datos,
+data:datos.historial,
 borderWidth:3,
 tension:0.3
 }]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false
 }
 }
 );
 
-if(graficoImpacto){
-graficoImpacto.destroy();
-}
-
+// impacto simple (puedes ajustar lógica después)
 graficoImpacto = new Chart(
 document.getElementById("graficoImpacto"),
 {
 type:"bar",
 data:{
-labels:[
-"Inicio",
-"Actual"
-],
+labels:["Antes","Actual"],
 datasets:[{
 label:"Incidentes",
-data:[
-datos[0],
-datos[5]
-]
+data:[datos.historial[0], datos.historial[5]]
 }]
-},
-options:{
-responsive:true,
-maintainAspectRatio:false
 }
 }
 );
 
-let cambio = 0;
-
-if(datos[0] > 0){
-
-cambio = Math.round(
-((datos[5] - datos[0]) / datos[0]) * 100
-);
-
-}
-
-let mensaje = "";
-
-if(cambio < 0){
-
-mensaje =
-`El estudiante presenta una mejora de ${Math.abs(cambio)}% desde el inicio del seguimiento.`;
-
-}
-else if(cambio > 0){
-
-mensaje =
-`Se detecta un aumento de ${cambio}% en las desregulaciones. Se recomienda intervención temprana.`;
-
-}
-else{
-
-mensaje =
-"El estudiante mantiene indicadores estables durante el período analizado.";
-
-}
+// observación automática simple
+let cambio =
+Math.round(((datos.historial[5]-datos.historial[0]) / (datos.historial[0] || 1))*100);
 
 document.getElementById("observacion").innerHTML =
-mensaje;
+cambio < 0
+? `El estudiante ha mejorado un ${Math.abs(cambio)}%`
+: `Se detecta aumento del ${cambio}%`;
 
 new bootstrap.Modal(
 document.getElementById("modalEstudiante")
 ).show();
 
-}
-catch(error){
-
-console.error(error);
-
-alert(
-"No fue posible cargar la información del estudiante."
-);
-
-}
+});
 
 }

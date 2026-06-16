@@ -5,7 +5,7 @@ let datosReporte;
 try{
 
 // FUTURO ENDPOINT FASTAPI
-const response = await fetch("http://localhost:8000/admin/reportes");
+const response = await fetch("http://localhost:8000/reportes/dashboard");
 
 if(!response.ok){
 throw new Error("Sin datos");
@@ -173,7 +173,7 @@ lista.innerHTML += `
 
 });
 // =======================================
-// DESCARGAR PDF
+// DESCARGAR PDF GENERAL
 // =======================================
 
 const btnPdf = document.getElementById("btnPdf");
@@ -182,10 +182,8 @@ if(btnPdf){
 
     btnPdf.addEventListener("click",()=>{
 
-        const idEstudiante = 1;
-
         window.open(
-            `http://localhost:8000/reportes/pdf/${idEstudiante}`,
+            "http://localhost:8000/reportes/pdf-general",
             "_blank"
         );
 

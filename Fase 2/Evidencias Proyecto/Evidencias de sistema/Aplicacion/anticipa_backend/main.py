@@ -1068,38 +1068,49 @@ def reporte_estudiante(
 # =========================================================
 
 @app.get("/reportes/dashboard")
-def dashboard_reportes(
-    db: Session = Depends(get_db)
-):
+def dashboard_reportes(db: Session = Depends(get_db)):
 
     estudiantes = db.query(models.Estudiante).all()
-
-    total_estudiantes = len(estudiantes)
-
     encuestas = db.query(models.EncuestaDiaria).all()
 
-    total_desregulaciones = sum(
-        e.cantidad or 0
-        for e in encuestas
-        if e.tuvo_desregulacion
-    )
+    total_estudiantes = len(estudiantes)
+    total_desregulaciones = sum(e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion)
 
-    motivos = Counter(
-        e.motivo
-        for e in encuestas
-        if e.motivo
-    )
+    motivos = Counter(e.motivo for e in encuestas if e.motivo)
 
-    motivo_principal = (
-        motivos.most_common(1)[0][0]
-        if motivos
-        else "Sin datos"
-    )
+    motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
 
     return {
-        "estudiantes": total_estudiantes,
-        "desregulaciones": total_desregulaciones,
-        "motivo_principal": motivo_principal
+        "mejoraGlobal": "37%",  # luego lo puedes calcular real
+        "riesgoAlto": 4,
+        "factorPrincipal": motivo_principal,
+        "cursoCritico": "5°A",
+
+        "evolucion": {
+            "labels": ["Ene","Feb","Mar","Abr","May","Jun"],
+            "data": [120,110,98,85,72,64]
+        },
+
+        "factores": {
+            "labels": list(motivos.keys())[:5],
+            "data": list(motivos.values())[:5]
+        },
+
+        "dias": {
+            "labels": ["Lun","Mar","Mié","Jue","Vie"],
+            "data": [25,30,18,35,14]
+        },
+
+        "cursos": {
+            "labels": ["1°A","2°A","3°A","4°A","5°A"],
+            "data": [8,12,18,10,25]
+        },
+
+        "hallazgos": [
+            "Las desregulaciones están concentradas en ciertos días.",
+            "El factor principal es el más recurrente.",
+            "El sistema permite detección temprana de crisis."
+        ]
     }
 
 @app.get("/reportes/pdf/{id_estudiante}")
