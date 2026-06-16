@@ -172,5 +172,41 @@ lista.innerHTML += `
 `;
 
 });
+// =======================================
+// DESCARGAR PDF
+// =======================================
 
+const btnPdf = document.getElementById("btnPdf");
+
+if(btnPdf){
+
+    btnPdf.addEventListener("click",()=>{
+
+        const idEstudiante = 1;
+
+        window.open(
+            `http://localhost:8000/reportes/pdf/${idEstudiante}`,
+            "_blank"
+        );
+
+    });
+
+}
+
+
+// =======================================
+// DESCARGAR EXCEL
+// =======================================
+
+const btnExcel = document.getElementById("btnExcel");
+
+if(btnExcel){
+
+    btnExcel.addEventListener("click",()=>{
+
+        alert("Excel próximamente conectado al backend");
+
+    });
+
+}
 });
