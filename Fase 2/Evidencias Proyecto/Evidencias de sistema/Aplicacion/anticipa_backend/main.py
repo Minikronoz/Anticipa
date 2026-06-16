@@ -1324,6 +1324,8 @@ def detalle_estudiante(
 
 
 
+import io
+
 @app.get("/reportes/pdf-general")
 def reporte_general_pdf(db: Session = Depends(get_db)):
 
@@ -1346,10 +1348,10 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
 
     motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
 
-    nombre_archivo = "reporte_general.pdf"
-
-    doc = SimpleDocTemplate(nombre_archivo)
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
     estilos = getSampleStyleSheet()
+
     contenido = []
 
     contenido.append(Paragraph("REPORTE GENERAL ESCUELA", estilos["Title"]))
@@ -1361,8 +1363,12 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
 
     doc.build(contenido)
 
-    return FileResponse(
-        nombre_archivo,
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
         media_type="application/pdf",
-        filename=nombre_archivo
+        headers={
+            "Content-Disposition": "inline; filename=reporte_general.pdf"
+        }
     )
