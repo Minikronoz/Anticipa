@@ -1321,3 +1321,48 @@ def detalle_estudiante(
         "mes": dato_mes,
         "historial": historial
     }
+
+
+
+@app.get("/reportes/pdf-general")
+def reporte_general_pdf(db: Session = Depends(get_db)):
+
+    estudiantes = db.query(models.Estudiante).all()
+    encuestas = db.query(models.EncuestaDiaria).all()
+
+    total_estudiantes = len(estudiantes)
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    motivos = Counter(
+        e.motivo
+        for e in encuestas
+        if e.motivo
+    )
+
+    motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
+
+    nombre_archivo = "reporte_general.pdf"
+
+    doc = SimpleDocTemplate(nombre_archivo)
+    estilos = getSampleStyleSheet()
+    contenido = []
+
+    contenido.append(Paragraph("REPORTE GENERAL ESCUELA", estilos["Title"]))
+    contenido.append(Spacer(1, 12))
+
+    contenido.append(Paragraph(f"Total estudiantes: {total_estudiantes}", estilos["Normal"]))
+    contenido.append(Paragraph(f"Total desregulaciones: {total_desregulaciones}", estilos["Normal"]))
+    contenido.append(Paragraph(f"Motivo principal: {motivo_principal}", estilos["Normal"]))
+
+    doc.build(contenido)
+
+    return FileResponse(
+        nombre_archivo,
+        media_type="application/pdf",
+        filename=nombre_archivo
+    )

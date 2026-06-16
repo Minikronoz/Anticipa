@@ -11,7 +11,7 @@ function cargarSidebar() {
 
         <div class="sidebar-header">
             <h3>🧩 Anticipa</h3>
-            <span>Panel Administrativo</span>
+            <span>Colegio Sagrado Corazón</span>
         </div>
 
         <ul class="sidebar-menu">
