@@ -9,16 +9,18 @@ import string
 import re
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone, date
-CHILE_TZ = timezone(timedelta(hours=-4))
+from zoneinfo import ZoneInfo
+
+CHILE_TZ = ZoneInfo("America/Santiago")
 from dotenv import load_dotenv
 from pathlib import Path
 import os
 from admin import router as admin_router
 from collections import Counter
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
-
+import io
 
 
 
@@ -583,7 +585,7 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
     alerta_minutos = datos.pop('alerta_minutos', None)
 
     hoy = datetime.now(CHILE_TZ).date()
-    if actividad.fecha_actividad < hoy:
+    if str(actividad.fecha_actividad) < str(hoy):
         raise HTTPException(status_code=400, detail="No se pueden crear actividades en fechas pasadas.")
     ahora = datetime.now(CHILE_TZ).time()
     if actividad.fecha_actividad == hoy and actividad.hora_inicio < ahora:
@@ -673,8 +675,10 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
     hoy = datetime.now(CHILE_TZ).date()
 
     if a.fecha_actividad < hoy:
-        db.rollback()
-        raise HTTPException(status_code=400, detail="No se pueden completar actividades de días pasados.")
+    raise HTTPException(
+        status_code=400,
+        detail="No se pueden completar actividades de días pasados."
+    )
 
     if not estaba_completada:
         # Completando: +1 estrella, +1 punto, registrar historial
@@ -1159,9 +1163,8 @@ def descargar_reporte_pdf(
         if e.tuvo_desregulacion
     )
 
-    nombre_archivo = f"reporte_{id_estudiante}.pdf"
-
-    doc = SimpleDocTemplate(nombre_archivo)
+    buffer = io.BytesIO()
+doc = SimpleDocTemplate(buffer)
 
     estilos = getSampleStyleSheet()
 
@@ -1220,11 +1223,15 @@ def descargar_reporte_pdf(
 
     doc.build(contenido)
 
-    return FileResponse(
-        nombre_archivo,
-        media_type="application/pdf",
-        filename=nombre_archivo
-    )
+buffer.seek(0)
+
+return StreamingResponse(
+    buffer,
+    media_type="application/pdf",
+    headers={
+        "Content-Disposition": f"inline; filename=reporte_{id_estudiante}.pdf"
+    }
+)
 
 @app.get("/reportes/detalle-estudiante/{id_estudiante}")
 def detalle_estudiante(
@@ -1324,7 +1331,7 @@ def detalle_estudiante(
 
 
 
-import io
+
 
 @app.get("/reportes/pdf-general")
 def reporte_general_pdf(db: Session = Depends(get_db)):
