@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
 import '../theme/app_theme.dart';
+import 'theme_settings_screen.dart';
 
 // ═══════════════════════════════════════════════════════════
 // PANEL ESTUDIANTE — Modo kiosko simplificado
@@ -14,6 +15,7 @@ class PanelEstudiante extends StatefulWidget {
   final String rol;
   final String nombreEstudiante;
   final ThemeConfig themeConfig;
+  final Function(ThemeConfig) onThemeChanged;
 
   const PanelEstudiante({
     super.key,
@@ -22,6 +24,7 @@ class PanelEstudiante extends StatefulWidget {
     required this.rol,
     required this.nombreEstudiante,
     required this.themeConfig,
+    required this.onThemeChanged,
   });
 
   @override
@@ -122,11 +125,8 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
   }
 
   void _moverSemana(int direccion) {
-    final hoy = DateTime.now();
-    final nuevaFecha = _fechaSeleccionada.add(Duration(days: 7 * direccion));
-    if (nuevaFecha.isBefore(DateTime(hoy.year, hoy.month, hoy.day))) return;
     setState(() {
-      _fechaSeleccionada = nuevaFecha;
+      _fechaSeleccionada = _fechaSeleccionada.add(Duration(days: 7 * direccion));
     });
     _cargarTodo();
   }
@@ -202,6 +202,21 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           tooltip: 'Cerrar sesión',
           onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
         ),
+        IconButton(
+          icon: const Icon(Icons.palette, color: Colors.white70, size: 22),
+          tooltip: 'Personalizar colores',
+          onPressed: () async {
+            final result = await Navigator.push<ThemeConfig>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ThemeSettingsScreen(currentConfig: widget.themeConfig),
+              ),
+            );
+            if (result != null && mounted) {
+              widget.onThemeChanged(result);
+            }
+          },
+        ),
       ]),
     );
   }
@@ -238,15 +253,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
               final df = d.toIso8601String().split('T')[0];
               final seleccionado = df == _fechaFormateada;
               final esHoy = df == hoy;
-              bool _esFechaPasada(DateTime d) {
-    final hoy = DateTime.now();
-    final hoyFmt = DateTime(hoy.year, hoy.month, hoy.day);
-    final dFmt = DateTime(d.year, d.month, d.day);
-    return dFmt.isBefore(hoyFmt);
-  }
 
               return GestureDetector(
-                onTap: _esFechaPasada(d) ? null : () => _seleccionarDia(d),
+                onTap: () => _seleccionarDia(d),
                 child: Container(
                   width: 56,
                   margin: const EdgeInsets.symmetric(horizontal: 3),
