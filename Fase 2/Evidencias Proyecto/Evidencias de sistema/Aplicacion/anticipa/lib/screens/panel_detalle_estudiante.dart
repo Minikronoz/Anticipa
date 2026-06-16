@@ -9,6 +9,7 @@ import 'dart:convert';
 import '../constants.dart';
 import '../theme/app_theme.dart';
 import 'reporte_estudiante_screen.dart';
+import 'recompensas_screen.dart';
 
 class PanelDetalleEstudiante extends StatefulWidget {
   final int idEstudiante;
@@ -1163,6 +1164,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           Row(children: [
             Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.emoji_events, size: 18), label: const Text('Recompensas'))),
             const SizedBox(width: 12),
+
             // aca hice un cambio para hacer funcionar boton reportes 
             Expanded(
     child: OutlinedButton.icon(
