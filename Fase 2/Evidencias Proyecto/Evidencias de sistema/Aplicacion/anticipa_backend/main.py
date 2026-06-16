@@ -9,6 +9,7 @@ import string
 import re
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone, date
+CHILE_TZ = timezone(timedelta(hours=-4))
 from dotenv import load_dotenv
 from pathlib import Path
 import os
@@ -581,10 +582,10 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
     datos = actividad.model_dump()
     alerta_minutos = datos.pop('alerta_minutos', None)
 
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now(CHILE_TZ).date()
     if actividad.fecha_actividad < hoy:
         raise HTTPException(status_code=400, detail="No se pueden crear actividades en fechas pasadas.")
-    ahora = datetime.utcnow().time()
+    ahora = datetime.now(CHILE_TZ).time()
     if actividad.fecha_actividad == hoy and actividad.hora_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden crear actividades con hora en el pasado.")
 
@@ -669,7 +670,7 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
 
     estaba_completada = a.es_completada
     a.es_completada = not a.es_completada
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now(CHILE_TZ).date()
 
     if not estaba_completada:
         # Completando: +1 estrella, +1 punto, registrar historial
@@ -728,10 +729,10 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
     nueva_fecha = datos_dict.get('fecha_actividad', a.fecha_actividad)
     nueva_inicio = datos_dict.get('hora_inicio', a.hora_inicio)
 
-    hoy = datetime.utcnow().date()
+    hoy = datetime.now(CHILE_TZ).date()
     if nueva_fecha < hoy:
         raise HTTPException(status_code=400, detail="No se pueden mover actividades a fechas pasadas.")
-    ahora = datetime.utcnow().time()
+    ahora = datetime.now(CHILE_TZ).time()
     if nueva_fecha == hoy and nueva_inicio is not None and nueva_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden asignar horas en el pasado.")
 

@@ -25,3 +25,4 @@ websockets==16.0
 passlib==1.7.4
 bcrypt==4.2.1
 yagmail==0.16.0
+reportlab==4.2.5

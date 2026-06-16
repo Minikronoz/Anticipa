@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator, field_serializer, ValidationInfo
 from typing import Optional
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timezone, timedelta
+CHILE_TZ = timezone(timedelta(hours=-4))
 from models import TipoSonidoEnum, MinutosAnticipEnum
 import re
 
@@ -150,7 +151,7 @@ class ActividadCreate(ConfigBase):
     @field_validator('fecha_actividad')
     @classmethod
     def fecha_no_pasada(cls, v: date) -> date:
-        if v < datetime.utcnow().date():
+        if v < datetime.now(CHILE_TZ).date():
             raise ValueError('No se permiten fechas pasadas')
         return v
 
@@ -187,7 +188,7 @@ class ActividadUpdate(ConfigBase):
     @field_validator('fecha_actividad')
     @classmethod
     def fecha_no_pasada(cls, v: Optional[date]) -> Optional[date]:
-        if v is not None and v < datetime.utcnow().date():
+        if v is not None and v < datetime.now(CHILE_TZ).date():
             raise ValueError('No se permiten fechas pasadas')
         return v
 
