@@ -1210,3 +1210,99 @@ def descargar_reporte_pdf(
         media_type="application/pdf",
         filename=nombre_archivo
     )
+
+@app.get("/reportes/detalle-estudiante/{id_estudiante}")
+def detalle_estudiante(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    hoy = date.today()
+
+    # Desregulaciones hoy
+    encuesta_hoy = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.fecha == hoy
+    ).first()
+
+    dato_hoy = (
+        encuesta_hoy.cantidad
+        if encuesta_hoy and encuesta_hoy.tuvo_desregulacion
+        else 0
+    )
+
+    # Últimos 7 días
+    semana_inicio = hoy - timedelta(days=7)
+
+    encuestas_semana = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.fecha >= semana_inicio
+    ).all()
+
+    dato_semana = sum(
+        e.cantidad or 0
+        for e in encuestas_semana
+        if e.tuvo_desregulacion
+    )
+
+    # Últimos 30 días
+    mes_inicio = hoy - timedelta(days=30)
+
+    encuestas_mes = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.fecha >= mes_inicio
+    ).all()
+
+    dato_mes = sum(
+        e.cantidad or 0
+        for e in encuestas_mes
+        if e.tuvo_desregulacion
+    )
+
+    # Evolución mensual
+    historial = []
+
+    for i in range(5, -1, -1):
+
+        inicio_mes = date(
+            hoy.year,
+            hoy.month,
+            1
+        ) - timedelta(days=i * 30)
+
+        fin_mes = inicio_mes + timedelta(days=30)
+
+        total = sum(
+            e.cantidad or 0
+            for e in db.query(models.EncuestaDiaria).filter(
+                models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+                models.EncuestaDiaria.fecha >= inicio_mes,
+                models.EncuestaDiaria.fecha < fin_mes
+            ).all()
+            if e.tuvo_desregulacion
+        )
+
+        historial.append(total)
+
+    return {
+        "nombre": estudiante.nombre,
+        "curso": (
+            f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
+            if estudiante.curso_r
+            else ""
+        ),
+        "hoy": dato_hoy,
+        "semana": dato_semana,
+        "mes": dato_mes,
+        "historial": historial
+    }
