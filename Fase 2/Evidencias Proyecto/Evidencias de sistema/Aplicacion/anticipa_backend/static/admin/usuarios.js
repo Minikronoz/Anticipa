@@ -119,27 +119,30 @@ function renderTabla(lista) {
                 )}
             </td>
 
-            <td>
-                ${usuario.curso_id_curso || '-'}
-            </td>
 
             <td>
 
-                <button
-                    class="btn btn-sm btn-outline-primary me-2"
-                    onclick="abrirEditar(${usuario.id_usuario})">
+<div class="d-flex gap-2">
 
-                    <i class="fas fa-pen"></i>
+    <button
+        class="btn btn-soft-primary btn-sm shadow-sm"
+        onclick="abrirEditar(${usuario.id_usuario})"
+        title="Editar usuario">
 
-                </button>
+        <i class="fas fa-pen"></i>
 
-                <button
-                    class="btn btn-sm btn-outline-danger"
-                    onclick="eliminarUsuario(${usuario.id_usuario})">
+    </button>
 
-                    <i class="fas fa-trash"></i>
+    <button
+        class="btn btn-soft-danger btn-sm shadow-sm"
+        onclick="eliminarUsuario(${usuario.id_usuario})"
+        title="Eliminar usuario">
 
-                </button>
+        <i class="fas fa-trash"></i>
+
+    </button>
+
+</div>
 
             </td>
 
