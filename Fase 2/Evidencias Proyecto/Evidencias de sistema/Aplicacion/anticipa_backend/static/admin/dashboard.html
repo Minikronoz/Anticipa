@@ -16,66 +16,7 @@
 <div class="wrapper">
 
     <!-- SIDEBAR -->
-<aside class="sidebar">
-
-    <div class="sidebar-header">
-        <h3>🧩 Anticipa</h3>
-        <span>Administración</span>
-    </div>
-
-    <ul class="sidebar-menu">
-
-        <li>
-            <a href="dashboard.html">
-                <i class="bi bi-speedometer2"></i>
-                Dashboard
-            </a>
-        </li>
-
-        <li class="active">
-            <a href="usuarios.html">
-                <i class="bi bi-people-fill"></i>
-                Gestión Usuarios
-            </a>
-        </li>
-
-        <li>
-            <a href="estudiantes.html">
-                <i class="bi bi-person-vcard"></i>
-                Estudiantes
-            </a>
-        </li>
-
-        <li>
-            <a href="desregulaciones.html">
-                <i class="bi bi-graph-up-arrow"></i>
-                Desregulaciones
-            </a>
-        </li>
-
-        <li>
-            <a href="reportes.html">
-                <i class="bi bi-file-earmark-bar-graph"></i>
-                Reportes
-            </a>
-        </li>
-
-    </ul>
-
-    <div class="sidebar-footer">
-
-        <button
-            class="btn btn-danger w-100"
-            onclick="logout()">
-
-            <i class="bi bi-box-arrow-right"></i>
-            Cerrar Sesión
-
-        </button>
-
-    </div>
-
-</aside>
+<div id="sidebarContainer"></div>
 
     <!-- CONTENIDO -->
     <main class="main-content">
@@ -304,7 +245,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
+<script src="sidebar.js"></script>
 <script src="app.js"></script>
 <script src="charts.js"></script>
 
