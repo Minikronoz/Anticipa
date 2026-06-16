@@ -412,10 +412,58 @@ def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
-@app.get("/estudiantes/", response_model=list[schemas.EstudianteResponse], tags=["Estudiantes"])
-def listar_estudiantes(db: Session = Depends(get_db)):
-    return db.query(models.Estudiante).all()
+from sqlalchemy.orm import selectinload
 
+@app.get("/estudiantes/")
+def listar_estudiantes(db: Session = Depends(get_db)):
+
+    estudiantes = db.query(models.Estudiante).options(
+        selectinload(models.Estudiante.curso_r)
+    ).all()
+
+    resultado = []
+
+    for e in estudiantes:
+
+        # =========================
+        # ESTADO (desde BD si existe, si no se calcula)
+        # =========================
+        if e.estado:
+            estado = e.estado
+        else:
+            if e.puntos_totales >= 20:
+                estado = "Mejorando"
+            elif e.puntos_totales >= 10:
+                estado = "Estable"
+            else:
+                estado = "Riesgo"
+
+        # =========================
+        # DIAGNÓSTICO (desde BD)
+        # =========================
+        diagnostico = e.diagnostico if e.diagnostico else "TEA"
+
+        # =========================
+        # SEMANA (temporal aún)
+        # =========================
+        semana = 0
+
+        resultado.append({
+            "id_estudiante": e.id_estudiante,
+            "nombre": e.nombre,
+            "puntos_totales": e.puntos_totales,
+
+            "diagnostico": diagnostico,
+            "estado": estado,
+            "semana": semana,
+
+            "curso_r": {
+                "nivel_academico": e.curso_r.nivel_academico if e.curso_r else "",
+                "letra_academica": e.curso_r.letra_academica if e.curso_r else ""
+            } if e.curso_r else None
+        })
+
+    return resultado
 @app.get("/estudiantes/{id_estudiante}", response_model=schemas.EstudianteResponse, tags=["Estudiantes"])
 def obtener_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
     e = db.query(models.Estudiante).filter(
@@ -1118,20 +1166,14 @@ def dashboard_reportes(db: Session = Depends(get_db)):
     }
 
 @app.get("/reportes/pdf/{id_estudiante}")
-def descargar_reporte_pdf(
-    id_estudiante: int,
-    db: Session = Depends(get_db)
-):
+def descargar_reporte_pdf(id_estudiante: int, db: Session = Depends(get_db)):
 
     estudiante = db.query(models.Estudiante).filter(
         models.Estudiante.id_estudiante == id_estudiante
     ).first()
 
     if not estudiante:
-        raise HTTPException(
-            status_code=404,
-            detail="Estudiante no encontrado"
-        )
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
 
     actividades = db.query(models.Actividad).filter(
         models.Actividad.estudiante_id_estudiante == id_estudiante
@@ -1146,28 +1188,57 @@ def descargar_reporte_pdf(
     ).all()
 
     total_actividades = len(actividades)
-
-    completadas = len([
-        a for a in actividades
-        if a.es_completada
-    ])
-
-    total_estrellas = sum(
-        e.estrellas_ganadas
-        for e in estrellas
-    )
-
-    total_desregulaciones = sum(
-        e.cantidad or 0
-        for e in encuestas
-        if e.tuvo_desregulacion
-    )
+    completadas = sum(1 for a in actividades if a.es_completada)
+    total_estrellas = sum(e.estrellas_ganadas for e in estrellas)
+    total_desregulaciones = sum(e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion)
 
     buffer = io.BytesIO()
-doc = SimpleDocTemplate(buffer)
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
 
+    content = []
+
+    content.append(Paragraph("REPORTE ESTUDIANTE", styles["Title"]))
+    content.append(Spacer(1, 12))
+
+    data = [
+        ["Campo", "Valor"],
+        ["Nombre", estudiante.nombre],
+        ["Curso", estudiante.curso_r.nivel_academico + estudiante.curso_r.letra_academica if estudiante.curso_r else ""],
+        ["Puntos Totales", str(estudiante.puntos_totales)],
+        ["Actividades Totales", str(total_actividades)],
+        ["Actividades Completadas", str(completadas)],
+        ["Estrellas Ganadas", str(total_estrellas)],
+        ["Desregulaciones", str(total_desregulaciones)],
+    ]
+
+    table = Table(data, colWidths=[200, 300])
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F4E79")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("PADDING", (0, 0), (-1, -1), 6),
+    ]))
+
+    content.append(table)
+
+    doc.build(content)
+
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=reporte_{id_estudiante}.pdf"}
+    )
+
+def descargar_reporte_pdf(...):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
     estilos = getSampleStyleSheet()
-
     contenido = []
 
     contenido.append(
@@ -1233,14 +1304,11 @@ return StreamingResponse(
     }
 )
 
-@app.get("/reportes/detalle-estudiante/{id_estudiante}")
-def detalle_estudiante(
-    id_estudiante: int,
-    db: Session = Depends(get_db)
-):
+@app.get("/reportes/detalle-estudiante/{id}")
+def detalle_estudiante(id: int, db: Session = Depends(get_db)):
 
     estudiante = db.query(models.Estudiante).filter(
-        models.Estudiante.id_estudiante == id_estudiante
+        models.Estudiante.id_estudiante == id
     ).first()
 
     if not estudiante:
@@ -1253,7 +1321,7 @@ def detalle_estudiante(
 
     # Desregulaciones hoy
     encuesta_hoy = db.query(models.EncuestaDiaria).filter(
-        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
         models.EncuestaDiaria.fecha == hoy
     ).first()
 
@@ -1267,7 +1335,7 @@ def detalle_estudiante(
     semana_inicio = hoy - timedelta(days=7)
 
     encuestas_semana = db.query(models.EncuestaDiaria).filter(
-        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
         models.EncuestaDiaria.fecha >= semana_inicio
     ).all()
 
@@ -1281,7 +1349,7 @@ def detalle_estudiante(
     mes_inicio = hoy - timedelta(days=30)
 
     encuestas_mes = db.query(models.EncuestaDiaria).filter(
-        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
         models.EncuestaDiaria.fecha >= mes_inicio
     ).all()
 
@@ -1307,7 +1375,7 @@ def detalle_estudiante(
         total = sum(
             e.cantidad or 0
             for e in db.query(models.EncuestaDiaria).filter(
-                models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+                models.EncuestaDiaria.estudiante_id_estudiante == id,
                 models.EncuestaDiaria.fecha >= inicio_mes,
                 models.EncuestaDiaria.fecha < fin_mes
             ).all()
@@ -1330,9 +1398,6 @@ def detalle_estudiante(
     }
 
 
-
-
-
 @app.get("/reportes/pdf-general")
 def reporte_general_pdf(db: Session = Depends(get_db)):
 
@@ -1342,15 +1407,11 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     total_estudiantes = len(estudiantes)
 
     total_desregulaciones = sum(
-        e.cantidad or 0
-        for e in encuestas
-        if e.tuvo_desregulacion
+        e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion
     )
 
     motivos = Counter(
-        e.motivo
-        for e in encuestas
-        if e.motivo
+        e.motivo for e in encuestas if e.motivo
     )
 
     motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
@@ -1358,7 +1419,6 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     buffer = io.BytesIO()
     doc = SimpleDocTemplate(buffer)
     estilos = getSampleStyleSheet()
-
     contenido = []
 
     contenido.append(Paragraph("REPORTE GENERAL ESCUELA", estilos["Title"]))
@@ -1369,7 +1429,6 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     contenido.append(Paragraph(f"Motivo principal: {motivo_principal}", estilos["Normal"]))
 
     doc.build(contenido)
-
     buffer.seek(0)
 
     return StreamingResponse(
@@ -1379,3 +1438,5 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
             "Content-Disposition": "inline; filename=reporte_general.pdf"
         }
     )
+
+

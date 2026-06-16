@@ -236,3 +236,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("ordenarPor").addEventListener("change", aplicarFiltros);
 
 });
+
+
