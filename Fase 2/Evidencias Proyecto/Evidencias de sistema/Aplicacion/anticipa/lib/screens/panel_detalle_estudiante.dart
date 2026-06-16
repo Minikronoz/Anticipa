@@ -1338,6 +1338,15 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
             child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 SizedBox(width: 50, child: Text(hora, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.primary))),
+                Text(
+                  a['usuario_rol'] == 'profesor'
+                      ? ' 🎓'
+                      : a['usuario_rol'] == 'apoderado'
+                          ? ' 👤'
+                          : '',
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(width: 4),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Container(

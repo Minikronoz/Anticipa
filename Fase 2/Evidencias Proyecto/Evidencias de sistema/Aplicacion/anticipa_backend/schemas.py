@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator, field_serializer, ValidationInfo
 from typing import Optional
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from models import TipoSonidoEnum, MinutosAnticipEnum
 import re
 
@@ -150,7 +150,7 @@ class ActividadCreate(ConfigBase):
     @field_validator('fecha_actividad')
     @classmethod
     def fecha_no_pasada(cls, v: date) -> date:
-        if v < date.today():
+        if v < datetime.utcnow().date():
             raise ValueError('No se permiten fechas pasadas')
         return v
 
@@ -168,12 +168,13 @@ class ActividadResponse(ConfigBase):
     usuario_id_usuario:             int
     pictograma_id_pictograma:       Optional[int]
     catalogo_actividad_id_catalogo: Optional[int]
-    nombre_tarea:                   str
+    nombre_tarea:                  str
     hora_inicio:                    time
-    hora_fin:                       time
-    es_completada:                  bool
-    fecha_actividad:                date
-    fecha_creacion:                 datetime
+    hora_fin:                      time
+    es_completada:                 bool
+    fecha_actividad:               date
+    fecha_creacion:                datetime
+    usuario_rol:                   Optional[str] = None
 
 class ActividadUpdate(ConfigBase):
     nombre_tarea:                   Optional[str]  = None
@@ -186,7 +187,7 @@ class ActividadUpdate(ConfigBase):
     @field_validator('fecha_actividad')
     @classmethod
     def fecha_no_pasada(cls, v: Optional[date]) -> Optional[date]:
-        if v is not None and v < date.today():
+        if v is not None and v < datetime.utcnow().date():
             raise ValueError('No se permiten fechas pasadas')
         return v
 
