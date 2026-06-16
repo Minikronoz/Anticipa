@@ -3,6 +3,29 @@ const API = 'https://anticipa.onrender.com';
 let usuarios = [];
 
 // =========================
+// DOMINIOS
+// =========================
+
+function actualizarDominio() {
+
+    const dominio =
+        document.getElementById(
+            "nuevoDominio"
+        );
+
+    const preview =
+        document.getElementById(
+            "dominioPreview"
+        );
+
+    if(!dominio || !preview){
+        return;
+    }
+
+    preview.textContent =
+        dominio.value;
+}
+// =========================
 // ROLES
 // =========================
 
@@ -227,10 +250,18 @@ async function crearUsuario() {
                 'nuevoNombre'
             ).value.trim();
 
-        const email =
-            document.getElementById(
-                'nuevoEmail'
-            ).value.trim();
+        const usuarioEmail =
+    document.getElementById(
+        'nuevoEmail'
+    ).value.trim();
+
+const dominio =
+    document.getElementById(
+        'nuevoDominio'
+    ).value;
+
+const email =
+    usuarioEmail + dominio;
 
         const password =
             document.getElementById(
@@ -499,5 +530,72 @@ document.addEventListener(
 
         cargarUsuarios();
 
+        const dominio =
+            document.getElementById(
+                "nuevoDominio"
+            );
+
+        const rol =
+            document.getElementById(
+                "nuevoRol"
+            );
+
+        if(dominio){
+
+            dominio.addEventListener(
+                "change",
+                actualizarDominio
+            );
+        }
+
+        if(rol){
+
+            rol.addEventListener(
+                "change",
+                sincronizarDominioRol
+            );
+        }
+
+        actualizarDominio();
+        sincronizarDominioRol();
+
     }
 );
+
+function sincronizarDominioRol(){
+
+    const rol =
+        document.getElementById(
+            "nuevoRol"
+        ).value;
+
+    const dominio =
+        document.getElementById(
+            "nuevoDominio"
+        );
+
+    switch(Number(rol)){
+
+        case 1:
+            dominio.value =
+                "@admin.com";
+            break;
+
+        case 2:
+            dominio.value =
+                "@profesor.com";
+            break;
+
+        case 3:
+            dominio.value =
+                "@tutor.com";
+            break;
+
+        case 4:
+            dominio.value =
+                "@estudiante.com";
+            break;
+    }
+
+    actualizarDominio();
+}
