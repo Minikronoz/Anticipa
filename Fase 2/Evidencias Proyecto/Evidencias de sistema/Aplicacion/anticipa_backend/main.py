@@ -13,6 +13,10 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 from admin import router as admin_router
+from collections import Counter
+from fastapi.responses import FileResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
 
 
 
@@ -823,3 +827,367 @@ app.mount(
 )
 
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+
+from collections import Counter
+
+# =========================================================
+# ENCUESTA DIARIA APODERADO
+# =========================================================
+
+@app.post(
+    "/encuestas/",
+    response_model=schemas.EncuestaDiariaResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Encuestas"]
+)
+def crear_encuesta(
+    encuesta: schemas.EncuestaDiariaCreate,
+    db: Session = Depends(get_db)
+):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == encuesta.estudiante_id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    hoy = date.today()
+
+    encuesta_existente = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == encuesta.estudiante_id_estudiante,
+        models.EncuestaDiaria.fecha == hoy
+    ).first()
+
+    if encuesta_existente:
+        raise HTTPException(
+            status_code=400,
+            detail="Ya existe una encuesta registrada para hoy."
+        )
+
+    nueva = models.EncuestaDiaria(**encuesta.model_dump())
+
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+
+    return nueva
+
+
+@app.get(
+    "/encuestas/estudiante/{id_estudiante}",
+    response_model=list[schemas.EncuestaDiariaResponse],
+    tags=["Encuestas"]
+)
+def obtener_encuestas_estudiante(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    return db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).order_by(
+        models.EncuestaDiaria.fecha.desc()
+    ).all()
+
+
+@app.get(
+    "/encuestas/verificar/{id_estudiante}",
+    tags=["Encuestas"]
+)
+def verificar_encuesta_hoy(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    hoy = date.today()
+
+    encuesta = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.fecha == hoy
+    ).first()
+
+    return {
+        "respondida": encuesta is not None
+    }
+
+
+@app.get(
+    "/encuestas/resumen/{id_estudiante}",
+    tags=["Encuestas"]
+)
+def resumen_desregulaciones(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    total_encuestas = len(encuestas)
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    dias_con_desregulacion = sum(
+        1
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    return {
+        "total_encuestas": total_encuestas,
+        "dias_con_desregulacion": dias_con_desregulacion,
+        "total_desregulaciones": total_desregulaciones
+    }
+
+
+@app.get(
+    "/encuestas/motivos/{id_estudiante}",
+    tags=["Encuestas"]
+)
+def motivos_frecuentes(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.tuvo_desregulacion == True
+    ).all()
+
+    motivos = [
+        e.motivo
+        for e in encuestas
+        if e.motivo
+    ]
+
+    contador = Counter(motivos)
+
+    return contador.most_common()
+
+
+# =========================================================
+# REPORTE ESTUDIANTE
+# =========================================================
+
+@app.get("/reportes/estudiante/{id_estudiante}")
+def reporte_estudiante(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    actividades = db.query(models.Actividad).filter(
+        models.Actividad.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    estrellas = db.query(models.RegistroEstrellaDiaria).filter(
+        models.RegistroEstrellaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    recompensas = db.query(models.RecompensaDisponible).filter(
+        models.RecompensaDisponible.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    total_actividades = len(actividades)
+
+    completadas = len([
+        a for a in actividades
+        if a.es_completada
+    ])
+
+    total_estrellas = sum(
+        e.estrellas_ganadas
+        for e in estrellas
+    )
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    return {
+        "estudiante": estudiante.nombre,
+        "curso": estudiante.curso_r.nivel_academico if estudiante.curso_r else "",
+        "puntos_totales": estudiante.puntos_totales,
+        "actividades_totales": total_actividades,
+        "actividades_completadas": completadas,
+        "estrellas": total_estrellas,
+        "desregulaciones": total_desregulaciones,
+        "recompensas": len(recompensas)
+    }
+
+
+# =========================================================
+# DASHBOARD REPORTES ADMIN
+# =========================================================
+
+@app.get("/reportes/dashboard")
+def dashboard_reportes(
+    db: Session = Depends(get_db)
+):
+
+    estudiantes = db.query(models.Estudiante).all()
+
+    total_estudiantes = len(estudiantes)
+
+    encuestas = db.query(models.EncuestaDiaria).all()
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    motivos = Counter(
+        e.motivo
+        for e in encuestas
+        if e.motivo
+    )
+
+    motivo_principal = (
+        motivos.most_common(1)[0][0]
+        if motivos
+        else "Sin datos"
+    )
+
+    return {
+        "estudiantes": total_estudiantes,
+        "desregulaciones": total_desregulaciones,
+        "motivo_principal": motivo_principal
+    }
+
+@app.get("/reportes/pdf/{id_estudiante}")
+def descargar_reporte_pdf(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    actividades = db.query(models.Actividad).filter(
+        models.Actividad.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    estrellas = db.query(models.RegistroEstrellaDiaria).filter(
+        models.RegistroEstrellaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    total_actividades = len(actividades)
+
+    completadas = len([
+        a for a in actividades
+        if a.es_completada
+    ])
+
+    total_estrellas = sum(
+        e.estrellas_ganadas
+        for e in estrellas
+    )
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    nombre_archivo = f"reporte_{id_estudiante}.pdf"
+
+    doc = SimpleDocTemplate(nombre_archivo)
+
+    estilos = getSampleStyleSheet()
+
+    contenido = []
+
+    contenido.append(
+        Paragraph(
+            "Reporte Anticipa",
+            estilos["Title"]
+        )
+    )
+
+    contenido.append(Spacer(1,12))
+
+    contenido.append(
+        Paragraph(
+            f"Estudiante: {estudiante.nombre}",
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            f"Puntos Totales: {estudiante.puntos_totales}",
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            f"Actividades Totales: {total_actividades}",
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            f"Actividades Completadas: {completadas}",
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            f"Estrellas Ganadas: {total_estrellas}",
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            f"Desregulaciones Detectadas: {total_desregulaciones}",
+            estilos["Normal"]
+        )
+    )
+
+    doc.build(contenido)
+
+    return FileResponse(
+        nombre_archivo,
+        media_type="application/pdf",
+        filename=nombre_archivo
+    )

@@ -302,3 +302,25 @@ class CambiarPasswordRequest(BaseModel):
     nueva_password: str
 
 
+# ENCUESTA DIARIA
+
+class EncuestaDiariaCreate(ConfigBase):
+    estudiante_id_estudiante: int
+    tuvo_desregulacion: bool
+    cantidad: int | None = None
+    motivo: str | None = None
+    otro_motivo: str | None = None
+    observacion: str | None = None
+
+
+class EncuestaDiariaResponse(ConfigBase):
+    id_encuesta: int
+    estudiante_id_estudiante: int
+    fecha: date
+    tuvo_desregulacion: bool
+    cantidad: int | None
+    motivo: str | None
+    otro_motivo: str | None
+    observacion: str | None
+
+    
