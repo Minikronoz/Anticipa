@@ -1162,8 +1162,22 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           _header(),
           const SizedBox(height: 12),
           Row(children: [
-            Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.emoji_events, size: 18), label: const Text('Recompensas'))),
+            // aca 
+            Expanded(  child: OutlinedButton.icon(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => RecompensasScreen(
+            idEstudiante: widget.idEstudiante,
+            nombreEstudiante: widget.nombreEstudiante,
+          ),
+        ),
+      );
+    },
+            icon: const Icon(Icons.emoji_events, size: 18), label: const Text('Recompensas'))),
             const SizedBox(width: 12),
+            // cambio para configurar el boton recompensas 
 
             // aca hice un cambio para hacer funcionar boton reportes 
             Expanded(
