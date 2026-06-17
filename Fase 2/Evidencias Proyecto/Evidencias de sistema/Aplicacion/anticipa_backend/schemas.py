@@ -343,6 +343,7 @@ class CambiarPasswordRequest(BaseModel):
 
 class EncuestaDiariaCreate(ConfigBase):
     estudiante_id_estudiante: int
+    usuario_id_usuario: int
     tuvo_desregulacion: bool
     cantidad: int | None = None
     motivo: str | None = None
@@ -353,6 +354,7 @@ class EncuestaDiariaCreate(ConfigBase):
 class EncuestaDiariaResponse(ConfigBase):
     id_encuesta: int
     estudiante_id_estudiante: int
+    usuario_id_usuario: int
     fecha: date
     tuvo_desregulacion: bool
     cantidad: int | None

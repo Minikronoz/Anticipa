@@ -942,6 +942,16 @@ def crear_encuesta(
             detail="Estudiante no encontrado"
         )
 
+    usuario = db.query(models.Usuario).filter(
+        models.Usuario.id_usuario == encuesta.usuario_id_usuario
+    ).first()
+
+    if not usuario:
+        raise HTTPException(
+            status_code=404,
+            detail="Usuario no encontrado"
+        )
+
     hoy = date.today()
 
     encuesta_existente = db.query(models.EncuestaDiaria).filter(

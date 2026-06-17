@@ -74,6 +74,7 @@ class Usuario(Base):
 
     rol    = relationship("Rol")
     curso  = relationship("Curso")
+    encuestas = relationship("EncuestaDiaria")
 
 
 # ── Tabla: Estudiantes (niños con TEA/NEE). 1:1 con Usuario ──
@@ -220,6 +221,12 @@ class EncuestaDiaria(Base):
         nullable=False
     )
 
+    usuario_id_usuario = Column(
+        Integer,
+        ForeignKey("usuario.id_usuario"),
+        nullable=False
+    )
+
     fecha = Column(
         Date,
         nullable=False,
@@ -252,6 +259,7 @@ class EncuestaDiaria(Base):
     )
 
     estudiante = relationship("Estudiante")
+    usuario = relationship("Usuario")
 
     __table_args__ = (
         UniqueConstraint(
