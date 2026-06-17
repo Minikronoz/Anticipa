@@ -1,11 +1,11 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
+const API = "https://anticipa.onrender.com";
+
 let datosReporte;
 
 try{
 
-// FUTURO ENDPOINT FASTAPI
-const API = "https://anticipa.onrender.com";
 const response = await fetch(`${API}/reportes/dashboard`);
 
 if(!response.ok){
