@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, field_validator, field_serializer, ValidationInfo
 from typing import Optional
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone, timedelta
+CHILE_TZ = timezone(timedelta(hours=-4))
 from models import TipoSonidoEnum, MinutosAnticipEnum
 import re
 
@@ -61,6 +62,8 @@ class EstudianteCreate(ConfigBase):
     fecha_nacimiento:  date
     usuario_id_usuario: int
     curso_id_curso:    int
+    diagnostico:      Optional[str] = None
+    estado:           Optional[str] = None
 
 class EstudianteResponse(ConfigBase):
     id_estudiante:     int
@@ -68,6 +71,8 @@ class EstudianteResponse(ConfigBase):
     fecha_nacimiento:  date
     codigo_vinculacion: Optional[str]
     puntos_totales:    int
+    diagnostico:       Optional[str]
+    estado:            Optional[str]
     creado_en:         datetime
     usuario_id_usuario: int
     curso_id_curso:    int
@@ -76,6 +81,8 @@ class EstudianteUpdate(ConfigBase):
     nombre:           Optional[str]  = None
     fecha_nacimiento: Optional[date] = None
     curso_id_curso:   Optional[int]  = None
+    diagnostico:      Optional[str]  = None
+    estado:           Optional[str]  = None
 
 
 # VINCULACION_HISTORIAL
@@ -150,7 +157,7 @@ class ActividadCreate(ConfigBase):
     @field_validator('fecha_actividad')
     @classmethod
     def fecha_no_pasada(cls, v: date) -> date:
-        if v < date.today():
+        if v < datetime.now(CHILE_TZ).date():
             raise ValueError('No se permiten fechas pasadas')
         return v
 
@@ -168,12 +175,13 @@ class ActividadResponse(ConfigBase):
     usuario_id_usuario:             int
     pictograma_id_pictograma:       Optional[int]
     catalogo_actividad_id_catalogo: Optional[int]
-    nombre_tarea:                   str
+    nombre_tarea:                  str
     hora_inicio:                    time
-    hora_fin:                       time
-    es_completada:                  bool
-    fecha_actividad:                date
-    fecha_creacion:                 datetime
+    hora_fin:                      time
+    es_completada:                 bool
+    fecha_actividad:               date
+    fecha_creacion:                datetime
+    usuario_rol:                   Optional[str] = None
 
 class ActividadUpdate(ConfigBase):
     nombre_tarea:                   Optional[str]  = None
@@ -186,7 +194,7 @@ class ActividadUpdate(ConfigBase):
     @field_validator('fecha_actividad')
     @classmethod
     def fecha_no_pasada(cls, v: Optional[date]) -> Optional[date]:
-        if v is not None and v < date.today():
+        if v is not None and v < datetime.now(CHILE_TZ).date():
             raise ValueError('No se permiten fechas pasadas')
         return v
 
@@ -302,3 +310,25 @@ class CambiarPasswordRequest(BaseModel):
     nueva_password: str
 
 
+# ENCUESTA DIARIA
+
+class EncuestaDiariaCreate(ConfigBase):
+    estudiante_id_estudiante: int
+    tuvo_desregulacion: bool
+    cantidad: int | None = None
+    motivo: str | None = None
+    otro_motivo: str | None = None
+    observacion: str | None = None
+
+
+class EncuestaDiariaResponse(ConfigBase):
+    id_encuesta: int
+    estudiante_id_estudiante: int
+    fecha: date
+    tuvo_desregulacion: bool
+    cantidad: int | None
+    motivo: str | None
+    otro_motivo: str | None
+    observacion: str | None
+
+    

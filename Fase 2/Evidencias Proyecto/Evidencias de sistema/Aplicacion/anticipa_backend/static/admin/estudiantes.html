@@ -23,61 +23,7 @@
 
     <!-- SIDEBAR -->
 
-    <aside class="sidebar">
-
-        <div class="sidebar-header">
-            <h3>🧩 Anticipa</h3>
-            <span>Panel Administrativo</span>
-        </div>
-
-        <ul class="sidebar-menu">
-
-            <li>
-                <a href="dashboard.html">
-                    <i class="fas fa-chart-line"></i>
-                    Dashboard
-                </a>
-            </li>
-
-            <li>
-                <a href="usuarios.html">
-                    <i class="fas fa-users"></i>
-                    Usuarios
-                </a>
-            </li>
-
-            <li class="active">
-                <a href="estudiantes.html">
-                    <i class="fas fa-user-graduate"></i>
-                    Estudiantes
-                </a>
-            </li>
-
-            <li>
-                <a href="desregulaciones.html">
-                    <i class="fas fa-heart-pulse"></i>
-                    Desregulaciones
-                </a>
-            </li>
-
-            <li>
-                <a href="reportes.html">
-                    <i class="fas fa-file-lines"></i>
-                    Reportes
-                </a>
-            </li>
-
-        </ul>
-
-        <div class="sidebar-footer">
-
-            <button class="btn btn-danger w-100">
-                Cerrar Sesión
-            </button>
-
-        </div>
-
-    </aside>
+<div id="sidebarContainer"></div>
 
     <!-- CONTENIDO -->
 
@@ -172,68 +118,164 @@
 
         <!-- TABLA -->
 
-        <div class="card">
+<div class="card">
 
-            <div class="card-header">
+    <div class="card-header">
 
-                <div class="row">
+        <div class="row g-2 align-items-center">
 
-                    <div class="col-md-6">
-                        <h5>Listado de Estudiantes</h5>
-                    </div>
+            <div class="col-md-3">
+                <h5 class="mb-0">
+                    Listado de Estudiantes
+                </h5>
+            </div>
 
-                    <div class="col-md-6">
+            <div class="col-md-2">
 
-                        <input
-                            type="text"
-                            class="form-control"
-                            id="buscar"
-                            placeholder="Buscar estudiante...">
+                <select
+                    id="filtroCurso"
+                    class="form-select">
 
-                    </div>
+                    <option value="">
+                        Todos los cursos
+                    </option>
 
-                </div>
+                </select>
 
             </div>
 
-            <div class="card-body">
+            <div class="col-md-2">
 
-                <div class="table-responsive">
+                <select
+                    id="filtroDiagnostico"
+                    class="form-select">
 
-                    <table class="table table-hover">
+                    <option value="">
+                        Todos los diagnósticos
+                    </option>
 
-                        <thead>
+                    <option value="TEA">
+                        TEA
+                    </option>
 
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Curso</th>
-                                <th>Diagnóstico</th>
-                                <th>Total</th>
-                                <th>Semana</th>
-                                <th>Estado</th>
-                                <th>Acción</th>
-                            </tr>
+                    <option value="TDAH">
+                        TDAH
+                    </option>
 
-                        </thead>
+                    <option value="TEL">
+                        TEL
+                    </option>
 
-                        <tbody id="tablaEstudiantes">
+                </select>
 
-                        </tbody>
+            </div>
 
-                    </table>
+            <div class="col-md-2">
 
-                </div>
+                <select
+                    id="filtroEstado"
+                    class="form-select">
+
+                    <option value="">
+                        Todos los estados
+                    </option>
+
+                    <option value="Mejorando">
+                        Mejorando
+                    </option>
+
+                    <option value="Estable">
+                        Estable
+                    </option>
+
+                    <option value="Riesgo">
+                        Riesgo
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <select
+                    id="ordenarPor"
+                    class="form-select">
+
+                    <option value="">
+                        Ordenar
+                    </option>
+
+                    <option value="totalDesc">
+                        Total ↓
+                    </option>
+
+                    <option value="totalAsc">
+                        Total ↑
+                    </option>
+
+                    <option value="semanaDesc">
+                        Semana ↓
+                    </option>
+
+                    <option value="semanaAsc">
+                        Semana ↑
+                    </option>
+
+                </select>
+
+            </div>
+
+            <div class="col-md-1">
+
+                <input
+                    type="text"
+                    class="form-control"
+                    id="buscar"
+                    placeholder="🔍">
 
             </div>
 
         </div>
 
+    </div>
+
+    <div class="card-body">
+
+        <div class="table-responsive">
+
+            <table class="table table-hover">
+
+                <thead>
+
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Curso</th>
+                        <th>Diagnóstico</th>
+                        <th>Total</th>
+                        <th>Semana</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+
+                </thead>
+
+                <tbody id="tablaEstudiantes">
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
     </main>
 
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="estudiantes.js"></script>
 <div class="modal fade" id="modalEstudiante">
 
     <div class="modal-dialog modal-xl">
@@ -364,7 +406,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="estudiantes.js"></script>
-
+<script src="sidebar.js"></script>
 
 </body>
 </html>

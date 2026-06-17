@@ -3,6 +3,29 @@ const API = 'https://anticipa.onrender.com';
 let usuarios = [];
 
 // =========================
+// DOMINIOS
+// =========================
+
+function actualizarDominio() {
+
+    const dominio =
+        document.getElementById(
+            "nuevoDominio"
+        );
+
+    const preview =
+        document.getElementById(
+            "dominioPreview"
+        );
+
+    if(!dominio || !preview){
+        return;
+    }
+
+    preview.textContent =
+        dominio.value;
+}
+// =========================
 // ROLES
 // =========================
 
@@ -96,27 +119,30 @@ function renderTabla(lista) {
                 )}
             </td>
 
-            <td>
-                ${usuario.curso_id_curso || '-'}
-            </td>
 
             <td>
 
-                <button
-                    class="btn btn-sm btn-outline-primary me-2"
-                    onclick="abrirEditar(${usuario.id_usuario})">
+<div class="d-flex gap-2">
 
-                    <i class="fas fa-pen"></i>
+    <button
+        class="btn btn-soft-primary btn-sm shadow-sm"
+        onclick="abrirEditar(${usuario.id_usuario})"
+        title="Editar usuario">
 
-                </button>
+        <i class="fas fa-pen"></i>
 
-                <button
-                    class="btn btn-sm btn-outline-danger"
-                    onclick="eliminarUsuario(${usuario.id_usuario})">
+    </button>
 
-                    <i class="fas fa-trash"></i>
+    <button
+        class="btn btn-soft-danger btn-sm shadow-sm"
+        onclick="eliminarUsuario(${usuario.id_usuario})"
+        title="Eliminar usuario">
 
-                </button>
+        <i class="fas fa-trash"></i>
+
+    </button>
+
+</div>
 
             </td>
 
@@ -227,10 +253,18 @@ async function crearUsuario() {
                 'nuevoNombre'
             ).value.trim();
 
-        const email =
-            document.getElementById(
-                'nuevoEmail'
-            ).value.trim();
+        const usuarioEmail =
+    document.getElementById(
+        'nuevoEmail'
+    ).value.trim();
+
+const dominio =
+    document.getElementById(
+        'nuevoDominio'
+    ).value;
+
+const email =
+    usuarioEmail + dominio;
 
         const password =
             document.getElementById(
@@ -499,5 +533,72 @@ document.addEventListener(
 
         cargarUsuarios();
 
+        const dominio =
+            document.getElementById(
+                "nuevoDominio"
+            );
+
+        const rol =
+            document.getElementById(
+                "nuevoRol"
+            );
+
+        if(dominio){
+
+            dominio.addEventListener(
+                "change",
+                actualizarDominio
+            );
+        }
+
+        if(rol){
+
+            rol.addEventListener(
+                "change",
+                sincronizarDominioRol
+            );
+        }
+
+        actualizarDominio();
+        sincronizarDominioRol();
+
     }
 );
+
+function sincronizarDominioRol(){
+
+    const rol =
+        document.getElementById(
+            "nuevoRol"
+        ).value;
+
+    const dominio =
+        document.getElementById(
+            "nuevoDominio"
+        );
+
+    switch(Number(rol)){
+
+        case 1:
+            dominio.value =
+                "@gmail.com";
+            break;
+
+        case 2:
+            dominio.value =
+                "@profesor.cl";
+            break;
+
+        case 3:
+            dominio.value =
+                "@gmail.com";
+            break;
+
+        case 4:
+            dominio.value =
+                "@estudiante.cl";
+            break;
+    }
+
+    actualizarDominio();
+}

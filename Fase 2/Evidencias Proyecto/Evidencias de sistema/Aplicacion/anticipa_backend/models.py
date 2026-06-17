@@ -63,6 +63,8 @@ class Estudiante(Base):
     fecha_nacimiento   = Column(Date, nullable=False)
     codigo_vinculacion = Column(String(7), unique=True, nullable=True)
     puntos_totales     = Column(Integer, nullable=False, default=0)
+    diagnostico        = Column(String(50), nullable=True)
+    estado             = Column(String(20), nullable=True)
     creado_en          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     usuario_id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
     curso_id_curso     = Column(Integer, ForeignKey("curso.id_curso"), nullable=False)
@@ -184,3 +186,56 @@ class RegistroEstrellaDiaria(Base):
         UniqueConstraint('estudiante_id_estudiante', 'fecha', name='unq_estudiante_fecha'),
     )
     estudiante = relationship("Estudiante")
+
+
+class EncuestaDiaria(Base):
+    __tablename__ = "encuesta_diaria"
+
+    id_encuesta = Column(Integer, primary_key=True)
+
+    estudiante_id_estudiante = Column(
+        Integer,
+        ForeignKey("estudiante.id_estudiante", ondelete="CASCADE"),
+        nullable=False
+    )
+
+    fecha = Column(
+        Date,
+        nullable=False,
+        server_default=text("CURRENT_DATE")
+    )
+
+    tuvo_desregulacion = Column(
+        Boolean,
+        nullable=False
+    )
+
+    cantidad = Column(
+        Integer,
+        nullable=True
+    )
+
+    motivo = Column(
+        String(100),
+        nullable=True
+    )
+
+    otro_motivo = Column(
+        Text,
+        nullable=True
+    )
+
+    observacion = Column(
+        Text,
+        nullable=True
+    )
+
+    estudiante = relationship("Estudiante")
+
+    __table_args__ = (
+        UniqueConstraint(
+            "estudiante_id_estudiante",
+            "fecha",
+            name="unq_encuesta_por_dia"
+        ),
+    )

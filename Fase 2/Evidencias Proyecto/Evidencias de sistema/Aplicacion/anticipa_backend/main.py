@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 import models
 import schemas
 from database import engine, get_db
@@ -9,11 +9,18 @@ import string
 import re
 from passlib.context import CryptContext
 from datetime import datetime, timedelta, timezone, date
+from zoneinfo import ZoneInfo
+
+CHILE_TZ = ZoneInfo("America/Santiago")
 from dotenv import load_dotenv
 from pathlib import Path
 import os
 from admin import router as admin_router
-
+from collections import Counter
+from fastapi.responses import FileResponse, StreamingResponse
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+import io
 
 
 
@@ -405,10 +412,56 @@ def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
-@app.get("/estudiantes/", response_model=list[schemas.EstudianteResponse], tags=["Estudiantes"])
+@app.get("/estudiantes/")
 def listar_estudiantes(db: Session = Depends(get_db)):
-    return db.query(models.Estudiante).all()
 
+    estudiantes = db.query(models.Estudiante).options(
+        selectinload(models.Estudiante.curso_r)
+    ).all()
+
+    resultado = []
+
+    for e in estudiantes:
+
+        # =========================
+        # ESTADO (desde BD si existe, si no se calcula)
+        # =========================
+        if e.estado:
+            estado = e.estado
+        else:
+            if e.puntos_totales >= 20:
+                estado = "Mejorando"
+            elif e.puntos_totales >= 10:
+                estado = "Estable"
+            else:
+                estado = "Riesgo"
+
+        # =========================
+        # DIAGNÓSTICO (desde BD)
+        # =========================
+        diagnostico = e.diagnostico if e.diagnostico else "TEA"
+
+        # =========================
+        # SEMANA (temporal aún)
+        # =========================
+        semana = 0
+
+        resultado.append({
+            "id_estudiante": e.id_estudiante,
+            "nombre": e.nombre,
+            "puntos_totales": e.puntos_totales,
+
+            "diagnostico": diagnostico,
+            "estado": estado,
+            "semana": semana,
+
+            "curso_r": {
+                "nivel_academico": e.curso_r.nivel_academico if e.curso_r else "",
+                "letra_academica": e.curso_r.letra_academica if e.curso_r else ""
+            } if e.curso_r else None
+        })
+
+    return resultado
 @app.get("/estudiantes/{id_estudiante}", response_model=schemas.EstudianteResponse, tags=["Estudiantes"])
 def obtener_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
     e = db.query(models.Estudiante).filter(
@@ -577,10 +630,10 @@ def crear_actividad(actividad: schemas.ActividadCreate, db: Session = Depends(ge
     datos = actividad.model_dump()
     alerta_minutos = datos.pop('alerta_minutos', None)
 
-    hoy = date.today()
-    if actividad.fecha_actividad < hoy:
+    hoy = datetime.now(CHILE_TZ).date()
+    if str(actividad.fecha_actividad) < str(hoy):
         raise HTTPException(status_code=400, detail="No se pueden crear actividades en fechas pasadas.")
-    ahora = datetime.now().time()
+    ahora = datetime.now(CHILE_TZ).time()
     if actividad.fecha_actividad == hoy and actividad.hora_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden crear actividades con hora en el pasado.")
 
@@ -631,10 +684,28 @@ def listar_actividades_estudiante(
 ):
     q = db.query(models.Actividad).filter(
         models.Actividad.estudiante_id_estudiante == id_estudiante
-    )
+    ).options(selectinload(models.Actividad.creador).selectinload(models.Usuario.rol))
     if fecha:
         q = q.filter(models.Actividad.fecha_actividad == fecha)
-    return q.order_by(models.Actividad.hora_inicio.asc()).all()
+    actividades = q.order_by(models.Actividad.hora_inicio.asc()).all()
+    resultado = []
+    for a in actividades:
+        item = {
+            "id_actividad": a.id_actividad,
+            "estudiante_id_estudiante": a.estudiante_id_estudiante,
+            "usuario_id_usuario": a.usuario_id_usuario,
+            "pictograma_id_pictograma": a.pictograma_id_pictograma,
+            "catalogo_actividad_id_catalogo": a.catalogo_actividad_id_catalogo,
+            "nombre_tarea": a.nombre_tarea,
+            "hora_inicio": a.hora_inicio,
+            "hora_fin": a.hora_fin,
+            "es_completada": a.es_completada,
+            "fecha_actividad": a.fecha_actividad,
+            "fecha_creacion": a.fecha_creacion,
+            "usuario_rol": a.creador.rol.nombre_rol if a.creador and a.creador.rol else None,
+        }
+        resultado.append(schemas.ActividadResponse(**item))
+    return resultado
 
 @app.patch("/actividades/{id_actividad}/completar",
            response_model=schemas.ActividadResponse, tags=["Actividades"])
@@ -647,20 +718,26 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
 
     estaba_completada = a.es_completada
     a.es_completada = not a.es_completada
-    hoy = date.today()
+    hoy = datetime.now(CHILE_TZ).date()
+
+    if a.fecha_actividad < hoy:
+        raise HTTPException(
+            status_code=400,
+            detail="No se pueden completar actividades de días pasados."
+        )
 
     if not estaba_completada:
         # Completando: +1 estrella, +1 punto, registrar historial
         registro = db.query(models.RegistroEstrellaDiaria).filter(
             models.RegistroEstrellaDiaria.estudiante_id_estudiante == a.estudiante_id_estudiante,
-            models.RegistroEstrellaDiaria.fecha == hoy,
+            models.RegistroEstrellaDiaria.fecha == a.fecha_actividad,
         ).first()
         if registro:
             registro.estrellas_ganadas += 1
         else:
             db.add(models.RegistroEstrellaDiaria(
                 estudiante_id_estudiante=a.estudiante_id_estudiante,
-                fecha=hoy,
+                fecha=a.fecha_actividad,
                 estrellas_ganadas=1,
             ))
 
@@ -678,7 +755,7 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
         # Desmarcando: -1 estrella, -1 punto (mínimo 0)
         registro = db.query(models.RegistroEstrellaDiaria).filter(
             models.RegistroEstrellaDiaria.estudiante_id_estudiante == a.estudiante_id_estudiante,
-            models.RegistroEstrellaDiaria.fecha == hoy,
+            models.RegistroEstrellaDiaria.fecha == a.fecha_actividad,
         ).first()
         if registro and registro.estrellas_ganadas > 0:
             registro.estrellas_ganadas -= 1
@@ -706,10 +783,10 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
     nueva_fecha = datos_dict.get('fecha_actividad', a.fecha_actividad)
     nueva_inicio = datos_dict.get('hora_inicio', a.hora_inicio)
 
-    hoy = date.today()
+    hoy = datetime.now(CHILE_TZ).date()
     if nueva_fecha < hoy:
         raise HTTPException(status_code=400, detail="No se pueden mover actividades a fechas pasadas.")
-    ahora = datetime.now().time()
+    ahora = datetime.now(CHILE_TZ).time()
     if nueva_fecha == hoy and nueva_inicio is not None and nueva_inicio < ahora:
         raise HTTPException(status_code=400, detail="No se pueden asignar horas en el pasado.")
 
@@ -731,7 +808,6 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
         if not catalogo:
             raise HTTPException(status_code=400, detail="El catálogo de actividad no existe.")
 
-    nueva_inicio = datos_dict.get('hora_inicio', a.hora_inicio)
     nueva_fin = datos_dict.get('hora_fin', a.hora_fin)
     if nueva_inicio is not None and nueva_fin is not None and nueva_fin <= nueva_inicio:
         raise HTTPException(status_code=400, detail="La hora de fin debe ser mayor que la hora de inicio.")
@@ -823,3 +899,472 @@ app.mount(
 )
 
 app.include_router(admin_router, prefix="/admin", tags=["Admin"])
+
+from collections import Counter
+
+# =========================================================
+# ENCUESTA DIARIA APODERADO
+# =========================================================
+
+@app.post(
+    "/encuestas/",
+    response_model=schemas.EncuestaDiariaResponse,
+    status_code=status.HTTP_201_CREATED,
+    tags=["Encuestas"]
+)
+def crear_encuesta(
+    encuesta: schemas.EncuestaDiariaCreate,
+    db: Session = Depends(get_db)
+):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == encuesta.estudiante_id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    hoy = date.today()
+
+    encuesta_existente = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == encuesta.estudiante_id_estudiante,
+        models.EncuestaDiaria.fecha == hoy
+    ).first()
+
+    if encuesta_existente:
+        raise HTTPException(
+            status_code=400,
+            detail="Ya existe una encuesta registrada para hoy."
+        )
+
+    nueva = models.EncuestaDiaria(**encuesta.model_dump())
+
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+
+    return nueva
+
+
+@app.get(
+    "/encuestas/estudiante/{id_estudiante}",
+    response_model=list[schemas.EncuestaDiariaResponse],
+    tags=["Encuestas"]
+)
+def obtener_encuestas_estudiante(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    return db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).order_by(
+        models.EncuestaDiaria.fecha.desc()
+    ).all()
+
+
+@app.get(
+    "/encuestas/verificar/{id_estudiante}",
+    tags=["Encuestas"]
+)
+def verificar_encuesta_hoy(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    hoy = date.today()
+
+    encuesta = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.fecha == hoy
+    ).first()
+
+    return {
+        "respondida": encuesta is not None
+    }
+
+
+@app.get(
+    "/encuestas/resumen/{id_estudiante}",
+    tags=["Encuestas"]
+)
+def resumen_desregulaciones(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    total_encuestas = len(encuestas)
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    dias_con_desregulacion = sum(
+        1
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    return {
+        "total_encuestas": total_encuestas,
+        "dias_con_desregulacion": dias_con_desregulacion,
+        "total_desregulaciones": total_desregulaciones
+    }
+
+
+@app.get(
+    "/encuestas/motivos/{id_estudiante}",
+    tags=["Encuestas"]
+)
+def motivos_frecuentes(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
+        models.EncuestaDiaria.tuvo_desregulacion == True
+    ).all()
+
+    motivos = [
+        e.motivo
+        for e in encuestas
+        if e.motivo
+    ]
+
+    contador = Counter(motivos)
+
+    return contador.most_common()
+
+
+# =========================================================
+# REPORTE ESTUDIANTE
+# =========================================================
+
+@app.get("/reportes/estudiante/{id_estudiante}")
+def reporte_estudiante(
+    id_estudiante: int,
+    db: Session = Depends(get_db)
+):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    actividades = db.query(models.Actividad).filter(
+        models.Actividad.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    estrellas = db.query(models.RegistroEstrellaDiaria).filter(
+        models.RegistroEstrellaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    recompensas = db.query(models.RecompensaDisponible).filter(
+        models.RecompensaDisponible.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    total_actividades = len(actividades)
+
+    completadas = len([
+        a for a in actividades
+        if a.es_completada
+    ])
+
+    total_estrellas = sum(
+        e.estrellas_ganadas
+        for e in estrellas
+    )
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    return {
+        "estudiante": estudiante.nombre,
+        "curso": estudiante.curso_r.nivel_academico if estudiante.curso_r else "",
+        "puntos_totales": estudiante.puntos_totales,
+        "actividades_totales": total_actividades,
+        "actividades_completadas": completadas,
+        "estrellas": total_estrellas,
+        "desregulaciones": total_desregulaciones,
+        "recompensas": len(recompensas)
+    }
+
+
+# =========================================================
+# DASHBOARD REPORTES ADMIN
+# =========================================================
+
+@app.get("/reportes/dashboard")
+def dashboard_reportes(db: Session = Depends(get_db)):
+
+    estudiantes = db.query(models.Estudiante).all()
+    encuestas = db.query(models.EncuestaDiaria).all()
+
+    total_estudiantes = len(estudiantes)
+    total_desregulaciones = sum(e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion)
+
+    motivos = Counter(e.motivo for e in encuestas if e.motivo)
+
+    motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
+
+    return {
+        "mejoraGlobal": "37%",  # luego lo puedes calcular real
+        "riesgoAlto": 4,
+        "factorPrincipal": motivo_principal,
+        "cursoCritico": "5°A",
+
+        "evolucion": {
+            "labels": ["Ene","Feb","Mar","Abr","May","Jun"],
+            "data": [120,110,98,85,72,64]
+        },
+
+        "factores": {
+            "labels": list(motivos.keys())[:5],
+            "data": list(motivos.values())[:5]
+        },
+
+        "dias": {
+            "labels": ["Lun","Mar","Mié","Jue","Vie"],
+            "data": [25,30,18,35,14]
+        },
+
+        "cursos": {
+            "labels": ["1°A","2°A","3°A","4°A","5°A"],
+            "data": [8,12,18,10,25]
+        },
+
+        "hallazgos": [
+            "Las desregulaciones están concentradas en ciertos días.",
+            "El factor principal es el más recurrente.",
+            "El sistema permite detección temprana de crisis."
+        ]
+    }
+
+@app.get("/reportes/pdf/{id_estudiante}")
+def descargar_reporte_pdf(id_estudiante: int, db: Session = Depends(get_db)):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == id_estudiante
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado")
+
+    actividades = db.query(models.Actividad).filter(
+        models.Actividad.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    estrellas = db.query(models.RegistroEstrellaDiaria).filter(
+        models.RegistroEstrellaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante
+    ).all()
+
+    total_actividades = len(actividades)
+    completadas = sum(1 for a in actividades if a.es_completada)
+    total_estrellas = sum(e.estrellas_ganadas for e in estrellas)
+    total_desregulaciones = sum(e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion)
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
+
+    content = []
+
+    content.append(Paragraph("REPORTE ESTUDIANTE", styles["Title"]))
+    content.append(Spacer(1, 12))
+
+    data = [
+        ["Campo", "Valor"],
+        ["Nombre", estudiante.nombre],
+        ["Curso", estudiante.curso_r.nivel_academico + estudiante.curso_r.letra_academica if estudiante.curso_r else ""],
+        ["Puntos Totales", str(estudiante.puntos_totales)],
+        ["Actividades Totales", str(total_actividades)],
+        ["Actividades Completadas", str(completadas)],
+        ["Estrellas Ganadas", str(total_estrellas)],
+        ["Desregulaciones", str(total_desregulaciones)],
+    ]
+
+    table = Table(data, colWidths=[200, 300])
+
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F4E79")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+        ("PADDING", (0, 0), (-1, -1), 6),
+    ]))
+
+    content.append(table)
+
+    doc.build(content)
+
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename=reporte_{id_estudiante}.pdf"}
+    )
+
+@app.get("/reportes/detalle-estudiante/{id}")
+def detalle_estudiante(id: int, db: Session = Depends(get_db)):
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == id
+    ).first()
+
+    if not estudiante:
+        raise HTTPException(
+            status_code=404,
+            detail="Estudiante no encontrado"
+        )
+
+    hoy = date.today()
+
+    # Desregulaciones hoy
+    encuesta_hoy = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
+        models.EncuestaDiaria.fecha == hoy
+    ).first()
+
+    dato_hoy = (
+        encuesta_hoy.cantidad
+        if encuesta_hoy and encuesta_hoy.tuvo_desregulacion
+        else 0
+    )
+
+    # Últimos 7 días
+    semana_inicio = hoy - timedelta(days=7)
+
+    encuestas_semana = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
+        models.EncuestaDiaria.fecha >= semana_inicio
+    ).all()
+
+    dato_semana = sum(
+        e.cantidad or 0
+        for e in encuestas_semana
+        if e.tuvo_desregulacion
+    )
+
+    # Últimos 30 días
+    mes_inicio = hoy - timedelta(days=30)
+
+    encuestas_mes = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
+        models.EncuestaDiaria.fecha >= mes_inicio
+    ).all()
+
+    dato_mes = sum(
+        e.cantidad or 0
+        for e in encuestas_mes
+        if e.tuvo_desregulacion
+    )
+
+    # Evolución mensual
+    historial = []
+
+    for i in range(5, -1, -1):
+
+        inicio_mes = date(
+            hoy.year,
+            hoy.month,
+            1
+        ) - timedelta(days=i * 30)
+
+        fin_mes = inicio_mes + timedelta(days=30)
+
+        total = sum(
+            e.cantidad or 0
+            for e in db.query(models.EncuestaDiaria).filter(
+                models.EncuestaDiaria.estudiante_id_estudiante == id,
+                models.EncuestaDiaria.fecha >= inicio_mes,
+                models.EncuestaDiaria.fecha < fin_mes
+            ).all()
+            if e.tuvo_desregulacion
+        )
+
+        historial.append(total)
+
+    return {
+        "nombre": estudiante.nombre,
+        "curso": (
+            f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
+            if estudiante.curso_r
+            else ""
+        ),
+        "hoy": dato_hoy,
+        "semana": dato_semana,
+        "mes": dato_mes,
+        "historial": historial
+    }
+
+
+@app.get("/reportes/pdf-general")
+def reporte_general_pdf(db: Session = Depends(get_db)):
+
+    estudiantes = db.query(models.Estudiante).all()
+    encuestas = db.query(models.EncuestaDiaria).all()
+
+    total_estudiantes = len(estudiantes)
+
+    total_desregulaciones = sum(
+        e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion
+    )
+
+    motivos = Counter(
+        e.motivo for e in encuestas if e.motivo
+    )
+
+    motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer)
+    estilos = getSampleStyleSheet()
+    contenido = []
+
+    contenido.append(Paragraph("REPORTE GENERAL ESCUELA", estilos["Title"]))
+    contenido.append(Spacer(1, 12))
+
+    contenido.append(Paragraph(f"Total estudiantes: {total_estudiantes}", estilos["Normal"]))
+    contenido.append(Paragraph(f"Total desregulaciones: {total_desregulaciones}", estilos["Normal"]))
+    contenido.append(Paragraph(f"Motivo principal: {motivo_principal}", estilos["Normal"]))
+
+    doc.build(contenido)
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": "inline; filename=reporte_general.pdf"
+        }
+    )
+
+

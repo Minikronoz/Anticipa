@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
-import '../theme/app_theme.dart';
 import 'panel_detalle_estudiante.dart';
 
 // ═══════════════════════════════════════════════════════════
@@ -11,9 +10,8 @@ import 'panel_detalle_estudiante.dart';
 class PanelApoderado extends StatefulWidget {
   final int idUsuario;
   final String nombre;
-  final ThemeConfig themeConfig;
 
-  const PanelApoderado({super.key, required this.idUsuario, required this.nombre, required this.themeConfig});
+  const PanelApoderado({super.key, required this.idUsuario, required this.nombre});
 
   @override
   State<PanelApoderado> createState() => _PanelApoderadoState();
@@ -25,7 +23,13 @@ class _PanelApoderadoState extends State<PanelApoderado> {
   bool _cargando = true;
   String? _error;
 
-  ThemeColors get _c => widget.themeConfig.colors;
+  // Default colors (no theme customization for this role)
+  static const _bg   = Color(0xFFF5F7FF);
+  static const _appB = Color(0xFF061A40);
+  static const _card = Color(0xFFFFFFFF);
+  static const _prim = Color(0xFF4F46E5);
+  static const _txtP = Color(0xFF061A40);
+  static const _txtS = Color(0xFF6B7280);
 
   @override
   void initState() {
@@ -155,7 +159,6 @@ class _PanelApoderadoState extends State<PanelApoderado> {
         idUsuario: widget.idUsuario,
         rol: 'Tutor / Apoderado',
         nombreEstudiante: hijo['nombre'] ?? '',
-        themeConfig: widget.themeConfig,
       ),
     ));
   }
@@ -163,11 +166,11 @@ class _PanelApoderadoState extends State<PanelApoderado> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _c.background,
+      backgroundColor: _bg,
       appBar: AppBar(
         title: const Text('Mis Hijos'),
         centerTitle: true,
-        backgroundColor: _c.appBar,
+        backgroundColor: _appB,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
@@ -187,7 +190,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
       floatingActionButton: _hijos.isNotEmpty
           ? FloatingActionButton.extended(
               onPressed: _mostrarDialogoVinculacion,
-              backgroundColor: _c.primary,
+              backgroundColor: _prim,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.person_add),
               label: const Text('Vincular hijo'),
@@ -198,9 +201,9 @@ class _PanelApoderadoState extends State<PanelApoderado> {
 
   Widget _buildError() {
     return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.wifi_off, size: 64, color: _c.textSecondary),
+      Icon(Icons.wifi_off, size: 64, color: _txtS),
       const SizedBox(height: 16),
-      Text(_error!, style: TextStyle(fontSize: 16, color: _c.textSecondary)),
+      Text(_error!, style: TextStyle(fontSize: 16, color: _txtS)),
       const SizedBox(height: 16),
       ElevatedButton.icon(onPressed: _cargarTodo, icon: const Icon(Icons.refresh), label: const Text('Reintentar')),
     ]));
@@ -211,11 +214,11 @@ class _PanelApoderadoState extends State<PanelApoderado> {
     return Center(child: SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.family_restroom, size: 80, color: _c.primary),
+        Icon(Icons.family_restroom, size: 80, color: _prim),
         const SizedBox(height: 20),
-        Text('Bienvenido, ${widget.nombre}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _c.textPrimary)),
+        Text('Bienvenido, ${widget.nombre}', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: _txtP)),
         const SizedBox(height: 8),
-        Text('Aún no tienes hijos vinculados.\nIngresa el código de vinculación del estudiante.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: _c.textSecondary)),
+        Text('Aún no tienes hijos vinculados.\nIngresa el código de vinculación del estudiante.', textAlign: TextAlign.center, style: TextStyle(fontSize: 15, color: _txtS)),
         const SizedBox(height: 24),
         SizedBox(width: 280, child: TextField(
           controller: codigoCtl,
@@ -223,7 +226,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
           decoration: InputDecoration(
             labelText: 'Código de vinculación',
             border: const OutlineInputBorder(),
-            prefixIcon: Icon(Icons.link, color: _c.primary),
+            prefixIcon: Icon(Icons.link, color: _prim),
           ),
         )),
         const SizedBox(height: 16),
@@ -235,7 +238,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
           icon: const Icon(Icons.person_add),
           label: const Text('VINCULAR HIJO'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: _c.primary,
+            backgroundColor: _prim,
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
           ),
@@ -265,7 +268,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
       decoration: BoxDecoration(
-        color: _c.appBar,
+        color: _appB,
       ),
       child: Column(children: [
         Row(children: [
@@ -291,7 +294,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 16),
-      color: _c.card,
+      color: _card,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -300,31 +303,31 @@ class _PanelApoderadoState extends State<PanelApoderado> {
           Container(
             width: 64, height: 64,
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [_c.primary, _c.primary.withValues(alpha: 0.7)]),
+              gradient: LinearGradient(colors: [_prim, _prim.withValues(alpha: 0.7)]),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(Icons.face, size: 40, color: Colors.white),
           ),
           const SizedBox(width: 16),
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(hijo['nombre'] ?? 'Sin nombre', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _c.textPrimary)),
+            Text(hijo['nombre'] ?? 'Sin nombre', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: _txtP)),
             const SizedBox(height: 4),
             Row(children: [
-              Icon(Icons.school, size: 16, color: _c.primary),
+              Icon(Icons.school, size: 16, color: _prim),
               const SizedBox(width: 4),
-              Text(cursoNombre, style: TextStyle(fontSize: 14, color: _c.textSecondary)),
+              Text(cursoNombre, style: TextStyle(fontSize: 14, color: _txtS)),
             ]),
           ])),
           Column(children: [
             Row(children: [
               const Icon(Icons.star, size: 22, color: Colors.amber),
               const SizedBox(width: 4),
-              Text('$puntos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.textPrimary)),
+              Text('$puntos', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _txtP)),
             ]),
-            Text('puntos', style: TextStyle(fontSize: 12, color: _c.textSecondary)),
+            Text('puntos', style: TextStyle(fontSize: 12, color: _txtS)),
           ]),
           const SizedBox(width: 8),
-          Icon(Icons.chevron_right, color: _c.textSecondary),
+          Icon(Icons.chevron_right, color: _txtS),
         ])),
       ),
     );

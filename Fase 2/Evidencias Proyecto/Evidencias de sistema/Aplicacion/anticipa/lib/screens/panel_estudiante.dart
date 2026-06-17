@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
 import '../theme/app_theme.dart';
+import 'theme_settings_screen.dart';
 
 // ═══════════════════════════════════════════════════════════
 // PANEL ESTUDIANTE — Modo kiosko simplificado
@@ -14,6 +15,7 @@ class PanelEstudiante extends StatefulWidget {
   final String rol;
   final String nombreEstudiante;
   final ThemeConfig themeConfig;
+  final Function(ThemeConfig) onThemeChanged;
 
   const PanelEstudiante({
     super.key,
@@ -22,6 +24,7 @@ class PanelEstudiante extends StatefulWidget {
     required this.rol,
     required this.nombreEstudiante,
     required this.themeConfig,
+    required this.onThemeChanged,
   });
 
   @override
@@ -199,6 +202,21 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           tooltip: 'Cerrar sesión',
           onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (_) => false),
         ),
+        IconButton(
+          icon: const Icon(Icons.palette, color: Colors.white70, size: 22),
+          tooltip: 'Personalizar colores',
+          onPressed: () async {
+            final result = await Navigator.push<ThemeConfig>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ThemeSettingsScreen(currentConfig: widget.themeConfig),
+              ),
+            );
+            if (result != null && mounted) {
+              widget.onThemeChanged(result);
+            }
+          },
+        ),
       ]),
     );
   }
@@ -235,6 +253,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
               final df = d.toIso8601String().split('T')[0];
               final seleccionado = df == _fechaFormateada;
               final esHoy = df == hoy;
+
               return GestureDetector(
                 onTap: () => _seleccionarDia(d),
                 child: Container(
@@ -285,6 +304,16 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     if (id == 0) return const SizedBox.shrink();
     final completada = a['es_completada'] == true;
     final completando = _completandoIds.contains(id);
+
+    bool _esActividadPasada(Map<String, dynamic> act) {
+      final f = act['fecha_actividad'];
+      if (f == null) return false;
+      final fechaStr = f.toString().split('T')[0];
+      final hoy = DateTime.now().toIso8601String().split('T')[0];
+      return fechaStr.compareTo(hoy) < 0;
+    }
+
+    final esPasado = _esActividadPasada(a);
     final picto = _pictoUrl(a['pictograma_id_pictograma']);
     final horaRaw = (a['hora_inicio']?.toString() ?? '');
     final hora = horaRaw.length >= 5 ? horaRaw.substring(0, 5) : '--:--';
@@ -339,9 +368,17 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: completada ? const Color(0xFFF0FDF4) : _c.card,
+                color: esPasado
+                    ? Colors.grey.shade200
+                    : completada
+                        ? const Color(0xFFF0FDF4)
+                        : _c.card,
                 borderRadius: BorderRadius.circular(24),
-                border: completada ? Border.all(color: const Color(0xFF22C55E), width: 3) : Border.all(color: _c.primary.withValues(alpha: 0.2)),
+                border: completada
+                    ? Border.all(color: const Color(0xFF22C55E), width: 3)
+                    : esPasado
+                        ? Border.all(color: Colors.grey.shade400)
+                        : Border.all(color: _c.primary.withValues(alpha: 0.2)),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
               ),
               child: Column(children: [
@@ -358,6 +395,13 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                if (esPasado)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(8)),
+                    child: const Text('🔒 Día pasado', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   child: Text(
@@ -371,6 +415,15 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                   Icon(Icons.access_time, size: 16, color: _c.primary),
                   const SizedBox(width: 4),
                   Text(hora, style: TextStyle(fontSize: 16, color: _c.primary, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 8),
+                  Text(
+                    a['usuario_rol'] == 'profesor'
+                        ? '🎓'
+                        : a['usuario_rol'] == 'apoderado'
+                            ? '👤'
+                            : '',
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ]),
                 const SizedBox(height: 12),
                 SizedBox(
@@ -378,7 +431,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: ElevatedButton(
-                      onPressed: completando ? null : () => _completar(id),
+                      onPressed: completando || esPasado ? null : () => _completar(id),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: completada ? const Color(0xFF22C55E) : _c.primary,
                         foregroundColor: Colors.white,
