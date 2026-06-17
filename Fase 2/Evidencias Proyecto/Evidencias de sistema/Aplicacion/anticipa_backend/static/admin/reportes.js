@@ -5,7 +5,8 @@ let datosReporte;
 try{
 
 // FUTURO ENDPOINT FASTAPI
-const response = await fetch("http://localhost:8000/reportes/dashboard");
+const API = "https://anticipa.onrender.com";
+const response = await fetch(`${API}/reportes/dashboard`);
 
 if(!response.ok){
 throw new Error("Sin datos");
@@ -183,7 +184,7 @@ if(btnPdf){
     btnPdf.addEventListener("click",()=>{
 
         window.open(
-            "http://localhost:8000/reportes/pdf-general",
+            `${API}/reportes/pdf-general`,
             "_blank"
         );
 

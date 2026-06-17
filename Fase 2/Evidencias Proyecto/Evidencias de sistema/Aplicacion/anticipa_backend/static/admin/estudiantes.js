@@ -3,7 +3,7 @@ let historial = {};
 
 let graficoAlumno = null;
 let graficoImpacto = null;
-const API = "http://localhost:8000";
+const API = "https://anticipa.onrender.com";
 // =======================================
 // CARGAR ESTUDIANTES DESDE BACKEND
 // =======================================

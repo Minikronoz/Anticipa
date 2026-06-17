@@ -141,6 +141,14 @@ async function cargarDashboard() {
             crearGraficoRoles(data);
         }
 
+        if (
+            typeof Chart !== "undefined" &&
+            document.getElementById('graficoDesregulacion') &&
+            typeof crearGraficoDesregulacion === "function"
+        ) {
+            crearGraficoDesregulacion({});
+        }
+
     } catch (error) {
 
         console.error(error);

@@ -581,22 +581,22 @@ function sincronizarDominioRol(){
 
         case 1:
             dominio.value =
-                "@admin.com";
+                "@gmail.com";
             break;
 
         case 2:
             dominio.value =
-                "@profesor.com";
+                "@profesor.cl";
             break;
 
         case 3:
             dominio.value =
-                "@tutor.com";
+                "@gmail.com";
             break;
 
         case 4:
             dominio.value =
-                "@estudiante.com";
+                "@estudiante.cl";
             break;
     }
 
