@@ -952,19 +952,6 @@ def crear_encuesta(
             detail="Usuario no encontrado"
         )
 
-    hoy = date.today()
-
-    encuesta_existente = db.query(models.EncuestaDiaria).filter(
-        models.EncuestaDiaria.estudiante_id_estudiante == encuesta.estudiante_id_estudiante,
-        models.EncuestaDiaria.fecha == hoy
-    ).first()
-
-    if encuesta_existente:
-        raise HTTPException(
-            status_code=400,
-            detail="Ya existe una encuesta registrada para hoy."
-        )
-
     nueva = models.EncuestaDiaria(**encuesta.model_dump())
 
     db.add(nueva)
@@ -1002,13 +989,25 @@ def verificar_encuesta_hoy(
 
     hoy = date.today()
 
-    encuesta = db.query(models.EncuestaDiaria).filter(
+    encuestas = db.query(models.EncuestaDiaria).filter(
         models.EncuestaDiaria.estudiante_id_estudiante == id_estudiante,
         models.EncuestaDiaria.fecha == hoy
-    ).first()
+    ).all()
 
     return {
-        "respondida": encuesta is not None
+        "respondida": len(encuestas) > 0,
+        "cantidad": len(encuestas),
+        "encuestas": [
+            {
+                "id_encuesta": e.id_encuesta,
+                "tuvo_desregulacion": e.tuvo_desregulacion,
+                "cantidad": e.cantidad,
+                "motivo": e.motivo,
+                "fecha": e.fecha,
+                "hora": str(e.fecha) if e.fecha else None
+            }
+            for e in encuestas
+        ]
     }
 
 

@@ -1,174 +1,187 @@
--- =========================================================
--- 1. TABLA ROL
--- =========================================================
-CREATE TABLE rol (
+-- ============================================================
+-- ANTICIPA - Script completo para Supabase
+-- ============================================================
+
+-- ── Tabla: COLEGIO ──────────────────────────────────────────
+CREATE TABLE public.colegio (
+    id_colegio         SERIAL PRIMARY KEY,
+    nombre             VARCHAR(100) NOT NULL,
+    rut                VARCHAR(20) UNIQUE,
+    direccion          VARCHAR(255),
+    telefono           VARCHAR(20),
+    correo             VARCHAR(100),
+    contacto_nombre    VARCHAR(100),
+    activo             BOOLEAN NOT NULL DEFAULT TRUE,
+    plan               VARCHAR(20) NOT NULL DEFAULT 'basico',
+    fecha_contrato     DATE,
+    fecha_vencimiento  DATE
+);
+
+-- ── Tabla: ROL ──────────────────────────────────────────────
+CREATE TABLE public.rol (
     id_rol     SERIAL PRIMARY KEY,
     nombre_rol VARCHAR(50) NOT NULL UNIQUE
 );
-INSERT INTO rol (nombre_rol) VALUES
-    ('Administrador'),
-    ('Profesor'),
-    ('Tutor / Apoderado'),
-    ('Estudiante');
-COMMENT ON TABLE rol IS 'Roles de usuarios: Administrador, Profesor, Tutor/Apoderado, Estudiante';
--- =========================================================
--- 2. TABLA CURSO
--- =========================================================
-CREATE TABLE curso (
-    id_curso        SERIAL PRIMARY KEY,
-    nivel_academico VARCHAR(10) NOT NULL,
-    letra_academica VARCHAR(1)
+
+-- ── Tabla: CURSO ────────────────────────────────────────────
+CREATE TABLE public.curso (
+    id_curso          SERIAL PRIMARY KEY,
+    nivel_academico   VARCHAR(10) NOT NULL,
+    letra_academica   VARCHAR(1),
+    colegio_id_colegio INTEGER REFERENCES public.colegio(id_colegio)
 );
-INSERT INTO curso (nivel_academico, letra_academica) VALUES
-    ('1 Básico', 'A'), ('1 Básico', 'B'),
-    ('2 Básico', 'A'), ('2 Básico', 'B'),
-    ('3 Básico', 'A'), ('3 Básico', 'B'),
-    ('4 Básico', 'A'), ('4 Básico', 'B'),
-    ('5 Básico', 'A'), ('5 Básico', 'B'),
-    ('6 Básico', 'A'), ('6 Básico', 'B'),
-    ('7 Básico', 'A'), ('7 Básico', 'B'),
-    ('8 Básico', 'A'), ('8 Básico', 'B');
-COMMENT ON TABLE curso IS 'Cursos académicos (1 Básico a 8 Básico, letras A-B)';
--- =========================================================
--- 3. TABLA USUARIO
--- =========================================================
-CREATE TABLE usuario (
+
+-- ── Tabla: USUARIO ──────────────────────────────────────────
+CREATE TABLE public.usuario (
     id_usuario         SERIAL PRIMARY KEY,
-    rol_id_rol         INTEGER NOT NULL REFERENCES rol(id_rol),
+    rol_id_rol         INTEGER NOT NULL REFERENCES public.rol(id_rol),
     nombre             VARCHAR(100) NOT NULL,
     email              VARCHAR(100) NOT NULL UNIQUE,
     password_hash      VARCHAR(255) NOT NULL,
-    fecha_registro     TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    fecha_registro     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     reset_token        VARCHAR(100) UNIQUE,
-    reset_token_expiry TIMESTAMPTZ,
-    curso_id_curso     INTEGER REFERENCES curso(id_curso)
+    reset_token_expiry TIMESTAMP WITH TIME ZONE,
+    curso_id_curso     INTEGER REFERENCES public.curso(id_curso),
+    es_admin           BOOLEAN NOT NULL DEFAULT FALSE
 );
-CREATE INDEX idx_usuario_email ON usuario(email);
-COMMENT ON TABLE usuario IS 'Usuarios que inician sesión (todos los roles)';
--- =========================================================
--- 4. TABLA ESTUDIANTE
--- =========================================================
-CREATE TABLE estudiante (
-    id_estudiante      SERIAL PRIMARY KEY,
-    nombre             VARCHAR(100) NOT NULL,
-    fecha_nacimiento   DATE NOT NULL,
-    codigo_vinculacion VARCHAR(7) UNIQUE,
-    puntos_totales     INTEGER DEFAULT 0 NOT NULL,
-    creado_en          TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    usuario_id_usuario INTEGER NOT NULL REFERENCES usuario(id_usuario),
-    curso_id_curso     INTEGER NOT NULL REFERENCES curso(id_curso)
+
+-- ── Tabla: ESTUDIANTE ───────────────────────────────────────
+CREATE TABLE public.estudiante (
+    id_estudiante       SERIAL PRIMARY KEY,
+    nombre              VARCHAR(100) NOT NULL,
+    fecha_nacimiento    DATE NOT NULL,
+    codigo_vinculacion  VARCHAR(7) UNIQUE,
+    puntos_totales      INTEGER NOT NULL DEFAULT 0,
+    diagnostico         VARCHAR(50),
+    estado              VARCHAR(20),
+    creado_en           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    usuario_id_usuario  INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    curso_id_curso      INTEGER NOT NULL REFERENCES public.curso(id_curso)
 );
-CREATE INDEX idx_estudiante_codigo   ON estudiante(codigo_vinculacion);
-CREATE INDEX idx_estudiante_usuario  ON estudiante(usuario_id_usuario);
-COMMENT ON TABLE estudiante IS 'Datos extendidos del estudiante (niño con TEA/NEE). Relación 1:1 con usuario';
--- =========================================================
--- 5. TABLA VINCULACION_HISTORIAL
--- =========================================================
-CREATE TABLE vinculacion_historial (
+
+-- ── Tabla: VINCULACION_HISTORIAL ────────────────────────────
+CREATE TABLE public.vinculacion_historial (
     id_vinculo         SERIAL PRIMARY KEY,
-    usuario_id_usuario INTEGER NOT NULL REFERENCES usuario(id_usuario),
-    id_estudiante      INTEGER NOT NULL REFERENCES estudiante(id_estudiante),
-    rol_id_rol         INTEGER NOT NULL REFERENCES rol(id_rol),
-    fecha_inicio       TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-    fecha_termino      TIMESTAMPTZ,
+    usuario_id_usuario INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    id_estudiante      INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante),
+    rol_id_rol         INTEGER NOT NULL REFERENCES public.rol(id_rol),
+    fecha_inicio       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    fecha_termino      TIMESTAMP WITH TIME ZONE,
     motivo_cambio      VARCHAR(255)
 );
+
 CREATE UNIQUE INDEX idx_un_vinculo_activo
-    ON vinculacion_historial (usuario_id_usuario, id_estudiante)
-    WHERE fecha_termino IS NULL;
-CREATE INDEX idx_vinculacion_usuario    ON vinculacion_historial(usuario_id_usuario);
-CREATE INDEX idx_vinculacion_estudiante ON vinculacion_historial(id_estudiante);
-COMMENT ON TABLE vinculacion_historial IS 'Historial de vínculos entre adulto y estudiante (relación N:M)';
--- =========================================================
--- 6. TABLA PICTOGRAMA
--- =========================================================
-CREATE TABLE pictograma (
+ON public.vinculacion_historial (usuario_id_usuario, id_estudiante)
+WHERE fecha_termino IS NULL;
+
+-- ── Tabla: PICTOGRAMA ───────────────────────────────────────
+CREATE TABLE public.pictograma (
     id_pictograma SERIAL PRIMARY KEY,
     nombre_imagen VARCHAR(100) NOT NULL,
     url           TEXT NOT NULL,
     categoria     VARCHAR(50)
 );
-COMMENT ON TABLE pictograma IS 'Catálogo de pictogramas (ARASAAC y personalizados)';
--- =========================================================
--- 7. TABLA CATALOGO_ACTIVIDAD
--- =========================================================
-CREATE TABLE catalogo_actividad (
+
+-- ── Tabla: CATALOGO_ACTIVIDAD ───────────────────────────────
+CREATE TABLE public.catalogo_actividad (
     id_catalogo              SERIAL PRIMARY KEY,
     nombre_predeterminado    VARCHAR(100) NOT NULL,
-    pictograma_id_pictograma INTEGER REFERENCES pictograma(id_pictograma)
+    pictograma_id_pictograma INTEGER REFERENCES public.pictograma(id_pictograma)
 );
-COMMENT ON TABLE catalogo_actividad IS 'Actividades predefinidas reutilizables';
--- =========================================================
--- 8. TABLA ACTIVIDAD
--- =========================================================
-CREATE TABLE actividad (
+
+-- ── Tabla: ACTIVIDAD ────────────────────────────────────────
+CREATE TABLE public.actividad (
     id_actividad                   SERIAL PRIMARY KEY,
-    estudiante_id_estudiante       INTEGER NOT NULL REFERENCES estudiante(id_estudiante)
-                                   ON DELETE CASCADE,
-    usuario_id_usuario             INTEGER NOT NULL REFERENCES usuario(id_usuario),
-    pictograma_id_pictograma       INTEGER REFERENCES pictograma(id_pictograma),
-    catalogo_actividad_id_catalogo INTEGER REFERENCES catalogo_actividad(id_catalogo),
+    estudiante_id_estudiante       INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante) ON DELETE CASCADE,
+    usuario_id_usuario             INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    pictograma_id_pictograma       INTEGER REFERENCES public.pictograma(id_pictograma),
+    catalogo_actividad_id_catalogo INTEGER REFERENCES public.catalogo_actividad(id_catalogo),
     nombre_tarea                   VARCHAR(100) NOT NULL,
     hora_inicio                    TIME NOT NULL,
     hora_fin                       TIME NOT NULL,
-    es_completada                  BOOLEAN DEFAULT FALSE NOT NULL,
+    es_completada                  BOOLEAN NOT NULL DEFAULT FALSE,
     fecha_actividad                DATE NOT NULL,
-    fecha_creacion                 TIMESTAMPTZ DEFAULT NOW() NOT NULL
+    fecha_creacion                 TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
-CREATE INDEX idx_actividad_estudiante ON actividad(estudiante_id_estudiante);
-CREATE INDEX idx_actividad_creador     ON actividad(usuario_id_usuario);
-CREATE INDEX idx_actividad_fecha       ON actividad(fecha_actividad);
-COMMENT ON TABLE actividad IS 'Actividades/rutinas diarias asignadas a estudiantes';
--- =========================================================
--- 9. TABLA CONFIGURACION_ALERTA
--- =========================================================
-CREATE TABLE configuracion_alerta (
+
+-- ── Tabla: CONFIGURACION_ALERTA ─────────────────────────────
+CREATE TABLE public.configuracion_alerta (
     id_alerta              SERIAL PRIMARY KEY,
-    actividad_id_actividad INTEGER NOT NULL UNIQUE REFERENCES actividad(id_actividad)
-                           ON DELETE CASCADE,
-    minutos_anticipacion   VARCHAR(2) DEFAULT '5' NOT NULL
-                           CHECK (minutos_anticipacion IN ('2', '5', '10')),
-    tipo_sonido            VARCHAR(10) DEFAULT 'suave' NOT NULL
-                           CHECK (tipo_sonido IN ('suave', 'moderado', 'silencio')),
-    parpadeo_visual        BOOLEAN DEFAULT TRUE NOT NULL
+    actividad_id_actividad INTEGER NOT NULL UNIQUE REFERENCES public.actividad(id_actividad) ON DELETE CASCADE,
+    minutos_anticipacion   VARCHAR(5) NOT NULL DEFAULT '5',
+    tipo_sonido            VARCHAR(20) NOT NULL DEFAULT 'suave',
+    parpadeo_visual        BOOLEAN NOT NULL DEFAULT TRUE
 );
-COMMENT ON TABLE configuracion_alerta IS 'Configuración de alertas 1:1 por actividad';
--- =========================================================
--- 10. TABLA HISTORIAL_CUMPLIMIENTO
--- =========================================================
-CREATE TABLE historial_cumplimiento (
+
+-- ── Tabla: HISTORIAL_CUMPLIMIENTO ───────────────────────────
+CREATE TABLE public.historial_cumplimiento (
     id_log                 SERIAL PRIMARY KEY,
-    actividad_id_actividad INTEGER NOT NULL REFERENCES actividad(id_actividad),
-    fecha_cumplimiento     TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    actividad_id_actividad INTEGER NOT NULL REFERENCES public.actividad(id_actividad),
+    fecha_cumplimiento     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     observaciones          VARCHAR(255)
 );
-CREATE INDEX idx_historial_actividad ON historial_cumplimiento(actividad_id_actividad);
-COMMENT ON TABLE historial_cumplimiento IS 'Registro de actividades completadas';
--- =========================================================
--- 11. TABLA RECOMPENSA_DISPONIBLE
--- =========================================================
-CREATE TABLE recompensa_disponible (
+
+-- ── Tabla: RECOMPENSA_DISPONIBLE ────────────────────────────
+CREATE TABLE public.recompensa_disponible (
     id_recompensa            SERIAL PRIMARY KEY,
-    estudiante_id_estudiante INTEGER NOT NULL REFERENCES estudiante(id_estudiante)
-                             ON DELETE CASCADE,
+    estudiante_id_estudiante INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante) ON DELETE CASCADE,
     nombre_recompensa        VARCHAR(100) NOT NULL,
     recompensa_url           TEXT,
-    meta_estrellas           INTEGER DEFAULT 5 NOT NULL,
-    estado_logro             BOOLEAN DEFAULT FALSE NOT NULL,
-    fecha_logro              TIMESTAMPTZ
+    meta_estrellas           INTEGER NOT NULL DEFAULT 5,
+    estado_logro             BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_logro              TIMESTAMP WITH TIME ZONE
 );
-CREATE INDEX idx_recompensa_estudiante ON recompensa_disponible(estudiante_id_estudiante);
-COMMENT ON TABLE recompensa_disponible IS 'Recompensas canjeables con estrellas acumuladas';
--- =========================================================
--- 12. TABLA REGISTRO_ESTRELLA_DIARIA
--- =========================================================
-CREATE TABLE registro_estrella_diaria (
+
+-- ── Tabla: REGISTRO_ESTRELLA_DIARIA ─────────────────────────
+CREATE TABLE public.registro_estrella_diaria (
     id_registro              SERIAL PRIMARY KEY,
-    estudiante_id_estudiante INTEGER NOT NULL REFERENCES estudiante(id_estudiante),
-    fecha                    DATE DEFAULT CURRENT_DATE NOT NULL,
-    estrellas_ganadas        INTEGER DEFAULT 0 NOT NULL
-                             CHECK (estrellas_ganadas >= 0),
+    estudiante_id_estudiante INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante),
+    fecha                    DATE NOT NULL DEFAULT CURRENT_DATE,
+    estrellas_ganadas        INTEGER NOT NULL DEFAULT 0 CHECK (estrellas_ganadas >= 0),
     CONSTRAINT unq_estudiante_fecha UNIQUE (estudiante_id_estudiante, fecha)
 );
-CREATE INDEX idx_registro_estrella_fecha ON registro_estrella_diaria(fecha);
-COMMENT ON TABLE registro_estrella_diaria IS 'Estrellas ganadas por estudiante por día';
+
+-- ── Tabla: ENCUESTA_DIARIA ──────────────────────────────────
+CREATE TABLE public.encuesta_diaria (
+    id_encuesta               SERIAL PRIMARY KEY,
+    estudiante_id_estudiante  INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante) ON DELETE CASCADE,
+    usuario_id_usuario        INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    fecha                     DATE NOT NULL DEFAULT CURRENT_DATE,
+    tuvo_desregulacion        BOOLEAN NOT NULL,
+    cantidad                  INTEGER,
+    motivo                    VARCHAR(100),
+    otro_motivo               TEXT,
+    observacion               TEXT,
+    CONSTRAINT unq_encuesta_por_dia UNIQUE (estudiante_id_estudiante, fecha)
+);
+
+-- ============================================================
+-- SEED DATA
+-- ============================================================
+
+-- Insertar roles
+INSERT INTO public.rol (nombre_rol) VALUES
+    ('Administrador'),
+    ('Profesor'),
+    ('Apoderado'),
+    ('Estudiante');
+
+-- Insertar colegio Sagrados Corazones
+INSERT INTO public.colegio (nombre, rut, direccion, telefono, correo, contacto_nombre, activo, plan, fecha_contrato, fecha_vencimiento)
+VALUES (
+    'Colegio Sagrados Corazones',
+    '76.XXX.XXX-X',
+    'Colón 1234, Hualpén, Chile',
+    '+56 41 XXX XXXX',
+    'contacto@sagradoscorazones.cl',
+    'Director/a Nombre Apellido',
+    TRUE,
+    'premium',
+    CURRENT_DATE,
+    CURRENT_DATE + INTERVAL '1 year'
+);
+
+-- ============================================================
+-- ACTUALIZAR CURSOS EXISTENTES (asignar al colegio 1)
+-- ============================================================
+UPDATE public.curso SET colegio_id_colegio = 1 WHERE colegio_id_colegio IS NULL;

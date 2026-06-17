@@ -260,11 +260,3 @@ class EncuestaDiaria(Base):
 
     estudiante = relationship("Estudiante")
     usuario = relationship("Usuario")
-
-    __table_args__ = (
-        UniqueConstraint(
-            "estudiante_id_estudiante",
-            "fecha",
-            name="unq_encuesta_por_dia"
-        ),
-    )
