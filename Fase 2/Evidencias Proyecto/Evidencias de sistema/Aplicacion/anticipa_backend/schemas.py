@@ -62,6 +62,8 @@ class EstudianteCreate(ConfigBase):
     fecha_nacimiento:  date
     usuario_id_usuario: int
     curso_id_curso:    int
+    diagnostico:      Optional[str] = None
+    estado:           Optional[str] = None
 
 class EstudianteResponse(ConfigBase):
     id_estudiante:     int
@@ -69,6 +71,8 @@ class EstudianteResponse(ConfigBase):
     fecha_nacimiento:  date
     codigo_vinculacion: Optional[str]
     puntos_totales:    int
+    diagnostico:       Optional[str]
+    estado:            Optional[str]
     creado_en:         datetime
     usuario_id_usuario: int
     curso_id_curso:    int
@@ -77,6 +81,8 @@ class EstudianteUpdate(ConfigBase):
     nombre:           Optional[str]  = None
     fecha_nacimiento: Optional[date] = None
     curso_id_curso:   Optional[int]  = None
+    diagnostico:      Optional[str]  = None
+    estado:           Optional[str]  = None
 
 
 # VINCULACION_HISTORIAL

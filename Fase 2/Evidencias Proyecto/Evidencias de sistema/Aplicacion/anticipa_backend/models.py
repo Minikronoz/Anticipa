@@ -63,6 +63,8 @@ class Estudiante(Base):
     fecha_nacimiento   = Column(Date, nullable=False)
     codigo_vinculacion = Column(String(7), unique=True, nullable=True)
     puntos_totales     = Column(Integer, nullable=False, default=0)
+    diagnostico        = Column(String(50), nullable=True)
+    estado             = Column(String(20), nullable=True)
     creado_en          = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     usuario_id_usuario = Column(Integer, ForeignKey("usuario.id_usuario"), nullable=False)
     curso_id_curso     = Column(Integer, ForeignKey("curso.id_curso"), nullable=False)
