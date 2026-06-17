@@ -12,6 +12,33 @@ class ConfigBase(BaseModel):
         use_enum_values  = True
 
 
+# COLEGIO
+class ColegioCreate(ConfigBase):
+    nombre:         str
+    rut:            Optional[str] = None
+    direccion:      Optional[str] = None
+    telefono:       Optional[str] = None
+    correo:         Optional[str] = None
+    contacto_nombre: Optional[str] = None
+    activo:         bool = True
+    plan:           str  = "basico"
+    fecha_contrato: Optional[date] = None
+    fecha_vencimiento: Optional[date] = None
+
+class ColegioResponse(ConfigBase):
+    id_colegio:         int
+    nombre:             str
+    rut:                Optional[str]
+    direccion:          Optional[str]
+    telefono:           Optional[str]
+    correo:             Optional[str]
+    contacto_nombre:     Optional[str]
+    activo:             bool
+    plan:               str
+    fecha_contrato:     Optional[date]
+    fecha_vencimiento:  Optional[date]
+
+
 # ROL
 class RolCreate(ConfigBase):
     nombre_rol: str
@@ -23,13 +50,15 @@ class RolResponse(ConfigBase):
 
 # CURSO
 class CursoCreate(ConfigBase):
-    nivel_academico: str
-    letra_academica: Optional[str] = None
+    nivel_academico:  str
+    letra_academica:  Optional[str] = None
+    colegio_id_colegio: Optional[int] = None
 
 class CursoResponse(ConfigBase):
-    id_curso:        int
-    nivel_academico: str
-    letra_academica: Optional[str]
+    id_curso:         int
+    nivel_academico:  str
+    letra_academica:  Optional[str]
+    colegio_id_colegio: Optional[int]
 
 
 # USUARIO

@@ -22,6 +22,24 @@ class MinutosAnticipEnum(enum.Enum):
     quince = '15'
 
 
+# ── Tabla: Colegio (institución educativa) ──
+class Colegio(Base):
+    __tablename__ = "colegio"
+    id_colegio         = Column(Integer, primary_key=True)
+    nombre             = Column(String(100), nullable=False)
+    rut                = Column(String(20), unique=True, nullable=True)
+    direccion          = Column(String(255), nullable=True)
+    telefono           = Column(String(20), nullable=True)
+    correo             = Column(String(100), nullable=True)
+    contacto_nombre    = Column(String(100), nullable=True)
+    activo             = Column(Boolean, nullable=False, default=True)
+    plan               = Column(String(20), nullable=False, default="basico")
+    fecha_contrato     = Column(Date, nullable=True)
+    fecha_vencimiento  = Column(Date, nullable=True)
+
+    cursos = relationship("Curso", back_populates="colegio_r")
+
+
 # ── Tabla: Roles del sistema (Admin, Profesor, Tutor, Estudiante) ──
 class Rol(Base):
     __tablename__ = "rol"
@@ -32,9 +50,12 @@ class Rol(Base):
 # ── Tabla: Cursos académicos ──
 class Curso(Base):
     __tablename__ = "curso"
-    id_curso        = Column(Integer, primary_key=True)
-    nivel_academico = Column(String(10), nullable=False)
-    letra_academica = Column(String(1), nullable=True)
+    id_curso         = Column(Integer, primary_key=True)
+    nivel_academico  = Column(String(10), nullable=False)
+    letra_academica  = Column(String(1), nullable=True)
+    colegio_id_colegio = Column(Integer, ForeignKey("colegio.id_colegio"), nullable=True)
+
+    colegio_r = relationship("Colegio", back_populates="cursos")
 
 
 # ── Tabla: Usuarios que inician sesión (todos los roles) ──

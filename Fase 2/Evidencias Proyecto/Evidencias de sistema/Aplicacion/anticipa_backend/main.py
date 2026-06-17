@@ -260,6 +260,21 @@ def cambiar_password(
 
 
 # =========================================================
+# COLEGIOS
+# =========================================================
+@app.get("/colegios/", response_model=list[schemas.ColegioResponse], tags=["Colegios"])
+def listar_colegios(db: Session = Depends(get_db)):
+    return db.query(models.Colegio).all()
+
+@app.get("/colegios/{id_colegio}", response_model=schemas.ColegioResponse, tags=["Colegios"])
+def obtener_colegio(id_colegio: int, db: Session = Depends(get_db)):
+    c = db.query(models.Colegio).filter(models.Colegio.id_colegio == id_colegio).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Colegio no encontrado")
+    return c
+
+
+# =========================================================
 # ROLES
 # =========================================================
 @app.post("/roles/", response_model=schemas.RolResponse,

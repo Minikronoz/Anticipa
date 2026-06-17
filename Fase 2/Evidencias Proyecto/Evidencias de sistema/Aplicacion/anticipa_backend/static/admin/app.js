@@ -146,7 +146,7 @@ async function cargarDashboard() {
             document.getElementById('graficoDesregulacion') &&
             typeof crearGraficoDesregulacion === "function"
         ) {
-            crearGraficoDesregulacion({});
+            crearGraficoDesregulacion();
         }
 
     } catch (error) {
