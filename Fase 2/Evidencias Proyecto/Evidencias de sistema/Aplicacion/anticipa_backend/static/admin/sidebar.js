@@ -16,12 +16,6 @@ function cargarSidebar() {
 
         <ul class="sidebar-menu">
 
-            <li class="${pagina === 'dashboard.html' ? 'active' : ''}">
-                <a href="dashboard.html">
-                    <i class="bi bi-speedometer2"></i>
-                    Dashboard
-                </a>
-            </li>
 
             <li class="${pagina === 'usuarios.html' ? 'active' : ''}">
                 <a href="usuarios.html">
