@@ -1543,6 +1543,6 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         buffer,
         media_type="application/pdf",
         headers={
-            "Content-Disposition": "inline; filename=reporte_general.pdf"
-        }
+    "Content-Disposition": f'inline; filename="Reporte_Anticipa_{datetime.now().strftime("%Y%m%d")}.pdf"'
+}
     )
