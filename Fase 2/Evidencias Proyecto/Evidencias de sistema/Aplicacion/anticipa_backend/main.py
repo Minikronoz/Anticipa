@@ -18,7 +18,7 @@ import os
 from admin import router as admin_router
 from collections import Counter
 from fastapi.responses import FileResponse, StreamingResponse
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer,Table , TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 import io
 from openpyxl import Workbook
