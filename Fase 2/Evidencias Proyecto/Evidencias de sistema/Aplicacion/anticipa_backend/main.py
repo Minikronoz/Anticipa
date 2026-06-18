@@ -18,12 +18,10 @@ import os
 from admin import router as admin_router
 from collections import Counter
 from fastapi.responses import FileResponse, StreamingResponse
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer,Table , TableStyle
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
 import io
-from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill, Alignment
-from openpyxl.utils import get_column_letter
+
 
 
 
@@ -1352,6 +1350,7 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
         "historial": historial
     }
 
+
 @app.get("/reportes/pdf-general")
 def reporte_general_pdf(db: Session = Depends(get_db)):
 
@@ -1361,365 +1360,36 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     total_estudiantes = len(estudiantes)
 
     total_desregulaciones = sum(
-        e.cantidad or 0
-        for e in encuestas
-        if e.tuvo_desregulacion
+        e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion
     )
 
     motivos = Counter(
-        e.motivo
-        for e in encuestas
-        if e.motivo
+        e.motivo for e in encuestas if e.motivo
     )
 
-    motivo_principal = (
-        motivos.most_common(1)[0][0]
-        if motivos else "Sin datos"
-    )
+    motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
 
     buffer = io.BytesIO()
-
     doc = SimpleDocTemplate(buffer)
-
     estilos = getSampleStyleSheet()
-
     contenido = []
 
-    contenido.append(
-        Paragraph(
-            "REPORTE EJECUTIVO ANTICIPA",
-            estilos["Title"]
-        )
-    )
+    contenido.append(Paragraph("REPORTE GENERAL ESCUELA", estilos["Title"]))
+    contenido.append(Spacer(1, 12))
 
-    contenido.append(Spacer(1, 20))
-
-    tabla_resumen = Table(
-        [
-            ["Indicador", "Valor"],
-            ["Total Estudiantes", str(total_estudiantes)],
-            ["Total Desregulaciones", str(total_desregulaciones)],
-            ["Motivo Principal", motivo_principal],
-            ["Riesgo Alto", "4"],
-            ["Curso Crítico", "5°A"],
-            ["Mejora Global", "37%"]
-        ],
-        colWidths=[220, 220]
-    )
-
-    tabla_resumen.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1F4E79")),
-        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-        ("FONTNAME", (0,0), (-1,0), "Helvetica-Bold"),
-        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-        ("ROWBACKGROUNDS", (0,1), (-1,-1),
-         [colors.whitesmoke, colors.lightgrey]),
-    ]))
-
-    contenido.append(tabla_resumen)
-
-    contenido.append(Spacer(1,20))
-
-    contenido.append(
-        Paragraph(
-            "Factores Desencadenantes",
-            estilos["Heading2"]
-        )
-    )
-
-    datos_factores = [["Motivo", "Cantidad"]]
-
-    for motivo, cantidad in motivos.items():
-        datos_factores.append([motivo, str(cantidad)])
-
-    tabla_factores = Table(datos_factores)
-
-    tabla_factores.setStyle(TableStyle([
-        ("BACKGROUND", (0,0), (-1,0), colors.HexColor("#1F4E79")),
-        ("TEXTCOLOR", (0,0), (-1,0), colors.white),
-        ("GRID", (0,0), (-1,-1), 0.5, colors.black),
-    ]))
-
-    contenido.append(tabla_factores)
-
-    contenido.append(Spacer(1,20))
-
-    contenido.append(
-        Paragraph(
-            "Hallazgos Inteligentes",
-            estilos["Heading2"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            "• El motivo principal corresponde al factor más recurrente registrado.",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            "• Las métricas permiten identificar estudiantes y cursos prioritarios.",
-            estilos["Normal"]
-        )
-    )
-
-    contenido.append(
-        Paragraph(
-            "• El sistema facilita la detección temprana de situaciones de riesgo.",
-            estilos["Normal"]
-        )
-    )
+    contenido.append(Paragraph(f"Total estudiantes: {total_estudiantes}", estilos["Normal"]))
+    contenido.append(Paragraph(f"Total desregulaciones: {total_desregulaciones}", estilos["Normal"]))
+    contenido.append(Paragraph(f"Motivo principal: {motivo_principal}", estilos["Normal"]))
 
     doc.build(contenido)
-
     buffer.seek(0)
 
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
         headers={
-            "Content-Disposition":
-            "inline; filename=reporte_general.pdf"
+            "Content-Disposition": "inline; filename=reporte_general.pdf"
         }
     )
 
-@app.get("/reportes/excel-general")
-def reporte_general_excel(db: Session = Depends(get_db)):
 
-    estudiantes = db.query(models.Estudiante).all()
-    encuestas = db.query(models.EncuestaDiaria).all()
-
-    wb = Workbook()
-
-    color_header = "1F4E79"
-
-    # =====================================================
-    # DASHBOARD
-    # =====================================================
-
-    ws = wb.active
-    ws.title = "Dashboard"
-
-    ws.merge_cells("A1:B1")
-
-    ws["A1"] = "REPORTE EJECUTIVO ANTICIPA"
-
-    ws["A1"].font = Font(
-        size=16,
-        bold=True
-    )
-
-    ws["A1"].alignment = Alignment(horizontal="center")
-
-    ws["A3"] = "Indicador"
-    ws["B3"] = "Valor"
-
-    for c in ["A3","B3"]:
-
-        ws[c].fill = PatternFill(
-            "solid",
-            fgColor=color_header
-        )
-
-        ws[c].font = Font(
-            color="FFFFFF",
-            bold=True
-        )
-
-    motivos = Counter(
-        e.motivo
-        for e in encuestas
-        if e.motivo
-    )
-
-    motivo_principal = (
-        motivos.most_common(1)[0][0]
-        if motivos else "Sin datos"
-    )
-
-    total_desregulaciones = sum(
-        e.cantidad or 0
-        for e in encuestas
-        if e.tuvo_desregulacion
-    )
-
-    dashboard = [
-        ["Total Estudiantes", len(estudiantes)],
-        ["Total Desregulaciones", total_desregulaciones],
-        ["Motivo Principal", motivo_principal],
-        ["Riesgo Alto", 4],
-        ["Curso Crítico", "5°A"],
-        ["Mejora Global", "37%"]
-    ]
-
-    fila = 4
-
-    for item in dashboard:
-
-        ws.cell(fila,1,item[0])
-        ws.cell(fila,2,item[1])
-
-        fila += 1
-
-    # =====================================================
-    # ESTUDIANTES
-    # =====================================================
-
-    ws2 = wb.create_sheet("Estudiantes")
-
-    columnas = [
-        "ID",
-        "Nombre",
-        "Curso",
-        "Puntos",
-        "Actividades",
-        "Completadas",
-        "Estrellas",
-        "Desregulaciones"
-    ]
-
-    for col, titulo in enumerate(columnas, start=1):
-
-        celda = ws2.cell(1,col)
-
-        celda.value = titulo
-
-        celda.fill = PatternFill(
-            "solid",
-            fgColor=color_header
-        )
-
-        celda.font = Font(
-            color="FFFFFF",
-            bold=True
-        )
-
-    fila = 2
-
-    for estudiante in estudiantes:
-
-        actividades = db.query(models.Actividad).filter(
-            models.Actividad.estudiante_id_estudiante ==
-            estudiante.id_estudiante
-        ).all()
-
-        estrellas = db.query(
-            models.RegistroEstrellaDiaria
-        ).filter(
-            models.RegistroEstrellaDiaria.estudiante_id_estudiante ==
-            estudiante.id_estudiante
-        ).all()
-
-        encuestas_est = db.query(
-            models.EncuestaDiaria
-        ).filter(
-            models.EncuestaDiaria.estudiante_id_estudiante ==
-            estudiante.id_estudiante
-        ).all()
-
-        total_actividades = len(actividades)
-
-        completadas = sum(
-            1 for a in actividades
-            if a.es_completada
-        )
-
-        total_estrellas = sum(
-            e.estrellas_ganadas
-            for e in estrellas
-        )
-
-        total_desreg = sum(
-            e.cantidad or 0
-            for e in encuestas_est
-            if e.tuvo_desregulacion
-        )
-
-        curso = ""
-
-        if estudiante.curso_r:
-            curso = (
-                estudiante.curso_r.nivel_academico +
-                estudiante.curso_r.letra_academica
-            )
-
-        fila_data = [
-            estudiante.id_estudiante,
-            estudiante.nombre,
-            curso,
-            estudiante.puntos_totales,
-            total_actividades,
-            completadas,
-            total_estrellas,
-            total_desreg
-        ]
-
-        for col, valor in enumerate(fila_data, start=1):
-            ws2.cell(fila,col,valor)
-
-        fila += 1
-
-    # =====================================================
-    # FACTORES
-    # =====================================================
-
-    ws3 = wb.create_sheet("Factores")
-
-    ws3["A1"] = "Motivo"
-    ws3["B1"] = "Cantidad"
-
-    for c in ["A1","B1"]:
-
-        ws3[c].fill = PatternFill(
-            "solid",
-            fgColor=color_header
-        )
-
-        ws3[c].font = Font(
-            color="FFFFFF",
-            bold=True
-        )
-
-    fila = 2
-
-    for motivo, cantidad in motivos.items():
-
-        ws3.cell(fila,1,motivo)
-        ws3.cell(fila,2,cantidad)
-
-        fila += 1
-
-    # =====================================================
-    # AJUSTE COLUMNAS
-    # =====================================================
-
-    for hoja in wb.worksheets:
-
-        for columna in hoja.columns:
-
-            largo = max(
-                len(str(celda.value))
-                if celda.value else 0
-                for celda in columna
-            )
-
-            hoja.column_dimensions[
-                get_column_letter(columna[0].column)
-            ].width = largo + 5
-
-    buffer = io.BytesIO()
-
-    wb.save(buffer)
-
-    buffer.seek(0)
-
-    return StreamingResponse(
-        buffer,
-        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={
-            "Content-Disposition":
-            "attachment; filename=reporte_anticipa.xlsx"
-        }
-    )
