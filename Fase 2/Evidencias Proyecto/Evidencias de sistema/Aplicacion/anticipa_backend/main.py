@@ -18,11 +18,10 @@ import os
 from admin import router as admin_router
 from collections import Counter
 from fastapi.responses import FileResponse, StreamingResponse
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet
 import io
-
-
+from reportlab.lib import colors
 
 
 # ── Configuración inicial ──────────────────────────────────
@@ -1353,6 +1352,194 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
 
 @app.get("/reportes/pdf-general")
 def reporte_general_pdf(db: Session = Depends(get_db)):
+
+    estudiantes = db.query(models.Estudiante).all()
+    encuestas = db.query(models.EncuestaDiaria).all()
+
+    total_estudiantes = len(estudiantes)
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+
+    motivos = Counter(
+        e.motivo
+        for e in encuestas
+        if e.motivo
+    )
+
+    motivo_principal = (
+        motivos.most_common(1)[0][0]
+        if motivos else "Sin datos"
+    )
+
+    buffer = io.BytesIO()
+
+    doc = SimpleDocTemplate(
+        buffer,
+        rightMargin=30,
+        leftMargin=30,
+        topMargin=30,
+        bottomMargin=30
+    )
+
+    estilos = getSampleStyleSheet()
+
+    contenido = []
+
+    # ==========================
+    # TITULO
+    # ==========================
+
+    contenido.append(
+        Paragraph(
+            "ANTICIPA - REPORTE GENERAL",
+            estilos["Title"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(Spacer(1,20))
+
+    # ==========================
+    # RESUMEN
+    # ==========================
+
+    contenido.append(
+        Paragraph(
+            "Resumen Ejecutivo",
+            estilos["Heading2"]
+        )
+    )
+
+    contenido.append(
+        Paragraph(
+            """
+            Este reporte presenta un resumen de los estudiantes,
+            registros emocionales y desregulaciones detectadas
+            por la plataforma Anticipa.
+            """,
+            estilos["Normal"]
+        )
+    )
+
+    contenido.append(Spacer(1,15))
+
+    # ==========================
+    # KPI
+    # ==========================
+
+    tabla_kpi = Table([
+        ["Indicador", "Valor"],
+        ["Total Estudiantes", str(total_estudiantes)],
+        ["Total Desregulaciones", str(total_desregulaciones)],
+        ["Motivo Principal", motivo_principal]
+    ])
+
+    tabla_kpi.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#1E88E5")),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+        ("GRID",(0,0),(-1,-1),1,colors.black),
+        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+    ]))
+
+    contenido.append(tabla_kpi)
+
+    contenido.append(Spacer(1,20))
+
+    # ==========================
+    # MOTIVOS
+    # ==========================
+
+    contenido.append(
+        Paragraph(
+            "Distribución de Motivos",
+            estilos["Heading2"]
+        )
+    )
+
+    datos_motivos = [["Motivo","Cantidad"]]
+
+    for motivo,cantidad in motivos.items():
+        datos_motivos.append([
+            str(motivo),
+            str(cantidad)
+        ])
+
+    tabla_motivos = Table(datos_motivos)
+
+    tabla_motivos.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.grey),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+        ("GRID",(0,0),(-1,-1),1,colors.black)
+    ]))
+
+    contenido.append(tabla_motivos)
+
+    contenido.append(PageBreak())
+
+    # ==========================
+    # ESTUDIANTES
+    # ==========================
+
+    contenido.append(
+        Paragraph(
+            "Listado de Estudiantes",
+            estilos["Heading2"]
+        )
+    )
+
+    datos_estudiantes = [
+        ["Nombre", "Curso"]
+    ]
+
+    for est in estudiantes:
+
+        datos_estudiantes.append([
+            f"{est.nombre} {est.apellido}",
+            est.curso if hasattr(est, "curso") else "-"
+        ])
+
+    tabla_estudiantes = Table(datos_estudiantes)
+
+    tabla_estudiantes.setStyle(TableStyle([
+        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#43A047")),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+        ("GRID",(0,0),(-1,-1),1,colors.black),
+        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold")
+    ]))
+
+    contenido.append(tabla_estudiantes)
+
+    contenido.append(Spacer(1,20))
+
+    contenido.append(
+        Paragraph(
+            "Documento generado automáticamente por Anticipa.",
+            estilos["Italic"]
+        )
+    )
+
+    doc.build(contenido)
+
+    buffer.seek(0)
+
+    return StreamingResponse(
+        buffer,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition":
+            "inline; filename=reporte_general.pdf"
+        }
+    )
 
     estudiantes = db.query(models.Estudiante).all()
     encuestas = db.query(models.EncuestaDiaria).all()
