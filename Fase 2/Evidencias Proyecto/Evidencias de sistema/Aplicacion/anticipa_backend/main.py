@@ -1359,7 +1359,7 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     total_estudiantes = len(estudiantes)
 
     total_desregulaciones = sum(
-        e.cantidad or 0
+        (e.cantidad or 0)
         for e in encuestas
         if e.tuvo_desregulacion
     )
@@ -1386,7 +1386,6 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     )
 
     estilos = getSampleStyleSheet()
-
     contenido = []
 
     # ==========================
@@ -1407,7 +1406,7 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         )
     )
 
-    contenido.append(Spacer(1,20))
+    contenido.append(Spacer(1, 20))
 
     # ==========================
     # RESUMEN
@@ -1431,7 +1430,7 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         )
     )
 
-    contenido.append(Spacer(1,15))
+    contenido.append(Spacer(1, 15))
 
     # ==========================
     # KPI
@@ -1441,19 +1440,19 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         ["Indicador", "Valor"],
         ["Total Estudiantes", str(total_estudiantes)],
         ["Total Desregulaciones", str(total_desregulaciones)],
-        ["Motivo Principal", motivo_principal]
+        ["Motivo Principal", str(motivo_principal)]
     ])
 
     tabla_kpi.setStyle(TableStyle([
-        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#1E88E5")),
-        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
-        ("GRID",(0,0),(-1,-1),1,colors.black),
-        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold"),
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1E88E5")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
     ]))
 
     contenido.append(tabla_kpi)
 
-    contenido.append(Spacer(1,20))
+    contenido.append(Spacer(1, 20))
 
     # ==========================
     # MOTIVOS
@@ -1466,9 +1465,9 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         )
     )
 
-    datos_motivos = [["Motivo","Cantidad"]]
+    datos_motivos = [["Motivo", "Cantidad"]]
 
-    for motivo,cantidad in motivos.items():
+    for motivo, cantidad in motivos.items():
         datos_motivos.append([
             str(motivo),
             str(cantidad)
@@ -1477,9 +1476,9 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     tabla_motivos = Table(datos_motivos)
 
     tabla_motivos.setStyle(TableStyle([
-        ("BACKGROUND",(0,0),(-1,0),colors.grey),
-        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
-        ("GRID",(0,0),(-1,-1),1,colors.black)
+        ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 1, colors.black)
     ]))
 
     contenido.append(tabla_motivos)
@@ -1503,23 +1502,31 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
 
     for est in estudiantes:
 
+        curso = "-"
+
+        try:
+            if hasattr(est, "curso_r") and est.curso_r:
+                curso = f"{est.curso_r.nivel_academico}{est.curso_r.letra_academica}"
+        except:
+            curso = "-"
+
         datos_estudiantes.append([
-            f"{est.nombre} {est.apellido}",
-            est.curso if hasattr(est, "curso") else "-"
+            str(est.nombre),
+            curso
         ])
 
     tabla_estudiantes = Table(datos_estudiantes)
 
     tabla_estudiantes.setStyle(TableStyle([
-        ("BACKGROUND",(0,0),(-1,0),colors.HexColor("#43A047")),
-        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
-        ("GRID",(0,0),(-1,-1),1,colors.black),
-        ("FONTNAME",(0,0),(-1,0),"Helvetica-Bold")
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#43A047")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("GRID", (0, 0), (-1, -1), 1, colors.black),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold")
     ]))
 
     contenido.append(tabla_estudiantes)
 
-    contenido.append(Spacer(1,20))
+    contenido.append(Spacer(1, 20))
 
     contenido.append(
         Paragraph(
@@ -1536,47 +1543,6 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         buffer,
         media_type="application/pdf",
         headers={
-            "Content-Disposition":
-            "inline; filename=reporte_general.pdf"
-        }
-    )
-
-    estudiantes = db.query(models.Estudiante).all()
-    encuestas = db.query(models.EncuestaDiaria).all()
-
-    total_estudiantes = len(estudiantes)
-
-    total_desregulaciones = sum(
-        e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion
-    )
-
-    motivos = Counter(
-        e.motivo for e in encuestas if e.motivo
-    )
-
-    motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
-
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer)
-    estilos = getSampleStyleSheet()
-    contenido = []
-
-    contenido.append(Paragraph("REPORTE GENERAL ESCUELA", estilos["Title"]))
-    contenido.append(Spacer(1, 12))
-
-    contenido.append(Paragraph(f"Total estudiantes: {total_estudiantes}", estilos["Normal"]))
-    contenido.append(Paragraph(f"Total desregulaciones: {total_desregulaciones}", estilos["Normal"]))
-    contenido.append(Paragraph(f"Motivo principal: {motivo_principal}", estilos["Normal"]))
-
-    doc.build(contenido)
-    buffer.seek(0)
-
-    return StreamingResponse(
-        buffer,
-        media_type="application/pdf",
-        headers={
             "Content-Disposition": "inline; filename=reporte_general.pdf"
         }
     )
-
-
