@@ -1341,11 +1341,11 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               Row(children: [
                 SizedBox(width: 50, child: Text(hora, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _prim))),
                 Text(
-                  a['usuario_rol'] == 'profesor'
+                  (a['usuario_rol'] ?? '').toString().toLowerCase().contains('profesor')
                       ? ' 🎓'
-                      : a['usuario_rol'] == 'apoderado'
+                      : (a['usuario_rol'] ?? '').toString().toLowerCase().contains('apodera')
                           ? ' 👤'
-                          : '',
+                          : ' 👤',
                   style: const TextStyle(fontSize: 16),
                 ),
                 const SizedBox(width: 4),

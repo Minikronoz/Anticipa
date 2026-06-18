@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
@@ -177,6 +178,9 @@ class _PanelApoderadoState extends State<PanelApoderado> {
     String? motivo;
     final obsCtrl = TextEditingController();
 
+    bool puedeGuardar(bool? t, int? c) =>
+        t != null && (t == false || (c != null && c != 999));
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -202,13 +206,44 @@ class _PanelApoderadoState extends State<PanelApoderado> {
               const SizedBox(height: 20),
               const Text('¿Cuántas desregulaciones?', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
               const SizedBox(height: 8),
-              Wrap(spacing: 8, children: [1, 2, 3, 4, 5].map((n) => ChoiceChip(
-                label: Text('$n'),
-                selected: cantidad == n,
-                onSelected: (_) => setModal(() => cantidad = n),
-                selectedColor: const Color(0xFFEF4444),
-                labelStyle: TextStyle(color: cantidad == n ? Colors.white : const Color(0xFF061A40)),
-              )).toList()),
+              Wrap(spacing: 8, children: [
+                ...[1, 2, 3, 4, 5].map((n) => ChoiceChip(
+                  label: Text('$n'),
+                  selected: cantidad == n,
+                  onSelected: (_) => setModal(() => cantidad = n),
+                  selectedColor: const Color(0xFFEF4444),
+                  labelStyle: TextStyle(color: cantidad == n ? Colors.white : const Color(0xFF061A40)),
+                )),
+                ChoiceChip(
+                  label: const Text('Otro'),
+                  selected: cantidad == 999,
+                  onSelected: (_) => setModal(() { cantidad = 999; }),
+                  selectedColor: const Color(0xFFEF4444),
+                  labelStyle: TextStyle(color: cantidad == 999 ? Colors.white : const Color(0xFF061A40)),
+                ),
+              ]),
+              if (cantidad == 999)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(2),
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: '¿Cuántas? (1-15)',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (v) {
+                      final n = int.tryParse(v);
+                      if (n != null && n >= 1 && n <= 15) {
+                        setModal(() => cantidad = n);
+                      }
+                    },
+                  ),
+                ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
                 decoration: const InputDecoration(labelText: 'Motivo principal', border: OutlineInputBorder()),
@@ -228,7 +263,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
             const SizedBox(height: 24),
             SizedBox(width: double.infinity, child: ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F46E5), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 14)),
-              onPressed: tuvo == null ? null : () {
+              onPressed: puedeGuardar(tuvo, cantidad) ? () {
                 Navigator.pop(ctx);
                 _enviarEncuesta(
                   hijo,
@@ -237,7 +272,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
                   motivo: motivo,
                   observacion: obsCtrl.text.trim().isEmpty ? null : obsCtrl.text.trim(),
                 );
-              },
+              } : null,
               child: const Text('Guardar', style: TextStyle(fontSize: 16)),
             )),
           ]),
