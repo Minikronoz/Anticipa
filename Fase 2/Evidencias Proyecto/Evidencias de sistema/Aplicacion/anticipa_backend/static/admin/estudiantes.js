@@ -58,7 +58,6 @@ function cargarTabla(lista) {
             <td>${e.curso_r?.nivel_academico || ""}${e.curso_r?.letra_academica || ""}</td>
             <td>${e.diagnostico}</td>
             <td>${e.puntos_totales || 0}</td>
-            <td>${e.semana || 0}</td>
             <td>
                 <span class="badge ${
                     e.estado === "Riesgo"
@@ -126,8 +125,9 @@ function aplicarFiltros() {
 
         const nombre = e.nombre.toLowerCase();
 
-        const cursoNombre = (e.curso_r?.nivel_academico || "") +
-                            (e.curso_r?.letra_academica || "");
+        const cursoNombre =
+            (e.curso_r?.nivel_academico || "") +
+            (e.curso_r?.letra_academica || "");
 
         return (
             nombre.includes(texto) &&
@@ -135,19 +135,17 @@ function aplicarFiltros() {
             (diagnostico === "" || e.diagnostico === diagnostico) &&
             (estado === "" || e.estado === estado)
         );
-
     });
 
     switch (orden) {
 
         case "totalDesc":
-            resultado.sort((a, b) => b.puntos_totales - a.puntos_totales);
+            resultado.sort((a, b) => (b.puntos_totales || 0) - (a.puntos_totales || 0));
             break;
 
         case "totalAsc":
-            resultado.sort((a, b) => a.puntos_totales - b.puntos_totales);
+            resultado.sort((a, b) => (a.puntos_totales || 0) - (b.puntos_totales || 0));
             break;
-
     }
 
     cargarTabla(resultado);
