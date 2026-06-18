@@ -105,8 +105,9 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
 
   Future<void> eliminarActividad(int id) async {
     try {
-      final r = await http.delete(Uri.parse('${AppConstants.baseUrl}/actividades/$id')).timeout(const Duration(seconds: 60));
+      final r = await http.delete(Uri.parse('${AppConstants.baseUrl}/actividades/$id?usuario_id=${widget.idUsuario}')).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) await _cargarTodo();
+      else if (r.statusCode == 403) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solo el creador puede eliminar esta actividad'), backgroundColor: Colors.orange)); }
     } catch (_) { setState(() => error = 'Error al eliminar'); }
   }
 
@@ -957,8 +958,9 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     };
     if (pictoElegido != null) body['pictograma_id_pictograma'] = pictoElegido!['id_pictograma'];
     try {
-      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/${a['id_actividad']}'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body)).timeout(const Duration(seconds: 60));
+      final r = await http.patch(Uri.parse('${AppConstants.baseUrl}/actividades/${a['id_actividad']}?usuario_id=${widget.idUsuario}'), headers: {'Content-Type': 'application/json'}, body: jsonEncode(body)).timeout(const Duration(seconds: 60));
       if (r.statusCode == 200) { await _cargarTodo(); }
+      else if (r.statusCode == 403) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Solo el creador puede editar esta actividad'), backgroundColor: Colors.orange)); }
       else { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error ${r.statusCode}: No se pudo editar la actividad'), backgroundColor: Colors.red)); }
     } catch (_) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Error al editar actividad'), backgroundColor: Colors.red)); }
   }
@@ -1368,7 +1370,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
               if (picto != null) Padding(padding: const EdgeInsets.only(left: 50, top: 2), child: Text(picto['nombre_imagen'] ?? '', style: TextStyle(fontSize: 12, color: Colors.grey[600]))),
               const SizedBox(height: 10),
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                if (canEdit && !esPasado) ...[
+                if (canEdit && !esPasado && a['usuario_id_usuario'] == widget.idUsuario) ...[
                   IconButton(icon: const Icon(Icons.edit, size: 20, color: Colors.blueGrey), tooltip: 'Editar', padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36), onPressed: () => editarActividad(a)),
                   IconButton(icon: const Icon(Icons.delete, size: 20, color: Colors.redAccent), tooltip: 'Eliminar', padding: EdgeInsets.zero, constraints: const BoxConstraints(minWidth: 36, minHeight: 36), onPressed: () => _confirmarEliminar(a)),
                 ],

@@ -314,9 +314,15 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     }
 
     final esPasado = _esActividadPasada(a);
-    final picto = _pictoUrl(a['pictograma_id_pictograma']);
+    final ahora = DateTime.now();
+    final horaActual = '${ahora.hour.toString().padLeft(2, '0')}:${ahora.minute.toString().padLeft(2, '0')}';
     final horaRaw = (a['hora_inicio']?.toString() ?? '');
-    final hora = horaRaw.length >= 5 ? horaRaw.substring(0, 5) : '--:--';
+    final horaFormateada = horaRaw.length >= 5 ? horaRaw.substring(0, 5) : '--:--';
+    final fechaActStr = a['fecha_actividad']?.toString().split('T')[0] ?? '';
+    final esFutura = !esPasado && fechaActStr.compareTo(DateTime.now().toIso8601String().split('T')[0]) > 0;
+    final esFuturaMismoDia = !esPasado && !esFutura && horaFormateada.compareTo(horaActual) > 0;
+    final picto = _pictoUrl(a['pictograma_id_pictograma']);
+    final hora = horaFormateada;
 
     final esPrimero = index == 0;
     final esUltimo = index == total - 1;
@@ -436,9 +442,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: ElevatedButton(
-                      onPressed: completando || esPasado ? null : () => _completar(id),
+                      onPressed: completando || esPasado || esFutura || esFuturaMismoDia ? null : () => _completar(id),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: completada ? const Color(0xFF22C55E) : _c.primary,
+                        backgroundColor: completada ? const Color(0xFF22C55E) : (esPasado || esFutura || esFuturaMismoDia ? Colors.grey : _c.primary),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -449,7 +455,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                         else ...[
                           Icon(completada ? Icons.check_circle : Icons.star, size: 22),
                           const SizedBox(width: 8),
-                          Text(completada ? '¡COMPLETADO!' : 'COMPLETAR', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(completada ? '¡COMPLETADO!' : (esFutura || esFuturaMismoDia ? 'PRÓXIMO' : 'COMPLETAR'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ]),
                     ),
@@ -457,11 +463,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                 ),
                 const SizedBox(height: 14),
               ]),
-            ],
-            ),
+            ]),
           ),
-        ),
-        ],
+      )],
       ),
     );
   }

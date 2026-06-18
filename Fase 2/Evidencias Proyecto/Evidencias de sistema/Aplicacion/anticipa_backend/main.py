@@ -732,12 +732,23 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
 
     estaba_completada = a.es_completada
     a.es_completada = not a.es_completada
-    hoy = datetime.now(CHILE_TZ).date()
+    ahora = datetime.now(CHILE_TZ)
+    hoy = ahora.date()
 
     if a.fecha_actividad < hoy:
         raise HTTPException(
             status_code=400,
             detail="No se pueden completar actividades de días pasados."
+        )
+    if a.fecha_actividad > hoy:
+        raise HTTPException(
+            status_code=400,
+            detail="No se pueden completar actividades de días futuros."
+        )
+    if a.fecha_actividad == hoy and a.hora_inicio > ahora.time():
+        raise HTTPException(
+            status_code=400,
+            detail="No se puede completar una actividad antes de su hora programada."
         )
 
     if not estaba_completada:
@@ -785,12 +796,14 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
 
 @app.patch("/actividades/{id_actividad}",
            response_model=schemas.ActividadResponse, tags=["Actividades"])
-def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: Session = Depends(get_db)):
+def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, usuario_id: int = Query(..., description="ID del usuario que edita"), db: Session = Depends(get_db)):
     a = db.query(models.Actividad).filter(
         models.Actividad.id_actividad == id_actividad
     ).first()
     if not a:
         raise HTTPException(status_code=404, detail="Actividad no encontrada.")
+    if a.usuario_id_usuario != usuario_id:
+        raise HTTPException(status_code=403, detail="Solo el creador de la actividad puede editarla.")
 
     datos_dict = datos.model_dump(exclude_unset=True)
 
@@ -832,12 +845,14 @@ def actualizar_actividad(id_actividad: int, datos: schemas.ActividadUpdate, db: 
     return a
 
 @app.delete("/actividades/{id_actividad}", tags=["Actividades"])
-def eliminar_actividad(id_actividad: int, db: Session = Depends(get_db)):
+def eliminar_actividad(id_actividad: int, usuario_id: int = Query(..., description="ID del usuario que elimina"), db: Session = Depends(get_db)):
     a = db.query(models.Actividad).filter(
         models.Actividad.id_actividad == id_actividad
     ).first()
     if not a:
         raise HTTPException(status_code=404, detail="Actividad no encontrada.")
+    if a.usuario_id_usuario != usuario_id:
+        raise HTTPException(status_code=403, detail="Solo el creador de la actividad puede eliminarla.")
     db.delete(a); db.commit()
     return {"mensaje": "Actividad eliminada exitosamente"}
 
