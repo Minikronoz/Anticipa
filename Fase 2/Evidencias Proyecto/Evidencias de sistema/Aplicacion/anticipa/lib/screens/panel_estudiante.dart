@@ -381,50 +381,55 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                         : Border.all(color: _c.primary.withValues(alpha: 0.2)),
                 boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, 4))],
               ),
-              child: Column(children: [
-                const SizedBox(height: 14),
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(color: _c.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(18)),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: picto != null
-                        ? Image.network(picto, width: 56, height: 56, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 40)))
-                        : const Text('📌', style: TextStyle(fontSize: 40)),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                if (esPasado)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 4),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(8)),
-                    child: const Text('🔒 Día pasado', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Stack(children: [
+                Positioned(
+                  top: 12,
+                  right: 12,
                   child: Text(
-                    a['nombre_tarea'] ?? 'Actividad',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.textPrimary, decoration: completada ? TextDecoration.lineThrough : null),
+                    (a['usuario_rol'] ?? '').toString().toLowerCase().contains('profesor')
+                        ? '🎓'
+                        : (a['usuario_rol'] ?? '').toString().toLowerCase().contains('apodera')
+                            ? '👤'
+                            : '👤',
+                    style: const TextStyle(fontSize: 20),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.access_time, size: 16, color: _c.primary),
-                  const SizedBox(width: 4),
-                  Text(hora, style: TextStyle(fontSize: 16, color: _c.primary, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 8),
-                  Text(
-                    a['usuario_rol'] == 'profesor'
-                        ? '🎓'
-                        : a['usuario_rol'] == 'apoderado'
-                            ? '👤'
-                            : '',
-                    style: const TextStyle(fontSize: 16),
+                Column(children: [
+                  const SizedBox(height: 14),
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(color: _c.primary.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(18)),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: picto != null
+                          ? Image.network(picto, width: 56, height: 56, fit: BoxFit.contain, errorBuilder: (_, _, _) => const Text('📌', style: TextStyle(fontSize: 40)))
+                          : const Text('📌', style: TextStyle(fontSize: 40)),
+                    ),
                   ),
-                ]),
+                  const SizedBox(height: 8),
+                  if (esPasado)
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(8)),
+                      child: const Text('🔒 Día pasado', style: TextStyle(fontSize: 11, color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(
+                      a['nombre_tarea'] ?? 'Actividad',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _c.textPrimary, decoration: completada ? TextDecoration.lineThrough : null),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(Icons.access_time, size: 16, color: _c.primary),
+                    const SizedBox(width: 4),
+                    Text(hora, style: TextStyle(fontSize: 16, color: _c.primary, fontWeight: FontWeight.w600)),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
@@ -452,8 +457,10 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                 ),
                 const SizedBox(height: 14),
               ]),
+            ],
             ),
           ),
+        ),
         ],
       ),
     );
