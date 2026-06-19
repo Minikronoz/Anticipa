@@ -11,7 +11,7 @@ async function cargarEstudiantes() {
 
     try {
 
-        const res = await fetch(`${API}/estudiantes/`)
+        const res = await fetch(`${API}/estudiantes/`);
 
         if (!res.ok) {
             throw new Error("Error cargando estudiantes");
@@ -19,30 +19,44 @@ async function cargarEstudiantes() {
 
         estudiantes = await res.json();
 
+        // TABLA Y CURSOS
         cargarCursos();
         cargarTabla(estudiantes);
 
-const totalTEA = document.getElementById("totalTEA");
-const totalTDAH = document.getElementById("totalTDAH");
-const totalRiesgo = document.getElementById("totalRiesgo");
+        // =========================
+        // TARJETAS
+        // =========================
+        const totalEstudiantes = document.getElementById("totalEstudiantes");
+        const totalTEA = document.getElementById("totalTEA");
+        const totalTDAH = document.getElementById("totalTDAH");
+        const totalRiesgo = document.getElementById("totalRiesgo");
 
-if (totalTEA) {
-    totalTEA.textContent =
-        estudiantes.filter(x => x.diagnostico === "TEA").length;
-}
+        // Total general
+        if (totalEstudiantes) {
+            totalEstudiantes.textContent = estudiantes.length;
+        }
 
-if (totalTDAH) {
-    totalTDAH.textContent =
-        estudiantes.filter(x => x.diagnostico === "TDAH").length;
-}
+        // TEA
+        if (totalTEA) {
+            totalTEA.textContent =
+                estudiantes.filter(x => x.diagnostico === "TEA").length;
+        }
 
-if (totalRiesgo) {
-    totalRiesgo.textContent =
-        estudiantes.filter(x => x.estado === "Riesgo").length;
-}} catch (error) {
+        // TDAH
+        if (totalTDAH) {
+            totalTDAH.textContent =
+                estudiantes.filter(x => x.diagnostico === "TDAH").length;
+        }
+
+        // Riesgo
+        if (totalRiesgo) {
+            totalRiesgo.textContent =
+                estudiantes.filter(x => x.estado === "Riesgo").length;
+        }
+
+    } catch (error) {
 
         console.error("Error:", error);
-
         alert("No se pudieron cargar los estudiantes desde el backend");
 
     }
@@ -261,7 +275,7 @@ function cargarGraficos() {
 
                 datasets: [{
 
-                    label: "Puntos Totales",
+                    label: "Total Desregulaciones",
 
                     data: valores,
 
