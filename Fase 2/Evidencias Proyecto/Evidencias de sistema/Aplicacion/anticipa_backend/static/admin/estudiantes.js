@@ -247,40 +247,46 @@ function cargarGraficos() {
         });
     }
 
-    // =========================
-    // GRÁFICO DE ESTADOS
-    // =========================
+// =========================
+// GRÁFICO DE ESTADOS
+// =========================
 
-    const riesgo = estudiantes.filter(e =>
-        (e.estado || "").toUpperCase() === "RIESGO"
-    ).length;
+const riesgo = estudiantes.filter(e =>
+    (e.estado || "").toUpperCase() === "RIESGO"
+).length;
 
-    const estable = estudiantes.filter(e =>
-        (e.estado || "").toUpperCase() === "ESTABLE"
-    ).length;
+const estable = estudiantes.filter(e =>
+    (e.estado || "").toUpperCase() === "ESTABLE"
+).length;
 
-    const mejorando = estudiantes.filter(e =>
-        (e.estado || "").toUpperCase() === "MEJORANDO"
-    ).length;
+const mejorando = estudiantes.filter(e =>
+    (e.estado || "").toUpperCase() === "MEJORANDO"
+).length;
 
-    const grafTendencia = document.getElementById("graficoTendencia");
+const grafTendencia = document.getElementById("graficoTendencia");
 
-    if (grafTendencia) {
+if (grafTendencia) {
 
-        if (window.graficoTendenciaInstance) {
-            window.graficoTendenciaInstance.destroy();
-        }
-
-        window.graficoTendenciaInstance = new Chart(grafTendencia, {
-            type: "doughnut",
-            data: {
-                labels: ["Riesgo", "Estable", "Mejorando"],
-                datasets: [{
-                    data: [riesgo, estable, mejorando]
-                }]
-            }
-        });
+    if (window.graficoTendenciaInstance) {
+        window.graficoTendenciaInstance.destroy();
     }
+
+    window.graficoTendenciaInstance = new Chart(grafTendencia, {
+        type: "doughnut",
+        data: {
+            labels: ["Riesgo", "Estable", "Mejorando"],
+            datasets: [{
+                data: [riesgo, estable, mejorando],
+                backgroundColor: [
+                    "#e74c3c", // rojo - Riesgo
+                    "#f1c40f", // amarillo - Estable
+                    "#2ecc71"  // verde - Mejorando
+                ],
+                borderWidth: 1
+            }]
+        }
+    });
+}
 }
 
 
