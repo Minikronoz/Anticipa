@@ -311,77 +311,43 @@ function verEstudiante(id) {
         estudiante.nombre || "Sin nombre";
 
     // =========================
-    // MÉTRICAS PRINCIPALES
+    // CURSO
+    // =========================
+    const curso = document.getElementById("datoCurso");
+    if (curso) {
+        const c = estudiante.curso_r
+            ? `${estudiante.curso_r.nivel_academico}${estudiante.curso_r.letra_academica}`
+            : "SIN CURSO";
+
+        curso.textContent = c;
+    }
+
+    // =========================
+    // DIAGNÓSTICO
+    // =========================
+    document.getElementById("datoDiagnostico").textContent =
+        (estudiante.diagnostico || "SIN DIAGNÓSTICO").toUpperCase();
+
+    // =========================
+    // ESTADO
+    // =========================
+    document.getElementById("datoEstado").textContent =
+        (estudiante.estado || "SIN ESTADO").toUpperCase();
+
+    // =========================
+    // PUNTOS (ÚNICO MÉTRICO REAL DEL ESTUDIANTE)
     // =========================
     const puntos = estudiante.puntos_totales || 0;
 
-    const hoy = document.getElementById("datoHoy");
-    const semana = document.getElementById("datoSemana");
-    const mes = document.getElementById("datoMes");
-
-    if (hoy) hoy.textContent = puntos;
-    if (semana) semana.textContent = Math.floor(puntos * 0.3);
-    if (mes) mes.textContent = Math.floor(puntos * 0.6);
-
-    // =========================
-    // DESREGULACIONES (NUEVO VALOR IMPORTANTE)
-    // =========================
-    const desregulaciones = estudiante.desregulaciones || estudiante.cantidad_desregulaciones || 0;
-
-    const totalDesreg = document.getElementById("datoDesregulaciones");
-
-    if (totalDesreg) {
-        totalDesreg.textContent = desregulaciones;
-    }
-
-    // =========================
-    // DIAGNÓSTICO + ESTADO
-    // =========================
-    const diagnostico = document.getElementById("datoDiagnostico");
-    const estado = document.getElementById("datoEstado");
-
-    if (diagnostico) {
-        diagnostico.textContent =
-            (estudiante.diagnostico || "SIN DIAGNÓSTICO").toUpperCase();
-    }
-
-    if (estado) {
-        estado.textContent =
-            (estudiante.estado || "SIN ESTADO").toUpperCase();
-    }
-
-    // =========================
-    // OBSERVACIÓN INTELIGENTE
-    // =========================
-    const observacion = document.getElementById("observacion");
-
-    if (observacion) {
-
-        let texto = "";
-
-        const estadoUpper = (estudiante.estado || "").toUpperCase();
-
-        const desreg = desregulaciones;
-
-        if (estadoUpper === "RIESGO" || desreg >= 5) {
-            texto = "⚠ Alta frecuencia de desregulaciones. Requiere seguimiento inmediato.";
-        }
-        else if (estadoUpper === "ESTABLE") {
-            texto = "✔ Estudiante con comportamiento estable y controlado.";
-        }
-        else {
-            texto = "📈 Estudiante con evolución positiva y baja incidencia de desregulaciones.";
-        }
-
-        observacion.textContent = texto;
+    const puntosUI = document.getElementById("datoPuntos");
+    if (puntosUI) {
+        puntosUI.textContent = puntos;
     }
 
     // =========================
     // MODAL
     // =========================
-    const modal = new bootstrap.Modal(
+    new bootstrap.Modal(
         document.getElementById("modalEstudiante")
-    );
-
-    modal.show();
+    ).show();
 }
