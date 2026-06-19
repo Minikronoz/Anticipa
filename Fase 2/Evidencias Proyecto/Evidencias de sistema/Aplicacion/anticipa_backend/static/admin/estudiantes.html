@@ -2,23 +2,17 @@
 <html lang="es">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>Estudiantes - Anticipa</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-
     <link rel="stylesheet" href="styles.css">
 
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
@@ -26,26 +20,19 @@
 <div class="wrapper">
 
     <!-- SIDEBAR -->
-
-<div id="sidebarContainer"></div>
+    <div id="sidebarContainer"></div>
 
     <!-- CONTENIDO -->
-
     <main class="main-content">
 
         <div class="page-header">
-
             <div>
                 <h2>Gestión de Estudiantes</h2>
-                <p class="text-muted">
-                    Seguimiento y evolución de estudiantes NEE/TEA
-                </p>
+                <p class="text-muted">Seguimiento y evolución de estudiantes NEE/TEA</p>
             </div>
-
         </div>
 
         <!-- TARJETAS -->
-
         <div class="row g-4 mb-4">
 
             <div class="col-md-3">
@@ -55,329 +42,179 @@
                 </div>
             </div>
 
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalTEA">0</h3>
+                    <span>TEA</span>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalTDAH">0</h3>
+                    <span>TDAH</span>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3 id="totalRiesgo">0</h3>
+                    <span>Riesgo</span>
+                </div>
+            </div>
 
         </div>
 
         <!-- GRAFICOS -->
-
         <div class="row g-4 mb-4">
 
             <div class="col-lg-6">
-
                 <div class="card">
-
-                    <div class="card-header">
-                        Desregulaciones por Curso
-                    </div>
-
+                    <div class="card-header">Desregulaciones por Curso</div>
                     <div class="card-body">
-
                         <canvas id="graficoCursos"></canvas>
-
                     </div>
-
                 </div>
-
             </div>
 
             <div class="col-lg-6">
-
                 <div class="card">
-
-                    <div class="card-header">
-                        Tendencia General
-                    </div>
-
+                    <div class="card-header">Tendencia General</div>
                     <div class="card-body">
-
                         <canvas id="graficoTendencia"></canvas>
-
                     </div>
-
                 </div>
-
             </div>
 
         </div>
 
         <!-- TABLA -->
+        <div class="card">
 
-<div class="card">
+            <div class="card-header">
+                <div class="row g-2 align-items-center">
 
-    <div class="card-header">
+                    <div class="col-md-3">
+                        <h5 class="mb-0">Listado de Estudiantes</h5>
+                    </div>
 
-        <div class="row g-2 align-items-center">
+                    <div class="col-md-2">
+                        <select id="filtroCurso" class="form-select">
+                            <option value="">Todos los cursos</option>
+                        </select>
+                    </div>
 
-            <div class="col-md-3">
-                <h5 class="mb-0">
-                    Listado de Estudiantes
-                </h5>
+                    <div class="col-md-2">
+                        <select id="filtroDiagnostico" class="form-select">
+                            <option value="">Todos los diagnósticos</option>
+                            <option value="TEA">TEA</option>
+                            <option value="TDAH">TDAH</option>
+                            <option value="TEL">TEL</option>
+                            <option value="DEA">DEA</option>
+                            <option value="DI">DI</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <select id="filtroEstado" class="form-select">
+                            <option value="">Todos los estados</option>
+                            <option value="Mejorando">Mejorando</option>
+                            <option value="Estable">Estable</option>
+                            <option value="Riesgo">Riesgo</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2">
+                        <select id="ordenarPor" class="form-select">
+                            <option value="">Ordenar</option>
+                            <option value="totalDesc">Total ↓</option>
+                            <option value="totalAsc">Total ↑</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-1">
+                        <input type="text" id="buscar" class="form-control" placeholder="🔍">
+                    </div>
+
+                </div>
             </div>
 
-            <div class="col-md-2">
-
-                <select
-                    id="filtroCurso"
-                    class="form-select">
-
-                    <option value="">
-                        Todos los cursos
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-2">
-
-                <select
-                    id="filtroDiagnostico"
-                    class="form-select">
-
-<option value="">Todos los diagnósticos</option>
-
-<option value="TEA">TEA</option>
-<option value="TDAH">TDAH</option>
-<option value="TEL">TEL</option>
-<option value="DEA">DEA</option>
-<option value="DI">Discapacidad Intelectual</option>
-<option value="TEPV">Trastorno Específico del Procesamiento Visual</option>
-<option value="TEPA">Trastorno Específico del Procesamiento Auditivo</option>
-<option value="PC">Parálisis Cerebral</option>
-<option value="SINDROME_DOWN">Síndrome de Down</option>
-<option value="MULTIPLE">Discapacidad Múltiple</option>
-<option value="OTRO">Otro</option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-2">
-
-                <select
-                    id="filtroEstado"
-                    class="form-select">
-
-                    <option value="">
-                        Todos los estados
-                    </option>
-
-                    <option value="Mejorando">
-                        Mejorando
-                    </option>
-
-                    <option value="Estable">
-                        Estable
-                    </option>
-
-                    <option value="Riesgo">
-                        Riesgo
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-2">
-
-                <select
-                    id="ordenarPor"
-                    class="form-select">
-
-                    <option value="">
-                        Ordenar
-                    </option>
-
-                    <option value="totalDesc">
-                        Total ↓
-                    </option>
-
-                    <option value="totalAsc">
-                        Total ↑
-                    </option>
-
-                </select>
-
-            </div>
-
-            <div class="col-md-1">
-
-                <input
-                    type="text"
-                    class="form-control"
-                    id="buscar"
-                    placeholder="🔍">
-
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Curso</th>
+                                <th>Diagnóstico</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaEstudiantes"></tbody>
+                    </table>
+                </div>
             </div>
 
         </div>
-
-    </div>
-
-    <div class="card-body">
-
-        <div class="table-responsive">
-
-            <table class="table table-hover">
-
-                <thead>
-
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Curso</th>
-                        <th>Diagnóstico</th>
-                        <th>Total</th>
-                        <th>Estado</th>
-                        <th>Acción</th>
-                    </tr>
-
-                </thead>
-
-                <tbody id="tablaEstudiantes">
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    </div>
-
-</div>
 
     </main>
-
 </div>
 
+<!-- MODAL -->
 <div class="modal fade" id="modalEstudiante">
-
     <div class="modal-dialog modal-xl">
-
         <div class="modal-content">
 
             <div class="modal-header">
-
-                <h5 id="tituloEstudiante">
-                    Ficha Estudiante
-                </h5>
-
-                <button
-                    class="btn-close"
-                    data-bs-dismiss="modal">
-                </button>
-
+                <h5 id="tituloEstudiante">Ficha Estudiante</h5>
+                <button class="btn-close" data-bs-dismiss="modal"></button>
             </div>
 
             <div class="modal-body">
 
                 <div class="row mb-4">
-
-                    <div class="col-md-4">
-
-                        <div class="metric-card">
-
-                            <h3 id="datoHoy">0</h3>
-
-                            <span>
-                                Hoy
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="metric-card">
-
-                            <h3 id="datoSemana">0</h3>
-
-                            <span>
-                                Semana
-                            </span>
-
-                        </div>
-
-                    </div>
-
-                    <div class="col-md-4">
-
-                        <div class="metric-card">
-
-                            <h3 id="datoMes">0</h3>
-
-                            <span>
-                                Mes
-                            </span>
-
-                        </div>
-
-                    </div>
-
+                    <div class="col-md-4"><div class="metric-card"><h3 id="datoHoy">0</h3><span>Hoy</span></div></div>
+                    <div class="col-md-4"><div class="metric-card"><h3 id="datoSemana">0</h3><span>Semana</span></div></div>
+                    <div class="col-md-4"><div class="metric-card"><h3 id="datoMes">0</h3><span>Mes</span></div></div>
                 </div>
 
                 <div class="row">
 
                     <div class="col-lg-6">
-
                         <div class="card">
-
-                            <div class="card-header">
-                                Evolución Mensual
-                            </div>
-
+                            <div class="card-header">Evolución</div>
                             <div class="card-body">
-
                                 <canvas id="graficoAlumno"></canvas>
-
                             </div>
-
                         </div>
-
                     </div>
 
                     <div class="col-lg-6">
-
                         <div class="card">
-
-                            <div class="card-header">
-                                Antes vs Después Anticipa
-                            </div>
-
+                            <div class="card-header">Impacto</div>
                             <div class="card-body">
-
                                 <canvas id="graficoImpacto"></canvas>
-
                             </div>
-
                         </div>
-
                     </div>
 
                 </div>
 
                 <div class="mt-4">
-
-                    <h5>
-                        Observación Automática
-                    </h5>
-
-                    <div
-                        id="observacion"
-                        class="alert alert-success">
-                    </div>
-
+                    <h5>Observación Automática</h5>
+                    <div id="observacion" class="alert alert-success"></div>
                 </div>
 
             </div>
 
         </div>
-
     </div>
-
 </div>
+
+<!-- SCRIPTS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="estudiantes.js"></script>
 <script src="sidebar.js"></script>
 
