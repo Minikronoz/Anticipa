@@ -221,67 +221,137 @@ let cambio = Math.round(((fin - inicio) / (inicio || 1)) * 100);
 }
 
 // =======================================
-// INIT
+// GRAFICOS REALES
 // =======================================
-document.addEventListener("DOMContentLoaded", async () => {
 
-    await cargarEstudiantes();
+function cargarGraficos() {
 
-    document.getElementById("buscar").addEventListener("input", aplicarFiltros);
-    document.getElementById("filtroCurso").addEventListener("change", aplicarFiltros);
-    document.getElementById("filtroDiagnostico").addEventListener("change", aplicarFiltros);
-    document.getElementById("filtroEstado").addEventListener("change", aplicarFiltros);
-    document.getElementById("ordenarPor").addEventListener("change", aplicarFiltros);
+    const cursos = {};
 
-    // Gráficos de la página principal
-    if (typeof Chart !== "undefined") {
-        // Gráfico Desregulaciones por Curso
-        const grafCursos = document.getElementById("graficoCursos");
-        if (grafCursos) {
-            new Chart(grafCursos, {
-                type: "bar",
-                data: {
-                    labels: ["1°A", "2°A", "3°A", "4°A", "5°A"],
-                    datasets: [{
-                        label: "Incidentes",
-                        data: [8, 12, 18, 10, 25],
-                        backgroundColor: ["#1565C0", "#43A047", "#FB8C00", "#8E24AA", "#E53935"]
-                    }]
+    estudiantes.forEach(est => {
+
+        const curso =
+            `${est.curso_r?.nivel_academico || ""}${est.curso_r?.letra_academica || ""}`;
+
+        if (!curso) return;
+
+        cursos[curso] = (cursos[curso] || 0) + 1;
+    });
+
+    const labels = Object.keys(cursos);
+    const valores = Object.values(cursos);
+
+    const grafCursos = document.getElementById("graficoCursos");
+
+    if (grafCursos) {
+
+        new Chart(grafCursos, {
+
+            type: "bar",
+
+            data: {
+
+                labels,
+
+                datasets: [{
+
+                    label: "Puntos Totales",
+
+                    data: valores,
+
+                    backgroundColor: [
+                        "#1565C0",
+                        "#43A047",
+                        "#FB8C00",
+                        "#8E24AA",
+                        "#E53935",
+                        "#00897B",
+                        "#6D4C41"
+                    ]
+
+                }]
+            },
+
+            options: {
+
+                responsive: true,
+
+                plugins: {
+                    legend: {
+                        display: false
+                    }
                 },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
-            });
-        }
 
-        // Gráfico Tendencia General
-        const grafTendencia = document.getElementById("graficoTendencia");
-        if (grafTendencia) {
-            new Chart(grafTendencia, {
-                type: "line",
-                data: {
-                    labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
-                    datasets: [{
-                        label: "Desregulaciones",
-                        data: [120, 110, 98, 85, 72, 64],
-                        borderColor: "#E53935",
-                        backgroundColor: "rgba(229, 57, 53, 0.1)",
-                        fill: true,
-                        tension: 0.4,
-                        borderWidth: 3
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { position: "bottom" } },
-                    scales: { y: { beginAtZero: true } }
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
-            });
-        }
+            }
+        });
     }
 
-});
+    // Tendencia simple basada en estados
+
+    const riesgo =
+        estudiantes.filter(e => e.estado === "Riesgo").length;
+
+    const estable =
+        estudiantes.filter(e => e.estado === "Estable").length;
+
+    const mejorando =
+        estudiantes.filter(e => e.estado === "Mejorando").length;
+
+    const grafTendencia =
+        document.getElementById("graficoTendencia");
+
+    if (grafTendencia) {
+
+        new Chart(grafTendencia, {
+
+            type: "doughnut",
+
+            data: {
+
+                labels: [
+                    "Riesgo",
+                    "Estable",
+                    "Mejorando"
+                ],
+
+                datasets: [{
+
+                    data: [
+                        riesgo,
+                        estable,
+                        mejorando
+                    ],
+
+                    backgroundColor: [
+                        "#dc3545",
+                        "#ffc107",
+                        "#198754"
+                    ]
+
+                }]
+            },
+
+            options: {
+
+                responsive: true,
+
+                plugins: {
+                    legend: {
+                        position: "bottom"
+                    }
+                }
+
+            }
+
+        });
+
+    }
+
+}
 
 
