@@ -1,3 +1,6 @@
+
+
+
 document.addEventListener("DOMContentLoaded", async () => {
 
 const API = "https://anticipa.onrender.com";
