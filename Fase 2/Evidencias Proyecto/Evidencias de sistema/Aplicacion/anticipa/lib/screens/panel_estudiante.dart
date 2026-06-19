@@ -320,7 +320,7 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     final horaFormateada = horaRaw.length >= 5 ? horaRaw.substring(0, 5) : '--:--';
     final fechaActStr = a['fecha_actividad']?.toString().split('T')[0] ?? '';
     final esFutura = !esPasado && fechaActStr.compareTo(DateTime.now().toIso8601String().split('T')[0]) > 0;
-    final esFuturaMismoDia = !esPasado && !esFutura && horaFormateada.compareTo(horaActual) > 0;
+    final esFuturaMismoDia = !esPasado && !esFutura && horaFormateada.compareTo(horaActual) < 0;
     final picto = _pictoUrl(a['pictograma_id_pictograma']);
     final hora = horaFormateada;
 

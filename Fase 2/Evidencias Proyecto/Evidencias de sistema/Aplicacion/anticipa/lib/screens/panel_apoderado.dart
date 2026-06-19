@@ -87,8 +87,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
   }
 
   bool get _esHoraDeEncuesta {
-    final ahora = DateTime.now();
-    return ahora.hour >= _horaMinEncuesta;
+    return true;
   }
 
   Future<List<Map<String, dynamic>>> _get(String url) async {
@@ -187,7 +186,7 @@ class _PanelApoderadoState extends State<PanelApoderado> {
       backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModal) => Container(
-          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + 24),
+          padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).padding.bottom + 24),
           decoration: const BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.vertical(top: Radius.circular(24)),

@@ -745,10 +745,10 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
             status_code=400,
             detail="No se pueden completar actividades de días futuros."
         )
-    if a.fecha_actividad == hoy and a.hora_inicio > ahora.time():
+    if a.fecha_actividad == hoy and a.hora_inicio < ahora.time():
         raise HTTPException(
             status_code=400,
-            detail="No se puede completar una actividad antes de su hora programada."
+            detail="La hora de la actividad ya pasó. No se puede completar."
         )
 
     if not estaba_completada:
