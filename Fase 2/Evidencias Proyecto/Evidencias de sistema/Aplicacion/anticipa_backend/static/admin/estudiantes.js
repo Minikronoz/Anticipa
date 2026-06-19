@@ -186,9 +186,6 @@ function initFiltros() {
     document.getElementById("ordenarPor")?.addEventListener("change", aplicarFiltros);
 }
 
-// =======================================
-// GRAFICOS
-// =======================================
 function cargarGraficos() {
 
     const cursos = {};
@@ -201,8 +198,13 @@ function cargarGraficos() {
 
         if (!curso) return;
 
-        cursos[curso] =
-            (cursos[curso] || 0) + (est.puntos_totales || 0);
+        // inicializar curso si no existe
+        if (!cursos[curso]) {
+            cursos[curso] = 0;
+        }
+
+        // 🔥 DESREGULACIONES = puntos_totales (ajustado correctamente)
+        cursos[curso] += est.puntos_totales || 0;
     });
 
     const labels = Object.keys(cursos);
@@ -212,17 +214,34 @@ function cargarGraficos() {
 
     if (grafCursos) {
 
-        new Chart(grafCursos, {
+        // evitar duplicación de gráfico si se recarga
+        if (window.graficoCursosInstance) {
+            window.graficoCursosInstance.destroy();
+        }
+
+        window.graficoCursosInstance = new Chart(grafCursos, {
             type: "bar",
             data: {
                 labels,
                 datasets: [{
-                    label: "Desregulaciones",
+                    label: "Desregulaciones por curso",
                     data: valores
                 }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        display: true
+                    }
+                }
             }
         });
     }
+
+    // =========================
+    // GRÁFICO DE ESTADOS
+    // =========================
 
     const riesgo = estudiantes.filter(e =>
         (e.estado || "").toUpperCase() === "RIESGO"
@@ -240,7 +259,11 @@ function cargarGraficos() {
 
     if (grafTendencia) {
 
-        new Chart(grafTendencia, {
+        if (window.graficoTendenciaInstance) {
+            window.graficoTendenciaInstance.destroy();
+        }
+
+        window.graficoTendenciaInstance = new Chart(grafTendencia, {
             type: "doughnut",
             data: {
                 labels: ["Riesgo", "Estable", "Mejorando"],
