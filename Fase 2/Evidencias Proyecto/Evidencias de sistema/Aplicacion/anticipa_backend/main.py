@@ -1370,7 +1370,6 @@ from sqlalchemy.orm import Session
 from fastapi.responses import StreamingResponse
 from collections import Counter
 from datetime import datetime
-import pytz
 import io
 
 from reportlab.platypus import (
@@ -1387,8 +1386,7 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
     # ======================================
     # 🇨🇱 FECHA CHILE CORREGIDA
     # ======================================
-    zona_chile = pytz.timezone("America/Santiago")
-    fecha_chile = datetime.now(zona_chile)
+    fecha_chile = datetime.now(CHILE_TZ)
 
     # ======================================
     # DATOS
