@@ -54,6 +54,14 @@ function cargarSidebar() {
 
     document.getElementById("sidebarContainer").innerHTML =
         menu;
+
+    const btn = document.getElementById("btnLogout");
+    if (btn) {
+        btn.addEventListener("click", () => {
+            localStorage.removeItem("adminSesion");
+            window.location.href = "index.html";
+        });
+    }
 }
 
 document.addEventListener(
