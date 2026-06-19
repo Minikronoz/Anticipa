@@ -1,11 +1,14 @@
 let estudiantes = [];
-let historial = {};
 
-let graficoAlumno = null;
-let graficoImpacto = null;
 const API = "https://anticipa.onrender.com";
+
+document.addEventListener("DOMContentLoaded", () => {
+    cargarEstudiantes();
+    initFiltros();
+});
+
 // =======================================
-// CARGAR ESTUDIANTES DESDE BACKEND
+// CARGAR ESTUDIANTES
 // =======================================
 async function cargarEstudiantes() {
 
@@ -19,44 +22,52 @@ async function cargarEstudiantes() {
 
         estudiantes = await res.json();
 
+        console.log("ESTUDIANTES CARGADOS:", estudiantes);
+
         cargarCursos();
         cargarTabla(estudiantes);
-
-        const totalEstudiantes = document.getElementById("totalEstudiantes");
-        const totalTEA = document.getElementById("totalTEA");
-        const totalTDAH = document.getElementById("totalTDAH");
-        const totalRiesgo = document.getElementById("totalRiesgo");
-
-        if (totalEstudiantes) {
-            totalEstudiantes.textContent = estudiantes.length;
-        }
-
-        if (totalTEA) {
-            totalTEA.textContent =
-                estudiantes.filter(x =>
-                    (x.diagnostico || "").trim().toUpperCase() === "TEA"
-                ).length;
-        }
-
-        if (totalTDAH) {
-            totalTDAH.textContent =
-                estudiantes.filter(x =>
-                    (x.diagnostico || "").trim().toUpperCase() === "TDAH"
-                ).length;
-        }
-
-        if (totalRiesgo) {
-            totalRiesgo.textContent =
-                estudiantes.filter(x =>
-                    (x.estado || "").trim().toUpperCase() === "RIESGO"
-                ).length;
-        }
+        cargarMetricas();
+        cargarGraficos();
 
     } catch (error) {
-        console.error("Error:", error);
+        console.error(error);
         alert("No se pudieron cargar los estudiantes desde el backend");
     }
 }
+
+// =======================================
+// MÉTRICAS (TARJETAS)
+// =======================================
+function cargarMetricas() {
+
+    const totalEstudiantes = document.getElementById("totalEstudiantes");
+    const totalTEA = document.getElementById("totalTEA");
+    const totalTDAH = document.getElementById("totalTDAH");
+    const totalRiesgo = document.getElementById("totalRiesgo");
+
+    if (totalEstudiantes) {
+        totalEstudiantes.textContent = estudiantes.length;
+    }
+
+    if (totalTEA) {
+        totalTEA.textContent = estudiantes.filter(x =>
+            (x.diagnostico || "").trim().toUpperCase() === "TEA"
+        ).length;
+    }
+
+    if (totalTDAH) {
+        totalTDAH.textContent = estudiantes.filter(x =>
+            (x.diagnostico || "").trim().toUpperCase() === "TDAH"
+        ).length;
+    }
+
+    if (totalRiesgo) {
+        totalRiesgo.textContent = estudiantes.filter(x =>
+            (x.estado || "").trim().toUpperCase() === "RIESGO"
+        ).length;
+    }
+}
+
 // =======================================
 // TABLA
 // =======================================
@@ -81,7 +92,7 @@ function cargarTabla(lista) {
                             ? "bg-warning text-dark"
                             : "bg-success"
                 }">
-                ${e.estado}
+                    ${e.estado}
                 </span>
             </td>
             <td>
@@ -92,7 +103,6 @@ function cargarTabla(lista) {
             </td>
         </tr>
         `;
-
     });
 }
 
@@ -103,27 +113,25 @@ function cargarCursos() {
 
     const select = document.getElementById("filtroCurso");
 
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Todos los cursos</option>`;
+
     const cursos = [
-    ...new Set(
-        estudiantes
-            .map(e => {
-                if (!e.curso_r) return null;
-                return `${e.curso_r.nivel_academico}${e.curso_r.letra_academica}`;
-            })
-            .filter(Boolean)
-    )
-].sort();
+        ...new Set(
+            estudiantes
+                .map(e =>
+                    e.curso_r
+                        ? `${e.curso_r.nivel_academico}${e.curso_r.letra_academica}`
+                        : null
+                )
+                .filter(Boolean)
+        )
+    ].sort();
 
     cursos.forEach(curso => {
-
-        select.innerHTML += `
-        <option value="${curso}">
-            ${curso}
-        </option>
-        `;
-
+        select.innerHTML += `<option value="${curso}">${curso}</option>`;
     });
-
 }
 
 function aplicarFiltros() {
@@ -138,11 +146,12 @@ function aplicarFiltros() {
 
     resultado = resultado.filter(e => {
 
-        const nombre = e.nombre.toLowerCase();
+        const nombre = (e.nombre || "").toLowerCase();
 
         const cursoNombre =
-            (e.curso_r?.nivel_academico || "") +
-            (e.curso_r?.letra_academica || "");
+            e.curso_r
+                ? `${e.curso_r.nivel_academico}${e.curso_r.letra_academica}`
+                : "";
 
         return (
             nombre.includes(texto) &&
@@ -153,7 +162,6 @@ function aplicarFiltros() {
     });
 
     switch (orden) {
-
         case "totalDesc":
             resultado.sort((a, b) => (b.puntos_totales || 0) - (a.puntos_totales || 0));
             break;
@@ -167,86 +175,29 @@ function aplicarFiltros() {
 }
 
 // =======================================
-// VER ESTUDIANTE (MODAL)
+// INICIALIZAR FILTROS
 // =======================================
-function verEstudiante(id) {
+function initFiltros() {
 
-    fetch(`${API}/reportes/detalle-estudiante/${id}`)
-        .then(res => res.json())
-        .then(datos => {
-
-            document.getElementById("tituloEstudiante").innerHTML =
-                `${datos.nombre} - ${datos.curso}`;
-
-            document.getElementById("datoHoy").innerHTML = datos.hoy;
-            document.getElementById("datoSemana").innerHTML = datos.semana;
-            document.getElementById("datoMes").innerHTML = datos.mes;
-
-            if (graficoAlumno) graficoAlumno.destroy();
-            if (graficoImpacto) graficoImpacto.destroy();
-
-            graficoAlumno = new Chart(
-                document.getElementById("graficoAlumno"),
-                {
-                    type: "line",
-                    data: {
-                        labels: ["Ene", "Feb", "Mar", "Abr", "May", "Jun"],
-                        datasets: [{
-                            label: "Desregulaciones",
-                            data: datos.historial,
-                            borderWidth: 3,
-                            tension: 0.3
-                        }]
-                    }
-                }
-            );
-
-            graficoImpacto = new Chart(
-                document.getElementById("graficoImpacto"),
-                {
-                    type: "bar",
-                    data: {
-                        labels: ["Antes", "Actual"],
-                        datasets: [{
-                            label: "Incidentes",
-                            data: [
-                                datos.historial[0],
-                                datos.historial[5]
-                            ]
-                        }]
-                    }
-                }
-            );
-
-            const inicio = datos.historial[0] || 0;
-const fin = datos.historial[datos.historial.length - 1] || 0;
-
-let cambio = Math.round(((fin - inicio) / (inicio || 1)) * 100);
-
-            document.getElementById("observacion").innerHTML =
-                cambio < 0
-                    ? `El estudiante ha mejorado un ${Math.abs(cambio)}%`
-                    : `Se detecta aumento del ${cambio}%`;
-
-            new bootstrap.Modal(
-                document.getElementById("modalEstudiante")
-            ).show();
-
-        });
+    document.getElementById("buscar")?.addEventListener("input", aplicarFiltros);
+    document.getElementById("filtroCurso")?.addEventListener("change", aplicarFiltros);
+    document.getElementById("filtroDiagnostico")?.addEventListener("change", aplicarFiltros);
+    document.getElementById("filtroEstado")?.addEventListener("change", aplicarFiltros);
+    document.getElementById("ordenarPor")?.addEventListener("change", aplicarFiltros);
 }
 
 // =======================================
-// GRAFICOS REALES
+// GRAFICOS
 // =======================================
-
 function cargarGraficos() {
 
     const cursos = {};
 
     estudiantes.forEach(est => {
 
-        const curso =
-            `${est.curso_r?.nivel_academico || ""}${est.curso_r?.letra_academica || ""}`;
+        const curso = est.curso_r
+            ? `${est.curso_r.nivel_academico}${est.curso_r.letra_academica}`
+            : "";
 
         if (!curso) return;
 
@@ -261,131 +212,41 @@ function cargarGraficos() {
     if (grafCursos) {
 
         new Chart(grafCursos, {
-
             type: "bar",
-
             data: {
-
                 labels,
-
                 datasets: [{
-
-                    label: "Total Desregulaciones",
-
-                    data: valores,
-
-                    backgroundColor: [
-                        "#1565C0",
-                        "#43A047",
-                        "#FB8C00",
-                        "#8E24AA",
-                        "#E53935",
-                        "#00897B",
-                        "#6D4C41"
-                    ]
-
+                    label: "Desregulaciones",
+                    data: valores
                 }]
-            },
-
-            options: {
-
-                responsive: true,
-
-                plugins: {
-                    legend: {
-                        display: false
-                    }
-                },
-
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
             }
         });
     }
 
-    // Tendencia simple basada en estados
+    const riesgo = estudiantes.filter(e =>
+        (e.estado || "").toUpperCase() === "RIESGO"
+    ).length;
 
-    const riesgo =
-        estudiantes.filter(e => e.estado === "Riesgo").length;
+    const estable = estudiantes.filter(e =>
+        (e.estado || "").toUpperCase() === "ESTABLE"
+    ).length;
 
-    const estable =
-        estudiantes.filter(e => e.estado === "Estable").length;
+    const mejorando = estudiantes.filter(e =>
+        (e.estado || "").toUpperCase() === "MEJORANDO"
+    ).length;
 
-    const mejorando =
-        estudiantes.filter(e => e.estado === "Mejorando").length;
-
-    const grafTendencia =
-        document.getElementById("graficoTendencia");
+    const grafTendencia = document.getElementById("graficoTendencia");
 
     if (grafTendencia) {
 
         new Chart(grafTendencia, {
-
             type: "doughnut",
-
             data: {
-
-                labels: [
-                    "Riesgo",
-                    "Estable",
-                    "Mejorando"
-                ],
-
+                labels: ["Riesgo", "Estable", "Mejorando"],
                 datasets: [{
-
-                    data: [
-                        riesgo,
-                        estable,
-                        mejorando
-                    ],
-
-                    backgroundColor: [
-                        "#dc3545",
-                        "#ffc107",
-                        "#198754"
-                    ]
-
+                    data: [riesgo, estable, mejorando]
                 }]
-            },
-
-            options: {
-
-                responsive: true,
-
-                plugins: {
-                    legend: {
-                        position: "bottom"
-                    }
-                }
-
             }
-
         });
-
     }
-
-}
-
-document.addEventListener("DOMContentLoaded", init);
-
-async function init() {
-    await cargarEstudiantes();
-    cargarGraficos();
-    initFiltros();
-}
-
-function initFiltros() {
-
-    document.getElementById("buscar").addEventListener("input", aplicarFiltros);
-
-    document.getElementById("filtroCurso").addEventListener("change", aplicarFiltros);
-
-    document.getElementById("filtroDiagnostico").addEventListener("change", aplicarFiltros);
-
-    document.getElementById("filtroEstado").addEventListener("change", aplicarFiltros);
-
-    document.getElementById("ordenarPor").addEventListener("change", aplicarFiltros);
 }
