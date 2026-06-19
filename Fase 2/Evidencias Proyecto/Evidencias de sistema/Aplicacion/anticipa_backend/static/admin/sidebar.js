@@ -42,14 +42,10 @@ function cargarSidebar() {
 
         <div class="sidebar-footer">
 
-            <button
-                class="btn btn-danger w-100"
-                onclick="logout()">
-
-                <i class="bi bi-box-arrow-right"></i>
-                Cerrar Sesión
-
-            </button>
+<button id="btnLogout" class="btn btn-danger w-100">
+    <i class="bi bi-box-arrow-right"></i>
+    Cerrar Sesión
+</button>
 
         </div>
 

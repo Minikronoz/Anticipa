@@ -186,9 +186,6 @@ function initFiltros() {
     document.getElementById("ordenarPor")?.addEventListener("change", aplicarFiltros);
 }
 
-// =======================================
-// GRAFICOS
-// =======================================
 function cargarGraficos() {
 
     const cursos = {};
@@ -201,8 +198,11 @@ function cargarGraficos() {
 
         if (!curso) return;
 
-        cursos[curso] =
-            (cursos[curso] || 0) + (est.puntos_totales || 0);
+        if (!cursos[curso]) {
+            cursos[curso] = 0;
+        }
+
+        cursos[curso] += est.puntos_totales || 0;
     });
 
     const labels = Object.keys(cursos);
@@ -212,17 +212,44 @@ function cargarGraficos() {
 
     if (grafCursos) {
 
-        new Chart(grafCursos, {
+        if (window.graficoCursosInstance) {
+            window.graficoCursosInstance.destroy();
+        }
+
+        window.graficoCursosInstance = new Chart(grafCursos, {
             type: "bar",
             data: {
-                labels,
+                labels: labels,
                 datasets: [{
-                    label: "Desregulaciones",
+                    label: "Desregulaciones por curso",
                     data: valores
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // 🔥 IMPORTANTE
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Cursos"
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Cantidad de desregulaciones"
+                        }
+                    }
+                }
             }
         });
     }
+
+    // =========================
+    // GRÁFICO DE ESTADOS
+    // =========================
 
     const riesgo = estudiantes.filter(e =>
         (e.estado || "").toUpperCase() === "RIESGO"
@@ -240,7 +267,11 @@ function cargarGraficos() {
 
     if (grafTendencia) {
 
-        new Chart(grafTendencia, {
+        if (window.graficoTendenciaInstance) {
+            window.graficoTendenciaInstance.destroy();
+        }
+
+        window.graficoTendenciaInstance = new Chart(grafTendencia, {
             type: "doughnut",
             data: {
                 labels: ["Riesgo", "Estable", "Mejorando"],

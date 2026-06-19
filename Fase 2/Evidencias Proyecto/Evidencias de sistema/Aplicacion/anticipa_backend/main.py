@@ -1365,9 +1365,34 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
     }
 
 
+from fastapi import Depends
+from sqlalchemy.orm import Session
+from fastapi.responses import StreamingResponse
+from collections import Counter
+from datetime import datetime
+import pytz
+import io
+
+from reportlab.platypus import (
+    SimpleDocTemplate, Paragraph, Spacer,
+    Table, TableStyle, PageBreak
+)
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
+
+
 @app.get("/reportes/pdf-general")
 def reporte_general_pdf(db: Session = Depends(get_db)):
 
+    # ======================================
+    # 🇨🇱 FECHA CHILE CORREGIDA
+    # ======================================
+    zona_chile = pytz.timezone("America/Santiago")
+    fecha_chile = datetime.now(zona_chile)
+
+    # ======================================
+    # DATOS
+    # ======================================
     estudiantes = db.query(models.Estudiante).all()
     encuestas = db.query(models.EncuestaDiaria).all()
 
@@ -1390,6 +1415,9 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
         if motivos else "Sin datos"
     )
 
+    # ======================================
+    # PDF
+    # ======================================
     buffer = io.BytesIO()
 
     doc = SimpleDocTemplate(
@@ -1416,7 +1444,7 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
 
     contenido.append(
         Paragraph(
-            f"Fecha de generación: {datetime.now().strftime('%d/%m/%Y %H:%M')}",
+            f"Fecha de generación: {fecha_chile.strftime('%d/%m/%Y %H:%M')}",
             estilos["Normal"]
         )
     )
@@ -1554,10 +1582,15 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
 
     buffer.seek(0)
 
+    # ======================================
+    # NOMBRE ARCHIVO CON HORA CHILE
+    # ======================================
+    filename = f"Reporte_Anticipa_{fecha_chile.strftime('%Y%m%d_%H%M')}.pdf"
+
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
         headers={
-    "Content-Disposition": f'inline; filename="Reporte_Anticipa_{datetime.now().strftime("%Y%m%d")}.pdf"'
-}
+            "Content-Disposition": f'inline; filename="{filename}"'
+        }
     )
