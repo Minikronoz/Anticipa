@@ -19,49 +19,44 @@ async function cargarEstudiantes() {
 
         estudiantes = await res.json();
 
-        // TABLA Y CURSOS
         cargarCursos();
         cargarTabla(estudiantes);
 
-        // =========================
-        // TARJETAS
-        // =========================
         const totalEstudiantes = document.getElementById("totalEstudiantes");
         const totalTEA = document.getElementById("totalTEA");
         const totalTDAH = document.getElementById("totalTDAH");
         const totalRiesgo = document.getElementById("totalRiesgo");
 
-        // Total general
         if (totalEstudiantes) {
             totalEstudiantes.textContent = estudiantes.length;
         }
 
-        // TEA
         if (totalTEA) {
             totalTEA.textContent =
-                estudiantes.filter(x => x.diagnostico === "TEA").length;
+                estudiantes.filter(x =>
+                    (x.diagnostico || "").trim().toUpperCase() === "TEA"
+                ).length;
         }
 
-        // TDAH
         if (totalTDAH) {
             totalTDAH.textContent =
-                estudiantes.filter(x => x.diagnostico === "TDAH").length;
+                estudiantes.filter(x =>
+                    (x.diagnostico || "").trim().toUpperCase() === "TDAH"
+                ).length;
         }
 
-        // Riesgo
         if (totalRiesgo) {
             totalRiesgo.textContent =
-                estudiantes.filter(x => x.estado === "Riesgo").length;
+                estudiantes.filter(x =>
+                    (x.estado || "").trim().toUpperCase() === "RIESGO"
+                ).length;
         }
 
     } catch (error) {
-
         console.error("Error:", error);
         alert("No se pudieron cargar los estudiantes desde el backend");
-
     }
 }
-
 // =======================================
 // TABLA
 // =======================================
