@@ -80,13 +80,12 @@ async function login(e) {
 
 function logout() {
 
-    localStorage.removeItem(
-        'adminSesion'
-    );
+    localStorage.removeItem('adminSesion');
 
-    window.location.href =
-        'index.html';
+    window.location.href = 'index.html';
 }
+
+window.logout = logout;
 
 // =========================
 // DASHBOARD

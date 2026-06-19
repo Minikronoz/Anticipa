@@ -22,18 +22,24 @@ async function cargarEstudiantes() {
         cargarCursos();
         cargarTabla(estudiantes);
 
-        document.getElementById("totalEstudiantes").textContent = estudiantes.length;
+const totalTEA = document.getElementById("totalTEA");
+const totalTDAH = document.getElementById("totalTDAH");
+const totalRiesgo = document.getElementById("totalRiesgo");
 
-        document.getElementById("totalTEA").textContent =
-            estudiantes.filter(x => x.diagnostico === "TEA").length;
+if (totalTEA) {
+    totalTEA.textContent =
+        estudiantes.filter(x => x.diagnostico === "TEA").length;
+}
 
-        document.getElementById("totalTDAH").textContent =
-            estudiantes.filter(x => x.diagnostico === "TDAH").length;
+if (totalTDAH) {
+    totalTDAH.textContent =
+        estudiantes.filter(x => x.diagnostico === "TDAH").length;
+}
 
-        document.getElementById("totalRiesgo").textContent =
-            estudiantes.filter(x => x.estado === "Riesgo").length;
-
-    } catch (error) {
+if (totalRiesgo) {
+    totalRiesgo.textContent =
+        estudiantes.filter(x => x.estado === "Riesgo").length;
+}} catch (error) {
 
         console.error("Error:", error);
 
@@ -354,4 +360,9 @@ function cargarGraficos() {
 
 }
 
+document.addEventListener("DOMContentLoaded", init);
 
+async function init() {
+    await cargarEstudiantes();
+    cargarGraficos();
+}
