@@ -41,26 +41,30 @@ async function cargarEstudiantes() {
 function cargarMetricas() {
 
     const totalEstudiantes = document.getElementById("totalEstudiantes");
-    const totalTEA = document.getElementById("totalTEA");
-    const totalTDAH = document.getElementById("totalTDAH");
     const totalRiesgo = document.getElementById("totalRiesgo");
 
     if (totalEstudiantes) {
         totalEstudiantes.textContent = estudiantes.length;
     }
 
-    if (totalTEA) {
-        totalTEA.textContent = estudiantes.filter(x =>
-            (x.diagnostico || "").trim().toUpperCase() === "TEA"
-        ).length;
-    }
+    // Agrupar diagnósticos dinámicamente
+    const diagnosticos = {};
 
-    if (totalTDAH) {
-        totalTDAH.textContent = estudiantes.filter(x =>
-            (x.diagnostico || "").trim().toUpperCase() === "TDAH"
-        ).length;
-    }
+    estudiantes.forEach(x => {
+        const diag = (x.diagnostico || "SIN DIAGNOSTICO").trim().toUpperCase();
+        diagnosticos[diag] = (diagnosticos[diag] || 0) + 1;
+    });
 
+    // Render automático en el HTML
+    Object.keys(diagnosticos).forEach(diag => {
+        const el = document.getElementById(`total${diag}`);
+
+        if (el) {
+            el.textContent = diagnosticos[diag];
+        }
+    });
+
+    // Riesgo separado (estado)
     if (totalRiesgo) {
         totalRiesgo.textContent = estudiantes.filter(x =>
             (x.estado || "").trim().toUpperCase() === "RIESGO"
@@ -188,6 +192,11 @@ function initFiltros() {
 
 function cargarGraficos() {
 
+    if (!estudiantes.length) return;
+
+    // ===================================
+    // GRÁFICO POR CURSOS (PUNTOS)
+    // ===================================
     const cursos = {};
 
     estudiantes.forEach(est => {
@@ -198,15 +207,11 @@ function cargarGraficos() {
 
         if (!curso) return;
 
-        if (!cursos[curso]) {
-            cursos[curso] = 0;
-        }
-
-        cursos[curso] += est.puntos_totales || 0;
+        cursos[curso] = (cursos[curso] || 0) + (est.puntos_totales || 0);
     });
 
-    const labels = Object.keys(cursos);
-    const valores = Object.values(cursos);
+    const labelsCursos = Object.keys(cursos);
+    const valoresCursos = Object.values(cursos);
 
     const grafCursos = document.getElementById("graficoCursos");
 
@@ -219,15 +224,15 @@ function cargarGraficos() {
         window.graficoCursosInstance = new Chart(grafCursos, {
             type: "bar",
             data: {
-                labels: labels,
+                labels: labelsCursos,
                 datasets: [{
                     label: "Desregulaciones por curso",
-                    data: valores
+                    data: valoresCursos
                 }]
             },
             options: {
                 responsive: true,
-                maintainAspectRatio: false, // 🔥 IMPORTANTE
+                maintainAspectRatio: false,
                 scales: {
                     x: {
                         title: {
@@ -247,46 +252,47 @@ function cargarGraficos() {
         });
     }
 
-// =========================
-// GRÁFICO DE ESTADOS
-// =========================
+    // ===================================
+    // GRÁFICO DE ESTADOS (OPTIMIZADO)
+    // ===================================
 
-const riesgo = estudiantes.filter(e =>
-    (e.estado || "").toUpperCase() === "RIESGO"
-).length;
+    let riesgo = 0;
+    let estable = 0;
+    let mejorando = 0;
 
-const estable = estudiantes.filter(e =>
-    (e.estado || "").toUpperCase() === "ESTABLE"
-).length;
+    estudiantes.forEach(e => {
 
-const mejorando = estudiantes.filter(e =>
-    (e.estado || "").toUpperCase() === "MEJORANDO"
-).length;
+        const estado = (e.estado || "").toUpperCase();
 
-const grafTendencia = document.getElementById("graficoTendencia");
-
-if (grafTendencia) {
-
-    if (window.graficoTendenciaInstance) {
-        window.graficoTendenciaInstance.destroy();
-    }
-
-    window.graficoTendenciaInstance = new Chart(grafTendencia, {
-        type: "doughnut",
-        data: {
-            labels: ["Riesgo", "Estable", "Mejorando"],
-            datasets: [{
-                data: [riesgo, estable, mejorando],
-                backgroundColor: [
-                    "#e74c3c", // rojo - Riesgo
-                    "#f1c40f", // amarillo - Estable
-                    "#2ecc71"  // verde - Mejorando
-                ],
-                borderWidth: 1
-            }]
-        }
+        if (estado === "RIESGO") riesgo++;
+        else if (estado === "ESTABLE") estable++;
+        else if (estado === "MEJORANDO") mejorando++;
     });
-}
+
+    const grafTendencia = document.getElementById("graficoTendencia");
+
+    if (grafTendencia) {
+
+        if (window.graficoTendenciaInstance) {
+            window.graficoTendenciaInstance.destroy();
+        }
+
+        window.graficoTendenciaInstance = new Chart(grafTendencia, {
+            type: "doughnut",
+            data: {
+                labels: ["Riesgo", "Estable", "Mejorando"],
+                datasets: [{
+                    data: [riesgo, estable, mejorando],
+                    backgroundColor: [
+                        "#e74c3c",
+                        "#f1c40f",
+                        "#2ecc71"
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+    }
 }
 
 
