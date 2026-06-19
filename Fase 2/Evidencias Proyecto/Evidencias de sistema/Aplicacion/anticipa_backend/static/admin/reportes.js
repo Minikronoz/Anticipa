@@ -1,214 +1,172 @@
-
-
-
 document.addEventListener("DOMContentLoaded", async () => {
 
-const API = "https://anticipa.onrender.com";
+    const API = "https://anticipa.onrender.com";
 
-let datosReporte;
+    let datosReporte = null;
 
-try{
+    try {
 
-const response = await fetch(`${API}/reportes/dashboard`);
+        const response = await fetch(`${API}/reportes/dashboard`);
 
-if(!response.ok){
-throw new Error("Sin datos");
-}
+        if (!response.ok) {
+            throw new Error("Sin datos");
+        }
 
-datosReporte = await response.json();
+        datosReporte = await response.json();
 
-}catch(error){
+    } catch (error) {
 
-console.log("Usando datos de prueba");
+        console.error("Error cargando dashboard:", error);
 
-// DATOS FICTICIOS
-datosReporte = {
+        alert("No se pudieron cargar los datos del reporte");
 
-mejoraGlobal:"37%",
-riesgoAlto:4,
-factorPrincipal:"Conflictos Familiares",
-cursoCritico:"5°A",
+        return;
+    }
 
-evolucion:{
-labels:["Ene","Feb","Mar","Abr","May","Jun"],
-data:[120,110,98,85,72,64]
-},
+    // =========================
+    // KPI
+    // =========================
 
-factores:{
-labels:[
-"Conflictos Familiares",
-"Ruido",
-"Cambios Rutina",
-"Comidas",
-"Evaluaciones"
-],
-data:[35,20,18,15,12]
-},
+    document.getElementById("mejoraGlobal").textContent =
+        datosReporte.mejoraGlobal ?? "0";
 
-dias:{
-labels:["Lun","Mar","Mié","Jue","Vie"],
-data:[25,30,18,35,14]
-},
+    document.getElementById("riesgoAlto").textContent =
+        datosReporte.riesgoAlto ?? 0;
 
-cursos:{
-labels:["1°A","2°A","3°A","4°A","5°A"],
-data:[8,12,18,10,25]
-},
+    document.getElementById("factorPrincipal").textContent =
+        datosReporte.factorPrincipal ?? "-";
 
-hallazgos:[
-
-"Las desregulaciones disminuyeron un 37% desde la implementación de Anticipa.",
-
-"Los conflictos familiares representan el principal desencadenante.",
-
-"Los jueves presentan la mayor cantidad de incidentes.",
-
-"El curso 5°A requiere intervención prioritaria.",
-
-"Los estudiantes TEA presentan una reducción promedio del 42% en incidentes.",
-
-"El 68% de las desregulaciones ocurre antes del almuerzo.",
-
-"Las alertas tempranas permitieron evitar 23 posibles crisis durante el último mes."
-
-]
-
-};
-
-}
-
-// KPI
-
-document.getElementById("mejoraGlobal").textContent =
-datosReporte.mejoraGlobal;
-
-document.getElementById("riesgoAlto").textContent =
-datosReporte.riesgoAlto;
-
-document.getElementById("factorPrincipal").textContent =
-datosReporte.factorPrincipal;
-
-document.getElementById("cursoCritico").textContent =
-datosReporte.cursoCritico;
+    document.getElementById("cursoCritico").textContent =
+        datosReporte.cursoCritico ?? "-";
 
 
-// EVOLUCION
+    // =========================
+    // EVOLUCIÓN
+    // =========================
 
-new Chart(
-document.getElementById("graficoEvolucion"),
-{
-type:"line",
-data:{
-labels:datosReporte.evolucion.labels,
-datasets:[{
-label:"Desregulaciones",
-data:datosReporte.evolucion.data,
-borderWidth:3,
-tension:.4
-}]
-}
-}
-);
-
-
-// FACTORES
-
-new Chart(
-document.getElementById("graficoFactores"),
-{
-type:"pie",
-data:{
-labels:datosReporte.factores.labels,
-datasets:[{
-data:datosReporte.factores.data
-}]
-}
-}
-);
+    new Chart(
+        document.getElementById("graficoEvolucion"),
+        {
+            type: "line",
+            data: {
+                labels: datosReporte.evolucion?.labels || [],
+                datasets: [{
+                    label: "Desregulaciones",
+                    data: datosReporte.evolucion?.data || [],
+                    borderWidth: 3,
+                    tension: 0.4
+                }]
+            }
+        }
+    );
 
 
-// DIAS
+    // =========================
+    // FACTORES
+    // =========================
 
-new Chart(
-document.getElementById("graficoDias"),
-{
-type:"bar",
-data:{
-labels:datosReporte.dias.labels,
-datasets:[{
-label:"Eventos",
-data:datosReporte.dias.data
-}]
-}
-}
-);
-
-
-// CURSOS
-
-new Chart(
-document.getElementById("graficoCursos"),
-{
-type:"bar",
-data:{
-labels:datosReporte.cursos.labels,
-datasets:[{
-label:"Incidentes",
-data:datosReporte.cursos.data
-}]
-}
-}
-);
+    new Chart(
+        document.getElementById("graficoFactores"),
+        {
+            type: "pie",
+            data: {
+                labels: datosReporte.factores?.labels || [],
+                datasets: [{
+                    data: datosReporte.factores?.data || []
+                }]
+            }
+        }
+    );
 
 
-// HALLAZGOS
+    // =========================
+    // DÍAS
+    // =========================
 
-const lista = document.getElementById("insights");
-
-lista.innerHTML = "";
-
-datosReporte.hallazgos.forEach(texto=>{
-
-lista.innerHTML += `
-<li class="list-group-item">
-📊 ${texto}
-</li>
-`;
-
-});
-// =======================================
-// DESCARGAR PDF GENERAL
-// =======================================
-
-const btnPdf = document.getElementById("btnPdf");
-
-if(btnPdf){
-
-    btnPdf.addEventListener("click",()=>{
-
-        window.open(
-            `${API}/reportes/pdf-general`,
-            "_blank"
-        );
-
-    });
-
-}
+    new Chart(
+        document.getElementById("graficoDias"),
+        {
+            type: "bar",
+            data: {
+                labels: datosReporte.dias?.labels || [],
+                datasets: [{
+                    label: "Eventos",
+                    data: datosReporte.dias?.data || []
+                }]
+            }
+        }
+    );
 
 
-// =======================================
-// DESCARGAR EXCEL
-// =======================================
+    // =========================
+    // CURSOS
+    // =========================
 
-const btnExcel = document.getElementById("btnExcel");
+    new Chart(
+        document.getElementById("graficoCursos"),
+        {
+            type: "bar",
+            data: {
+                labels: datosReporte.cursos?.labels || [],
+                datasets: [{
+                    label: "Incidentes",
+                    data: datosReporte.cursos?.data || []
+                }]
+            }
+        }
+    );
 
-if(btnExcel){
 
-    btnExcel.addEventListener("click",()=>{
+    // =========================
+    // HALLAZGOS
+    // =========================
 
-        alert("Excel próximamente conectado al backend");
+    const lista = document.getElementById("insights");
 
-    });
+    if (lista) {
 
-}
+        lista.innerHTML = "";
+
+        (datosReporte.hallazgos || []).forEach(texto => {
+
+            lista.innerHTML += `
+                <li class="list-group-item">
+                    📊 ${texto}
+                </li>
+            `;
+        });
+    }
+
+
+    // =========================
+    // PDF GENERAL
+    // =========================
+
+    const btnPdf = document.getElementById("btnPdf");
+
+    if (btnPdf) {
+
+        btnPdf.addEventListener("click", () => {
+
+            window.open(`${API}/reportes/pdf-general`, "_blank");
+
+        });
+    }
+
+
+    // =========================
+    // EXCEL
+    // =========================
+
+    const btnExcel = document.getElementById("btnExcel");
+
+    if (btnExcel) {
+
+        btnExcel.addEventListener("click", () => {
+
+            alert("Excel aún no conectado al backend");
+
+        });
+    }
+
 });
