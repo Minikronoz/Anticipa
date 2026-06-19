@@ -198,12 +198,10 @@ function cargarGraficos() {
 
         if (!curso) return;
 
-        // inicializar curso si no existe
         if (!cursos[curso]) {
             cursos[curso] = 0;
         }
 
-        // 🔥 DESREGULACIONES = puntos_totales (ajustado correctamente)
         cursos[curso] += est.puntos_totales || 0;
     });
 
@@ -214,7 +212,6 @@ function cargarGraficos() {
 
     if (grafCursos) {
 
-        // evitar duplicación de gráfico si se recarga
         if (window.graficoCursosInstance) {
             window.graficoCursosInstance.destroy();
         }
@@ -222,7 +219,7 @@ function cargarGraficos() {
         window.graficoCursosInstance = new Chart(grafCursos, {
             type: "bar",
             data: {
-                labels,
+                labels: labels,
                 datasets: [{
                     label: "Desregulaciones por curso",
                     data: valores
@@ -230,9 +227,20 @@ function cargarGraficos() {
             },
             options: {
                 responsive: true,
-                plugins: {
-                    legend: {
-                        display: true
+                maintainAspectRatio: false, // 🔥 IMPORTANTE
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: "Cursos"
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: "Cantidad de desregulaciones"
+                        }
                     }
                 }
             }
