@@ -379,4 +379,18 @@ document.addEventListener("DOMContentLoaded", init);
 async function init() {
     await cargarEstudiantes();
     cargarGraficos();
+    initFiltros();
+}
+
+function initFiltros() {
+
+    document.getElementById("buscar").addEventListener("input", aplicarFiltros);
+
+    document.getElementById("filtroCurso").addEventListener("change", aplicarFiltros);
+
+    document.getElementById("filtroDiagnostico").addEventListener("change", aplicarFiltros);
+
+    document.getElementById("filtroEstado").addEventListener("change", aplicarFiltros);
+
+    document.getElementById("ordenarPor").addEventListener("change", aplicarFiltros);
 }

@@ -58,12 +58,11 @@ async function login(e) {
         }
 
         localStorage.setItem(
-            'adminSesion',
-            JSON.stringify(data)
-        );
+    'adminSesion',
+    JSON.stringify(data)
+);
 
-        window.location.href =
-            'dashboard.html';
+window.location.href = 'usuarios.html';
 
     } catch (err) {
 
@@ -78,14 +77,18 @@ async function login(e) {
 // LOGOUT
 // =========================
 
-function logout() {
+document.addEventListener("DOMContentLoaded", () => {
 
-    localStorage.removeItem('adminSesion');
+    const btn = document.getElementById("btnLogout");
 
-    window.location.href = 'index.html';
-}
+    if (btn) {
+        btn.addEventListener("click", () => {
+            localStorage.removeItem("adminSesion");
+            window.location.href = "index.html";
+        });
+    }
 
-window.logout = logout;
+});
 
 // =========================
 // DASHBOARD
