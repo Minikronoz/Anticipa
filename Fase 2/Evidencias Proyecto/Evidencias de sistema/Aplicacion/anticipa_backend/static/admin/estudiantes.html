@@ -32,7 +32,9 @@
             </div>
         </div>
 
-        <!-- TARJETAS -->
+        <!-- ========================= -->
+        <!-- TARJETAS PRINCIPALES -->
+        <!-- ========================= -->
         <div class="row g-4 mb-4">
 
             <div class="col-md-3">
@@ -65,7 +67,9 @@
 
         </div>
 
-        <!-- GRAFICOS -->
+        <!-- ========================= -->
+        <!-- GRÁFICOS -->
+        <!-- ========================= -->
         <div class="row g-4 mb-4">
 
             <div class="col-lg-6">
@@ -88,7 +92,9 @@
 
         </div>
 
+        <!-- ========================= -->
         <!-- TABLA -->
+        <!-- ========================= -->
         <div class="card">
 
             <div class="card-header">
@@ -163,7 +169,9 @@
     </main>
 </div>
 
-<!-- MODAL -->
+<!-- ========================= -->
+<!-- MODAL ESTUDIANTE -->
+<!-- ========================= -->
 <div class="modal fade" id="modalEstudiante">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -175,12 +183,60 @@
 
             <div class="modal-body">
 
+                <!-- MÉTRICAS -->
                 <div class="row mb-4">
-                    <div class="col-md-4"><div class="metric-card"><h3 id="datoHoy">0</h3><span>Hoy</span></div></div>
-                    <div class="col-md-4"><div class="metric-card"><h3 id="datoSemana">0</h3><span>Semana</span></div></div>
-                    <div class="col-md-4"><div class="metric-card"><h3 id="datoMes">0</h3><span>Mes</span></div></div>
+
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <h3 id="datoHoy">0</h3>
+                            <span>Hoy</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <h3 id="datoSemana">0</h3>
+                            <span>Semana</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <h3 id="datoMes">0</h3>
+                            <span>Mes</span>
+                        </div>
+                    </div>
+
+                    <!-- 🔥 NUEVO: DESREGULACIONES -->
+                    <div class="col-md-3">
+                        <div class="metric-card">
+                            <h3 id="datoDesregulaciones">0</h3>
+                            <span>Desregulaciones</span>
+                        </div>
+                    </div>
+
                 </div>
 
+                <!-- INFO EXTRA -->
+                <div class="row mb-3">
+
+                    <div class="col-md-6">
+                        <div class="card p-3">
+                            <h6>Diagnóstico</h6>
+                            <h4 id="datoDiagnostico">-</h4>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="card p-3">
+                            <h6>Estado</h6>
+                            <h4 id="datoEstado">-</h4>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- GRÁFICOS -->
                 <div class="row">
 
                     <div class="col-lg-6">
@@ -203,6 +259,7 @@
 
                 </div>
 
+                <!-- OBSERVACIÓN -->
                 <div class="mt-4">
                     <h5>Observación Automática</h5>
                     <div id="observacion" class="alert alert-success"></div>
