@@ -282,3 +282,53 @@ function cargarGraficos() {
         });
     }
 }
+
+
+function verEstudiante(id) {
+
+    const estudiante = estudiantes.find(
+    e => Number(e.id_estudiante) === Number(id)
+);
+
+    if (!estudiante) return;
+
+    // TÍTULO
+    document.getElementById("tituloEstudiante").textContent =
+        estudiante.nombre;
+
+    // MÉTRICAS
+    const hoy = document.getElementById("datoHoy");
+    const semana = document.getElementById("datoSemana");
+    const mes = document.getElementById("datoMes");
+
+    if (hoy) hoy.textContent = estudiante.puntos_totales || 0;
+    if (semana) semana.textContent = Math.floor((estudiante.puntos_totales || 0) * 0.3);
+    if (mes) mes.textContent = Math.floor((estudiante.puntos_totales || 0) * 0.6);
+
+    // OBSERVACIÓN (simple automática)
+    const observacion = document.getElementById("observacion");
+
+    if (observacion) {
+
+        let texto = "";
+
+        if ((estudiante.estado || "").toUpperCase() === "RIESGO") {
+            texto = "⚠ Estudiante en riesgo, requiere seguimiento inmediato.";
+        }
+        else if ((estudiante.estado || "").toUpperCase() === "ESTABLE") {
+            texto = "✔ Estudiante estable con evolución normal.";
+        }
+        else {
+            texto = "📈 Estudiante en proceso de mejora.";
+        }
+
+        observacion.textContent = texto;
+    }
+
+    // MOSTRAR MODAL BOOTSTRAP
+    const modal = new bootstrap.Modal(
+        document.getElementById("modalEstudiante")
+    );
+
+    modal.show();
+}

@@ -1594,3 +1594,6 @@ def reporte_general_pdf(db: Session = Depends(get_db)):
             "Content-Disposition": f'inline; filename="{filename}"'
         }
     )
+
+
+    
