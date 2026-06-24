@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../constants.dart';
 import '../theme/app_theme.dart';
 import 'theme_settings_screen.dart';
+import 'recompensas_screen.dart';
 
 // ═══════════════════════════════════════════════════════════
 // PANEL ESTUDIANTE — Modo kiosko simplificado
@@ -189,14 +190,32 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
           Text('¡Hola ${widget.nombreEstudiante}!', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
           Text(_fechaBonita(), style: const TextStyle(fontSize: 14, color: Colors.white70)),
         ])),
-        Column(children: [
-          Row(mainAxisSize: MainAxisSize.min, children: [
-            const Text('⭐', style: TextStyle(fontSize: 22)),
-            const SizedBox(width: 4),
-            Text('$_estrellas', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
-          ]),
-          const Text('estrellas', style: TextStyle(fontSize: 11, color: Colors.white70)),
-        ]),
+        InkWell(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => RecompensasScreen(
+                  idEstudiante: widget.idEstudiante,
+                  nombreEstudiante: widget.nombreEstudiante,
+                  themeConfig: widget.themeConfig,
+                ),
+              ),
+            );
+          },
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Column(children: [
+              Row(mainAxisSize: MainAxisSize.min, children: [
+                const Text('⭐', style: TextStyle(fontSize: 22)),
+                const SizedBox(width: 4),
+                Text('$_estrellas', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+              ]),
+              const Text('estrellas', style: TextStyle(fontSize: 11, color: Colors.white70)),
+            ]),
+          ),
+        ),
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white70, size: 22),
           tooltip: 'Cerrar sesión',

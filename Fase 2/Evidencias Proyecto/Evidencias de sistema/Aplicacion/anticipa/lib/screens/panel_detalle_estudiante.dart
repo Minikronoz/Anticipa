@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../constants.dart';
+import '../theme/app_theme.dart';
 import 'reporte_estudiante_screen.dart';
 import 'recompensas_screen.dart';
 
@@ -15,6 +16,7 @@ class PanelDetalleEstudiante extends StatefulWidget {
   final int idUsuario;
   final String rol;
   final String nombreEstudiante;
+  final ThemeConfig? themeConfig;
 
   const PanelDetalleEstudiante({
     super.key,
@@ -22,6 +24,7 @@ class PanelDetalleEstudiante extends StatefulWidget {
     required this.idUsuario,
     required this.rol,
     required this.nombreEstudiante,
+    this.themeConfig,
   });
 
   @override
@@ -1175,6 +1178,7 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
           builder: (_) => RecompensasScreen(
             idEstudiante: widget.idEstudiante,
             nombreEstudiante: widget.nombreEstudiante,
+            themeConfig: widget.themeConfig ?? ThemeConfig.defaultTheme(),
           ),
         ),
       );

@@ -2,15 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import '../constants.dart';
+import '../theme/app_theme.dart';
 
 class RecompensasScreen extends StatefulWidget {
   final int idEstudiante;
   final String nombreEstudiante;
+  final ThemeConfig themeConfig;
 
   const RecompensasScreen({
     super.key,
     required this.idEstudiante,
     required this.nombreEstudiante,
+    required this.themeConfig,
   });
 
   @override
@@ -21,104 +24,110 @@ class _RecompensasScreenState extends State<RecompensasScreen> {
   bool isLoading = true;
   String error = '';
   int estrellas = 0;
-
-  final List<Map<String, dynamic>> recompensas = [
-    {
-      'id': 1,
-      'nombre': '5 minutos de juego educativo',
-      'meta': 20,
-      'icono': Icons.sports_esports,
-    },
-    {
-      'id': 2,
-      'nombre': 'Elegir actividad favorita',
-      'meta': 40,
-      'icono': Icons.palette,
-    },
-    {
-      'id': 3,
-      'nombre': 'Medalla virtual de logro',
-      'meta': 60,
-      'icono': Icons.emoji_events,
-    },
-  ];
-
+  List<Map<String, dynamic>> recompensas = [];
   final Set<int> recompensasCanjeadas = {};
+
+  ThemeColors get _c => widget.themeConfig.colors;
 
   @override
   void initState() {
     super.initState();
-    _cargarEstrellas();
+    _cargarTodo();
   }
 
-  Future<void> _cargarEstrellas() async {
+  Future<void> _cargarTodo() async {
     setState(() {
       isLoading = true;
       error = '';
     });
 
     try {
-      final r = await http
+      final resEstrellas = await http
           .get(Uri.parse('${AppConstants.baseUrl}/estrellas/estudiante/${widget.idEstudiante}'))
           .timeout(const Duration(seconds: 60));
+      final resRecompensas = await http
+          .get(Uri.parse('${AppConstants.baseUrl}/recompensas/estudiante/${widget.idEstudiante}'))
+          .timeout(const Duration(seconds: 60));
 
-      if (r.statusCode != 200) {
+      if (resEstrellas.statusCode == 200 && resRecompensas.statusCode == 200) {
+        final dataEstrellas = List<Map<String, dynamic>>.from(jsonDecode(resEstrellas.body));
+        final total = dataEstrellas.fold<int>(0, (sum, e) => sum + ((e['estrellas_ganadas'] ?? 0) as int));
+
+        final dataRecompensas = List<Map<String, dynamic>>.from(jsonDecode(resRecompensas.body));
+
         setState(() {
-          estrellas = 0;
-          error = 'No se pudieron cargar las estrellas.';
+          estrellas = total;
+          recompensas = dataRecompensas;
           isLoading = false;
         });
-        return;
+      } else {
+        setState(() {
+          error = 'No se pudieron cargar los datos.';
+          isLoading = false;
+        });
       }
-
-      final data = List<Map<String, dynamic>>.from(jsonDecode(r.body));
-
-      final total = data.fold<int>(
-        0,
-        (sum, e) => sum + ((e['estrellas_ganadas'] ?? 0) as int),
-      );
-
-      setState(() {
-        estrellas = total;
-        isLoading = false;
-      });
     } catch (_) {
       setState(() {
-        error = 'Error de conexión al cargar estrellas.';
+        error = 'Error de conexión.';
         isLoading = false;
       });
     }
   }
 
-  void _confirmarCanje(Map<String, dynamic> recompensa) {
-    final int id = recompensa['id'];
-    final String nombre = recompensa['nombre'];
-    final int meta = recompensa['meta'];
+  Future<void> _canjear(int idRecompensa, String nombre, int meta) async {
+    try {
+      final r = await http
+          .post(Uri.parse('${AppConstants.baseUrl}/recompensas/$idRecompensa/canjear'))
+          .timeout(const Duration(seconds: 60));
 
+      if (r.statusCode == 200) {
+        setState(() {
+          recompensasCanjeadas.add(idRecompensa);
+        });
+        await _cargarTodo();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('¡Recompensa "$nombre" canjeada!'), backgroundColor: Colors.green),
+          );
+        }
+      } else if (r.statusCode == 400) {
+        final body = jsonDecode(r.body);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(body['detail'] ?? 'No se pudo canjear'), backgroundColor: Colors.orange),
+          );
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al canjear recompensa'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _confirmarCanje(int id, String nombre, int meta) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Canjear recompensa'),
-        content: Text('¿Deseas canjear "$nombre" por $meta estrellas?'),
+        content: Text('¿Canjeas "$nombre" por $meta ⭐?', style: const TextStyle(fontSize: 16)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF22C55E),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () {
               Navigator.pop(ctx);
-
-              setState(() {
-                recompensasCanjeadas.add(id);
-              });
-
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Recompensa canjeada: $nombre'),
-                  backgroundColor: Colors.green,
-                ),
-              );
+              _canjear(id, nombre, meta);
             },
             child: const Text('Confirmar'),
           ),
@@ -127,126 +136,203 @@ class _RecompensasScreenState extends State<RecompensasScreen> {
     );
   }
 
+  IconData _iconoPorNombre(String? nombre) {
+    if (nombre == null) return Icons.card_giftcard;
+    final n = nombre.toLowerCase();
+    if (n.contains('juego') || n.contains('game')) return Icons.sports_esports;
+    if (n.contains('actividad') || n.contains('favorita')) return Icons.palette;
+    if (n.contains('medalla') || n.contains('logro')) return Icons.emoji_events;
+    if (n.contains('comida') || n.contains('almuerzo')) return Icons.restaurant;
+    if (n.contains('salida') || n.contains('paseo')) return Icons.park;
+    if (n.contains('pelicula') || n.contains('cine')) return Icons.movie;
+    if (n.contains('deber') || n.contains('libre')) return Icons.check_circle;
+    return Icons.card_giftcard;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: _c.background,
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Recompensas'),
+      backgroundColor: _c.background,
+      body: SafeArea(
+        child: Column(children: [
+          _barraSuperior(),
+          Expanded(
+            child: error.isNotEmpty
+                ? Center(child: Text(error, style: TextStyle(color: Colors.red.shade700, fontSize: 16)))
+                : _listaRecompensas(),
+          ),
+        ]),
       ),
-      body: RefreshIndicator(
-        onRefresh: _cargarEstrellas,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                title: Text(
-                  widget.nombreEstudiante,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-                subtitle: Text('Estrellas disponibles: $estrellas ⭐'),
-              ),
-            ),
+    );
+  }
 
-            const SizedBox(height: 16),
-
-            const Text(
-              'Recompensas disponibles',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            if (error.isNotEmpty)
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                    error,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-              ),
-
-            ...recompensas.map((r) {
-              final int id = r['id'];
-              final String nombre = r['nombre'];
-              final int meta = r['meta'];
-              final IconData icono = r['icono'];
-
-              final bool canjeada = recompensasCanjeadas.contains(id);
-              final bool disponible = estrellas >= meta && !canjeada;
-              final int faltan = meta - estrellas;
-
-              return Card(
-                margin: const EdgeInsets.only(bottom: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 26,
-                        child: Icon(icono, size: 30),
-                      ),
-                      const SizedBox(width: 14),
-
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              nombre,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              canjeada
-                                  ? 'Recompensa ya canjeada'
-                                  : disponible
-                                      ? 'Disponible por $meta ⭐'
-                                      : 'Meta: $meta ⭐ · Faltan $faltan ⭐',
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      if (canjeada)
-                        const Chip(label: Text('Canjeada'))
-                      else if (disponible)
-                        ElevatedButton(
-                          onPressed: () => _confirmarCanje(r),
-                          child: const Text('Canjear'),
-                        )
-                      else
-                        const Chip(label: Text('Bloqueada')),
-                    ],
-                  ),
-                ),
-              );
-            }),
-          ],
+  Widget _barraSuperior() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+      decoration: BoxDecoration(
+        color: _c.appBar,
+      ),
+      child: Row(children: [
+        IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
+          tooltip: 'Volver',
+          onPressed: () => Navigator.pop(context),
         ),
+        const SizedBox(width: 8),
+        Container(
+          width: 48, height: 48,
+          decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(24)),
+          child: const Icon(Icons.card_giftcard, size: 28, color: Colors.white),
+        ),
+        const SizedBox(width: 14),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('¡Hola ${widget.nombreEstudiante}!', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          const Text('Tus recompensas', style: TextStyle(fontSize: 13, color: Colors.white70)),
+        ])),
+        Column(children: [
+          Row(mainAxisSize: MainAxisSize.min, children: [
+            const Text('⭐', style: TextStyle(fontSize: 22)),
+            const SizedBox(width: 4),
+            Text('$estrellas', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+          ]),
+          const Text('estrellas', style: TextStyle(fontSize: 11, color: Colors.white70)),
+        ]),
+      ]),
+    );
+  }
+
+  Widget _listaRecompensas() {
+    if (recompensas.isEmpty) {
+      return Center(
+        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Icon(Icons.card_giftcard, size: 80, color: _c.primary.withValues(alpha: 0.4)),
+          const SizedBox(height: 16),
+          Text('Sin recompensas aún', style: TextStyle(fontSize: 20, color: _c.textSecondary)),
+          const SizedBox(height: 8),
+          Text('Tu apoderado creará\nrecompensas para ti', textAlign: TextAlign.center, style: TextStyle(fontSize: 14, color: _c.textSecondary)),
+        ]),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _cargarTodo,
+      color: _c.primary,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+        itemCount: recompensas.length,
+        itemBuilder: (ctx, i) => _cardRecompensa(recompensas[i]),
+      ),
+    );
+  }
+
+  Widget _cardRecompensa(Map<String, dynamic> r) {
+    final id = r['id_recompensa'] as int;
+    final nombre = r['nombre_recompensa'] as String? ?? 'Recompensa';
+    final meta = r['meta_estrellas'] as int? ?? 0;
+    final canjeada = (r['estado_logro'] == true) || recompensasCanjeadas.contains(id);
+    final disponible = estrellas >= meta && !canjeada;
+    final faltan = meta - estrellas;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: canjeada
+            ? Colors.grey.shade100
+            : disponible
+                ? const Color(0xFFF0FDF4)
+                : _c.card,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: canjeada
+              ? Colors.grey.shade400
+              : disponible
+                  ? const Color(0xFF22C55E)
+                  : _c.primary.withValues(alpha: 0.2),
+          width: canjeada ? 1 : 2,
+        ),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(children: [
+          Container(
+            width: 60, height: 60,
+            decoration: BoxDecoration(
+              color: canjeada
+                  ? Colors.grey.shade300
+                  : disponible
+                      ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+                      : _c.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              _iconoPorNombre(nombre),
+              size: 32,
+              color: canjeada ? Colors.grey : (disponible ? const Color(0xFF22C55E) : _c.primary),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              nombre,
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+                color: canjeada ? Colors.grey : _c.textPrimary,
+                decoration: canjeada ? TextDecoration.lineThrough : null,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Row(children: [
+              const Text('⭐', style: TextStyle(fontSize: 14)),
+              const SizedBox(width: 4),
+              Text(
+                '$meta estrellas',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: canjeada ? Colors.grey : (disponible ? const Color(0xFF22C55E) : _c.primary)),
+              ),
+            ]),
+            if (!canjeada && !disponible) ...[
+              const SizedBox(height: 2),
+              Text('Necesitas $faltan estrellas más', style: TextStyle(fontSize: 12, color: _c.textSecondary)),
+            ],
+            if (canjeada) ...[
+              const SizedBox(height: 2),
+              Row(children: [
+                Icon(Icons.check_circle, size: 16, color: Colors.grey.shade600),
+                const SizedBox(width: 4),
+                Text('Canjeada', style: TextStyle(fontSize: 13, color: Colors.grey.shade600, fontWeight: FontWeight.w600)),
+              ]),
+            ],
+          ])),
+          if (!canjeada && disponible)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF22C55E),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () => _confirmarCanje(id, nombre, meta),
+              child: const Text('Canjear', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+            )
+          else if (!canjeada)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text('Bloqueada', style: TextStyle(fontSize: 13, color: Colors.grey.shade700, fontWeight: FontWeight.w600)),
+            ),
+        ]),
       ),
     );
   }

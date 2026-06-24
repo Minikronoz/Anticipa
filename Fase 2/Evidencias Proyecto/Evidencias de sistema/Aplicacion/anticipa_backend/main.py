@@ -898,6 +898,30 @@ def listar_recompensas(id_estudiante: int, db: Session = Depends(get_db)):
         models.RecompensaDisponible.estudiante_id_estudiante == id_estudiante
     ).all()
 
+@app.post("/recompensas/{id_recompensa}/canjear", response_model=schemas.RecompensaResponse, tags=["Recompensas"])
+def canjear_recompensa(id_recompensa: int, db: Session = Depends(get_db)):
+    recomp = db.query(models.RecompensaDisponible).filter(
+        models.RecompensaDisponible.id_recompensa == id_recompensa
+    ).first()
+    if not recomp:
+        raise HTTPException(status_code=404, detail="Recompensa no encontrada.")
+    if recomp.estado_logro:
+        raise HTTPException(status_code=400, detail="Esta recompensa ya fue canjeada.")
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == recomp.estudiante_id_estudiante
+    ).first()
+    if not estudiante:
+        raise HTTPException(status_code=404, detail="Estudiante no encontrado.")
+    if estudiante.puntos_totales < recomp.meta_estrellas:
+        raise HTTPException(status_code=400, detail="Estrellas insuficientes para canjear esta recompensa.")
+
+    estudiante.puntos_totales -= recomp.meta_estrellas
+    recomp.estado_logro = True
+    recomp.fecha_logro = datetime.now(CHILE_TZ)
+    db.commit(); db.refresh(recomp)
+    return recomp
+
 
 # =========================================================
 # ESTRELLAS DIARIAS
