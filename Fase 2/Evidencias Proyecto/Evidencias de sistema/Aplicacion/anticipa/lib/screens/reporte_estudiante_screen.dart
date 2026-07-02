@@ -260,3 +260,13 @@ class _ReporteEstudianteScreenState extends State<ReporteEstudianteScreen> {
     );
   }
 }
+
+//En este commit se implementó la pantalla de reporte del estudiante,
+// la cual permite visualizar métricas generales relacionadas con sus actividades, pictogramas y estrellas acumuladas.
+// El código consume información desde la API para obtener las actividades asignadas, 
+//los pictogramas registrados y las estrellas ganadas por el estudiante. A partir de estos datos,
+// se calculan automáticamente indicadores como el total de actividades, 
+//actividades completadas, pendientes, porcentaje de cumplimiento y categorías con mayor cantidad de tareas pendientes.
+// Además, se incorporó una observación automática que entrega una interpretación del
+// desempeño del estudiante, permitiendo identificar si mantiene un buen nivel de
+// cumplimiento o si necesita refuerzo en una categoría específica.
