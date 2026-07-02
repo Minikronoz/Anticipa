@@ -396,10 +396,10 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _todosMinutos().contains(customMinIni) ? customMinIni : _todosMinutos().first,
+                            value: _minutosOtroInicio(fechaAct).contains(customMinIni) ? customMinIni : _minutosOtroInicio(fechaAct).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosOtroInicio(fechaAct).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
                               setDlg(() { customMinIni = v; horaCtl.text = '$customHoraIni:$v'; });
@@ -484,13 +484,20 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _horasOtro(fechaAct).contains(customHoraFin) ? customHoraFin : _horasOtro(fechaAct).first,
+                            value: _horasOtro(fechaAct, horaCtl.text.substring(0, 2)).contains(customHoraFin) ? customHoraFin : _horasOtro(fechaAct, horaCtl.text.substring(0, 2)).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _horasOtro(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _horasOtro(fechaAct, horaCtl.text.substring(0, 2)).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
-                              setDlg(() { customHoraFin = v; horaFinCtl.text = '$v:$customMinFin'; });
+                              setDlg(() {
+                                customHoraFin = v;
+                                final minsFiltrados = _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), v);
+                                if (!minsFiltrados.contains(customMinFin)) {
+                                  customMinFin = minsFiltrados.isNotEmpty ? minsFiltrados.first : '00';
+                                }
+                                horaFinCtl.text = '$v:$customMinFin';
+                              });
                             },
                           ),
                         ),
@@ -504,10 +511,10 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _todosMinutos().contains(customMinFin) ? customMinFin : _todosMinutos().first,
+                            value: _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), customHoraFin).contains(customMinFin) ? customMinFin : _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), customHoraFin).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), customHoraFin).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
                               setDlg(() { customMinFin = v; horaFinCtl.text = '$customHoraFin:$v'; });
@@ -794,10 +801,10 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _todosMinutos().contains(customMinIni) ? customMinIni : _todosMinutos().first,
+                            value: _minutosOtroInicio(fechaAct).contains(customMinIni) ? customMinIni : _minutosOtroInicio(fechaAct).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosOtroInicio(fechaAct).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
                               setDlg(() { customMinIni = v; horaCtl.text = '$customHoraIni:$v'; });
@@ -882,13 +889,20 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _horasOtro(fechaAct).contains(customHoraFin) ? customHoraFin : _horasOtro(fechaAct).first,
+                            value: _horasOtro(fechaAct, horaCtl.text.substring(0, 2)).contains(customHoraFin) ? customHoraFin : _horasOtro(fechaAct, horaCtl.text.substring(0, 2)).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _horasOtro(fechaAct).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _horasOtro(fechaAct, horaCtl.text.substring(0, 2)).map((h) => DropdownMenuItem(value: h, child: Text(h, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
-                              setDlg(() { customHoraFin = v; horaFinCtl.text = '$v:$customMinFin'; });
+                              setDlg(() {
+                                customHoraFin = v;
+                                final minsFiltrados = _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), v);
+                                if (!minsFiltrados.contains(customMinFin)) {
+                                  customMinFin = minsFiltrados.isNotEmpty ? minsFiltrados.first : '00';
+                                }
+                                horaFinCtl.text = '$v:$customMinFin';
+                              });
                             },
                           ),
                         ),
@@ -902,10 +916,10 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
                         decoration: BoxDecoration(borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade400)),
                         child: DropdownButtonHideUnderline(
                           child: DropdownButton<String>(
-                            value: _todosMinutos().contains(customMinFin) ? customMinFin : _todosMinutos().first,
+                            value: _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), customHoraFin).contains(customMinFin) ? customMinFin : _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), customHoraFin).first,
                             isExpanded: true,
                             borderRadius: BorderRadius.circular(12),
-                            items: _todosMinutos().map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
+                            items: _minutosOtroFin(fechaAct, horaCtl.text.substring(0, 2), horaCtl.text.substring(3, 5), customHoraFin).map((m) => DropdownMenuItem(value: m, child: Text(m, style: const TextStyle(fontSize: 15)))).toList(),
                             onChanged: (v) {
                               if (v == null) return;
                               setDlg(() { customMinFin = v; horaFinCtl.text = '$customHoraFin:$v'; });
@@ -1028,10 +1042,51 @@ class _PanelDetalleEstudianteState extends State<PanelDetalleEstudiante> {
     return _minutos.where((m) => int.parse(m) >= (horaInt == now.hour ? (now.minute ~/ 5) * 5 : 0)).toList();
   }
 
-  List<String> _horasOtro(DateTime fecha) {
-    if (!_esHoy(fecha)) return _horas;
+  List<String> _horasOtro(DateTime fecha, [String? horaMinima]) {
     final now = DateTime.now();
-    return _horas.where((h) => int.parse(h) >= now.hour).toList();
+    int minHora = 0;
+    if (_esHoy(fecha)) minHora = now.hour;
+    if (horaMinima != null) {
+      final hMin = int.parse(horaMinima);
+      if (hMin > minHora) minHora = hMin;
+    }
+    return _horas.where((h) => int.parse(h) >= minHora).toList();
+  }
+
+  /// Minutos para el selector "Otro" de hora inicio.
+  /// Si es hoy, filtra minutos desde el próximo múltiplo de 5 mayor o igual
+  /// al minuto actual. Si es otro día, devuelve todos los minutos 00-59.
+  List<String> _minutosOtroInicio(DateTime fecha) {
+    if (!_esHoy(fecha)) return _todosMinutos();
+    final now = DateTime.now();
+    final minRedondeado = (now.minute ~/ 5) * 5;
+    return _todosMinutos().where((m) => int.parse(m) >= minRedondeado).toList();
+  }
+
+  /// Minutos para el selector "Otro" de hora fin.
+  /// Filtra según la hora de inicio seleccionada y, si es hoy, según la hora actual.
+  List<String> _minutosOtroFin(DateTime fecha, String horaInicio, String minInicio, String horaFin) {
+    final todos = _todosMinutos();
+    final hIni = int.parse(horaInicio);
+    final mIni = int.parse(minInicio);
+    final hFin = int.parse(horaFin);
+
+    if (hFin > hIni) {
+      if (_esHoy(fecha)) {
+        final now = DateTime.now();
+        if (hFin == now.hour) {
+          final minRedondeado = (now.minute ~/ 5) * 5;
+          return todos.where((m) => int.parse(m) >= minRedondeado).toList();
+        }
+      }
+      return todos;
+    }
+
+    if (hFin == hIni) {
+      return todos.where((m) => int.parse(m) >= mIni).toList();
+    }
+
+    return [];
   }
 
   List<String> _todosMinutos() {

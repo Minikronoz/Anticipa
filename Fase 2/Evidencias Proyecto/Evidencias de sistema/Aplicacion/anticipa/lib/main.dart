@@ -5,8 +5,8 @@ import 'dart:convert';
 import 'screens/panel_profesor.dart';
 import 'screens/panel_estudiante.dart';
 import 'screens/panel_apoderado.dart';
-import 'screens/registro_screen.dart';
 import 'screens/recuperar_password_screen.dart';
+import 'screens/registro_codigo_screen.dart';
 import 'screens/theme_settings_screen.dart';
 import 'constants.dart';
 import 'services/theme_service.dart';
@@ -226,9 +226,9 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             TextButton(
               onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const RegistroScreen()));
+                Navigator.push(context, MaterialPageRoute(builder: (context) => RegistroCodigoScreen(themeConfig: widget.themeConfig)));
               },
-              child: Text('¿No tienes cuenta? Regístrate aquí', style: TextStyle(color: colors.primary)),
+              child: Text('Registrarme con código del colegio', style: TextStyle(color: colors.primary)),
             ),
             Text(mensajeSistema, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.bold, color: colors.textPrimary)),
           ],

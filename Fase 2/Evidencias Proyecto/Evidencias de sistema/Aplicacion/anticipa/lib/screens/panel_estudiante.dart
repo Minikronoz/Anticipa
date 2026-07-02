@@ -340,8 +340,11 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
     final horaFormateada = horaRaw.length >= 5 ? horaRaw.substring(0, 5) : '--:--';
     final horaFinFormateada = horaFinRaw.length >= 5 ? horaFinRaw.substring(0, 5) : '--:--';
     final fechaActStr = a['fecha_actividad']?.toString().split('T')[0] ?? '';
-    final esFutura = !esPasado && fechaActStr.compareTo(DateTime.now().toIso8601String().split('T')[0]) > 0;
-    final esBloqueadaHoraPasada = !esPasado && !esFutura && horaFinFormateada.compareTo(horaActual) < 0;
+    final hoyStr = DateTime.now().toIso8601String().split('T')[0];
+    final esFutura = !esPasado && fechaActStr.compareTo(hoyStr) > 0;
+    final esHoraInicioFutura = !esPasado && !esFutura && horaFormateada.compareTo(horaActual) > 0;
+    final esBloqueadaHoraPasada = !esPasado && !esFutura && !esHoraInicioFutura && horaFinFormateada.compareTo(horaActual) < 0;
+    final bloqueada = esPasado || esFutura || esHoraInicioFutura || esBloqueadaHoraPasada;
     final picto = _pictoUrl(a['pictograma_id_pictograma']);
     final hora = horaFormateada;
     final horaFin = horaFinFormateada;
@@ -458,15 +461,34 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                     Text('$hora - $horaFin', style: TextStyle(fontSize: 16, color: _c.primary, fontWeight: FontWeight.w600)),
                   ],
                 ),
+                if (esFutura || esHoraInicioFutura) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.schedule, size: 14, color: Color(0xFFB45309)),
+                      const SizedBox(width: 4),
+                      Text(
+                        esFutura ? 'Próximo día' : 'Próxima tarea',
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Color(0xFFB45309)),
+                      ),
+                    ]),
+                  ),
+                ],
                 const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: ElevatedButton(
-                      onPressed: completando || esPasado || esFutura || esBloqueadaHoraPasada ? null : () => _completar(id),
+                      onPressed: completando || bloqueada ? null : () => _completar(id),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: completada ? const Color(0xFF22C55E) : (esPasado || esFutura || esBloqueadaHoraPasada ? Colors.grey : _c.primary),
+                        backgroundColor: completada ? const Color(0xFF22C55E) : (bloqueada ? Colors.grey : _c.primary),
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -475,9 +497,9 @@ class _PanelEstudianteState extends State<PanelEstudiante> {
                         if (completando)
                           const SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white))
                         else ...[
-                          Icon(completada ? Icons.check_circle : Icons.star, size: 22),
+                          Icon(completada ? Icons.check_circle : (esFutura || esHoraInicioFutura ? Icons.schedule : Icons.star), size: 22),
                           const SizedBox(width: 8),
-                          Text(completada ? '¡COMPLETADO!' : (esPasado || esBloqueadaHoraPasada ? 'BLOQUEADA' : (esFutura ? 'PRÓXIMO' : 'COMPLETAR')), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          Text(completada ? '¡COMPLETADO!' : (esPasado || esBloqueadaHoraPasada ? 'BLOQUEADA' : (esFutura || esHoraInicioFutura ? 'PRÓXIMO' : 'COMPLETAR')), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         ],
                       ]),
                     ),

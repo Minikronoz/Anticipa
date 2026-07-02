@@ -77,12 +77,14 @@ class UsuarioCreate(ConfigBase):
         return v
 
 class UsuarioResponse(ConfigBase):
-    id_usuario:    int
-    rol_id_rol:    int
-    nombre:        str
-    email:         str
-    fecha_registro: datetime
-    curso_id_curso: Optional[int]
+    id_usuario:         int
+    rol_id_rol:         int
+    nombre:             str
+    email:              str
+    fecha_registro:     datetime
+    curso_id_curso:     Optional[int]
+    codigo_vinculacion: Optional[str]
+    registrado:         bool
 
 
 # ESTUDIANTE
@@ -126,6 +128,7 @@ class VinculacionResponse(ConfigBase):
     usuario_id_usuario: int
     id_estudiante:      int
     rol_id_rol:         int
+    nombre_tutor:       Optional[str] = None
     fecha_inicio:       datetime
     fecha_termino:      Optional[datetime]
     motivo_cambio:      Optional[str]
@@ -362,4 +365,32 @@ class EncuestaDiariaResponse(ConfigBase):
     otro_motivo: str | None
     observacion: str | None
 
-    
+     
+
+# REGISTRO POR CÓDIGO
+
+class RegistroCodigoRequest(BaseModel):
+    codigo:   str
+    password: str
+
+    @field_validator('password')
+    @classmethod
+    def password_min_length(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError('La contraseña debe tener al menos 6 caracteres')
+        return v
+
+
+class VinculacionCodigoRequest(BaseModel):
+    codigo_estudiante: str
+    usuario_id_usuario: int
+
+
+class VinculacionProfesorRequest(BaseModel):
+    codigo_tutor:         str
+    id_estudiante:        int
+    id_usuario_profesor:  int
+
+
+class DesvinculacionRequest(BaseModel):
+    motivo_cambio: Optional[str] = None

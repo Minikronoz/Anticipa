@@ -342,20 +342,14 @@ class _PanelApoderadoState extends State<PanelApoderado> {
       return;
     }
 
-    final bool necesitaEncuesta = _esHoraDeEncuesta && (_surveyStatus[idEst] != true);
-
-    if (necesitaEncuesta) {
-      _mostrarEncuesta(hijo);
-    } else {
-      Navigator.push(context, MaterialPageRoute(
-        builder: (_) => PanelDetalleEstudiante(
-          idEstudiante: idEst,
-          idUsuario: widget.idUsuario,
-          rol: 'Tutor / Apoderado',
-          nombreEstudiante: hijo['nombre'] ?? '',
-        ),
-      ));
-    }
+    Navigator.push(context, MaterialPageRoute(
+      builder: (_) => PanelDetalleEstudiante(
+        idEstudiante: idEst,
+        idUsuario: widget.idUsuario,
+        rol: 'Tutor / Apoderado',
+        nombreEstudiante: hijo['nombre'] ?? '',
+      ),
+    ));
   }
 
   @override

@@ -181,6 +181,37 @@ def iniciar_sesion(request: schemas.LoginRequest, db: Session = Depends(get_db))
     return respuesta
 
 
+@app.post("/auth/registro-codigo", tags=["Autenticación"])
+def registro_por_codigo(request: schemas.RegistroCodigoRequest, db: Session = Depends(get_db)):
+    usuario = db.query(models.Usuario).filter(
+        models.Usuario.codigo_vinculacion == request.codigo
+    ).first()
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Código no válido.")
+    if usuario.registrado:
+        raise HTTPException(status_code=400, detail="Este código ya fue registrado. Inicia sesión con tu email y contraseña.")
+
+    usuario.password_hash = hash_password(request.password)
+    usuario.registrado = True
+    db.commit(); db.refresh(usuario)
+
+    rol = db.query(models.Rol).filter(models.Rol.id_rol == usuario.rol_id_rol).first()
+    respuesta = {
+        "mensaje":    "Registro exitoso",
+        "id_usuario": usuario.id_usuario,
+        "nombre":     usuario.nombre,
+        "rol":        rol.nombre_rol if rol else None,
+        "rol_id_rol": usuario.rol_id_rol,
+    }
+    if usuario.rol_id_rol == 4:
+        estudiante = db.query(models.Estudiante).filter(
+            models.Estudiante.usuario_id_usuario == usuario.id_usuario
+        ).first()
+        if estudiante:
+            respuesta["id_estudiante"] = estudiante.id_estudiante
+    return respuesta
+
+
 # ── Recuperación de contraseña ────────────────────────────
 
 @app.post("/auth/solicitar-codigo", tags=["Autenticación"])
@@ -563,6 +594,16 @@ def vincular_por_codigo(codigo: str, id_usuario: int, rol_id_rol: int = 3, db: S
     ).first()
     if existente:
         raise HTTPException(status_code=409, detail="Ya estás vinculado a este estudiante.")
+
+    if rol_id_rol == 3:
+        tutores_activos = db.query(models.VinculacionHistorial).filter(
+            models.VinculacionHistorial.id_estudiante == estudiante.id_estudiante,
+            models.VinculacionHistorial.rol_id_rol == 3,
+            models.VinculacionHistorial.fecha_termino == None
+        ).count()
+        if tutores_activos >= 2:
+            raise HTTPException(status_code=409, detail="Este estudiante ya tiene 2 tutores vinculados.")
+
     nuevo = models.VinculacionHistorial(
         usuario_id_usuario = id_usuario,
         id_estudiante      = estudiante.id_estudiante,
@@ -571,12 +612,135 @@ def vincular_por_codigo(codigo: str, id_usuario: int, rol_id_rol: int = 3, db: S
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
+
+@app.post("/vinculaciones/profesor",
+          response_model=schemas.VinculacionResponse,
+          status_code=status.HTTP_201_CREATED, tags=["Vinculaciones"])
+def vincular_tutor_por_profesor(req: schemas.VinculacionProfesorRequest, db: Session = Depends(get_db)):
+    """Permite a un profesor vincular un tutor (apoderado) a un estudiante usando el código del tutor."""
+    codigo = (req.codigo_tutor or '').strip().upper()
+    if not codigo:
+        raise HTTPException(status_code=400, detail="El código del tutor es obligatorio.")
+
+    profesor = db.query(models.Usuario).filter(
+        models.Usuario.id_usuario == req.id_usuario_profesor
+    ).first()
+    if not profesor:
+        raise HTTPException(status_code=400, detail="El profesor no existe.")
+
+    estudiante = db.query(models.Estudiante).filter(
+        models.Estudiante.id_estudiante == req.id_estudiante
+    ).first()
+    if not estudiante:
+        raise HTTPException(status_code=404, detail="El estudiante no existe.")
+
+    # Validar que el profesor esté vinculado al estudiante (rol profesor = 2)
+    vinculo_profesor = db.query(models.VinculacionHistorial).filter(
+        models.VinculacionHistorial.usuario_id_usuario == req.id_usuario_profesor,
+        models.VinculacionHistorial.id_estudiante == req.id_estudiante,
+        models.VinculacionHistorial.rol_id_rol == 2,
+        models.VinculacionHistorial.fecha_termino == None
+    ).first()
+    if not vinculo_profesor:
+        raise HTTPException(
+            status_code=403,
+            detail="No tienes permiso para vincular tutores a este estudiante."
+        )
+
+    tutor = db.query(models.Usuario).filter(
+        models.Usuario.codigo_vinculacion == codigo,
+        models.Usuario.rol_id_rol == 3
+    ).first()
+    if not tutor:
+        raise HTTPException(status_code=404, detail="Código de tutor no encontrado.")
+
+    existente = db.query(models.VinculacionHistorial).filter(
+        models.VinculacionHistorial.usuario_id_usuario == tutor.id_usuario,
+        models.VinculacionHistorial.id_estudiante == req.id_estudiante,
+        models.VinculacionHistorial.fecha_termino == None
+    ).first()
+    if existente:
+        raise HTTPException(status_code=409, detail="Este tutor ya está vinculado al estudiante.")
+
+    tutores_activos = db.query(models.VinculacionHistorial).filter(
+        models.VinculacionHistorial.id_estudiante == req.id_estudiante,
+        models.VinculacionHistorial.rol_id_rol == 3,
+        models.VinculacionHistorial.fecha_termino == None
+    ).count()
+    if tutores_activos >= 2:
+        raise HTTPException(status_code=409, detail="Este estudiante ya tiene 2 tutores vinculados.")
+
+    nuevo = models.VinculacionHistorial(
+        usuario_id_usuario=tutor.id_usuario,
+        id_estudiante=req.id_estudiante,
+        rol_id_rol=3,
+    )
+    db.add(nuevo); db.commit(); db.refresh(nuevo)
+    return nuevo
+
+
 @app.get("/vinculaciones/usuario/{id_usuario}",
          response_model=list[schemas.VinculacionResponse], tags=["Vinculaciones"])
 def listar_vinculaciones(id_usuario: int, db: Session = Depends(get_db)):
-    return db.query(models.VinculacionHistorial).filter(
+    vinculos = db.query(models.VinculacionHistorial).filter(
         models.VinculacionHistorial.usuario_id_usuario == id_usuario
     ).all()
+    resultado = []
+    for v in vinculos:
+        usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == v.usuario_id_usuario).first()
+        data = schemas.VinculacionResponse(
+            id_vinculo=v.id_vinculo,
+            usuario_id_usuario=v.usuario_id_usuario,
+            id_estudiante=v.id_estudiante,
+            rol_id_rol=v.rol_id_rol,
+            nombre_tutor=usuario.nombre if usuario else None,
+            fecha_inicio=v.fecha_inicio,
+            fecha_termino=v.fecha_termino,
+            motivo_cambio=v.motivo_cambio,
+        )
+        resultado.append(data)
+    return resultado
+
+@app.get("/vinculaciones/estudiante/{id_estudiante}",
+         response_model=list[schemas.VinculacionResponse], tags=["Vinculaciones"])
+def vinculaciones_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
+    vinculos = db.query(models.VinculacionHistorial).filter(
+        models.VinculacionHistorial.id_estudiante == id_estudiante,
+        models.VinculacionHistorial.fecha_termino == None
+    ).all()
+    resultado = []
+    for v in vinculos:
+        usuario = db.query(models.Usuario).filter(models.Usuario.id_usuario == v.usuario_id_usuario).first()
+        data = schemas.VinculacionResponse(
+            id_vinculo=v.id_vinculo,
+            usuario_id_usuario=v.usuario_id_usuario,
+            id_estudiante=v.id_estudiante,
+            rol_id_rol=v.rol_id_rol,
+            nombre_tutor=usuario.nombre if usuario else None,
+            fecha_inicio=v.fecha_inicio,
+            fecha_termino=v.fecha_termino,
+            motivo_cambio=v.motivo_cambio,
+        )
+        resultado.append(data)
+    return resultado
+
+@app.get("/estudiantes/sin-vinculo/{rol_id_rol}",
+         response_model=list[schemas.EstudianteResponse], tags=["Vinculaciones"])
+def estudiantes_sin_vinculo(rol_id_rol: int, db: Session = Depends(get_db)):
+    from sqlalchemy import func
+    estudiantes = db.query(models.Estudiante).all()
+    resultado = []
+    for e in estudiantes:
+        cantidad = db.query(func.count(models.VinculacionHistorial.id_vinculo)).filter(
+            models.VinculacionHistorial.id_estudiante == e.id_estudiante,
+            models.VinculacionHistorial.rol_id_rol == rol_id_rol,
+            models.VinculacionHistorial.fecha_termino == None
+        ).scalar()
+        if rol_id_rol == 3 and cantidad < 2:
+            resultado.append(e)
+        elif rol_id_rol != 3 and cantidad == 0:
+            resultado.append(e)
+    return resultado
 
 @app.patch("/vinculaciones/{id_vinculo}/desvincular",
            response_model=schemas.VinculacionResponse, tags=["Vinculaciones"])
@@ -591,11 +755,23 @@ def desvincular(
     ).first()
     if not v:
         raise HTTPException(status_code=404, detail="Vínculo no encontrado.")
-    if v.usuario_id_usuario != id_usuario:
-        raise HTTPException(status_code=403, detail="No tienes permiso para desvincular este estudiante.")
+
+    # Permite autodesvinculación o que un profesor vinculado al estudiante desvincule a terceros
+    puede_desvincular = v.usuario_id_usuario == id_usuario
+    if not puede_desvincular:
+        vinculo_profesor = db.query(models.VinculacionHistorial).filter(
+            models.VinculacionHistorial.usuario_id_usuario == id_usuario,
+            models.VinculacionHistorial.id_estudiante == v.id_estudiante,
+            models.VinculacionHistorial.rol_id_rol == 2,
+            models.VinculacionHistorial.fecha_termino == None
+        ).first()
+        puede_desvincular = vinculo_profesor is not None
+
+    if not puede_desvincular:
+        raise HTTPException(status_code=403, detail="No tienes permiso para desvincular este vínculo.")
     if v.fecha_termino:
         raise HTTPException(status_code=409, detail="Este vínculo ya está inactivo.")
-    v.fecha_termino = datetime.now(timezone.utc)
+    v.fecha_termino = datetime.now(CHILE_TZ)
     v.motivo_cambio = motivo
     db.commit(); db.refresh(v)
     return v
@@ -744,6 +920,11 @@ def completar_actividad(id_actividad: int, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=400,
             detail="No se pueden completar actividades de días futuros."
+        )
+    if a.fecha_actividad == hoy and a.hora_inicio > ahora.time():
+        raise HTTPException(
+            status_code=400,
+            detail="La actividad aún no comienza. No se puede completar."
         )
     if a.fecha_actividad == hoy and a.hora_fin < ahora.time():
         raise HTTPException(

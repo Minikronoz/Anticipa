@@ -71,6 +71,8 @@ class Usuario(Base):
     reset_token_expiry = Column(TIMESTAMP(timezone=True), nullable=True)
     curso_id_curso     = Column(Integer, ForeignKey("curso.id_curso"), nullable=True)
     es_admin           = Column(Boolean, default=False, nullable=False)
+    codigo_vinculacion = Column(String(10), unique=True, nullable=True)
+    registrado         = Column(Boolean, default=False, nullable=False)
 
     rol    = relationship("Rol")
     curso  = relationship("Curso")
