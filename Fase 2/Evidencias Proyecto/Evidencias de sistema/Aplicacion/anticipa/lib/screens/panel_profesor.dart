@@ -354,3 +354,16 @@ class _PanelProfesorState extends State<PanelProfesor> {
   }
 }
 
+// La vista Panel Profesor permite al docente visualizar 
+//y gestionar los estudiantes que tiene vinculados dentro de la plataforma. 
+//Esta pantalla consume información desde la API para cargar los cursos
+// y los estudiantes asociados al profesor, mostrando datos como el nombre, 
+//curso y estrellas acumuladas de cada estudiante. Además, incorpora la funcionalidad
+// de vinculación mediante un código ingresado por el profesor,
+// actualizando automáticamente la información cuando el proceso es exitoso.
+// La vista también permite acceder al calendario y detalle individual de cada estudiante, 
+//e incluye manejo de estados de carga, errores de conexión y una interfaz diseñada para facilitar
+// la administración y seguimiento de los alumnos.
+
+
+
