@@ -337,3 +337,20 @@ class _RecompensasScreenState extends State<RecompensasScreen> {
     );
   }
 }
+
+// En esta vista  se implementó la pantalla de recompensas para el estudiante, la cual permite visualizar
+// las estrellas acumuladas y las recompensas disponibles mediante el consumo de datos desde la API.
+// Además, se desarrolló la funcionalidad de canje de recompensas a través de solicitudes HTTP al backend, incorporando
+// una ventana de confirmación antes de realizar el canje para evitar acciones accidentales. 
+//Tras un canje exitoso, la información se actualiza automáticamente para reflejar el nuevo estado de las estrellas y las recompensas.
+// También se añadió el manejo de estados de carga, errores de conexión y mensajes informativos mediante SnackBar,
+// junto con una interfaz dinámica que diferencia visualmente las recompensas disponibles, bloqueadas y canjeadas,
+// asignando además iconos representativos según el tipo de recompensa para mejorar la experiencia del usuario.
+
+// Como resultado, se obtuvo un módulo de recompensas completamente funcional e integrado con el backend,
+// permitiendo que los estudiantes visualicen sus estrellas acumuladas,
+// consulten las recompensas disponibles y realicen canjes de forma segura. 
+//La implementación mejora la experiencia del usuario mediante una interfaz intuitiva,
+// actualización automática de la información y un manejo adecuado de errores, garantizando 
+//un funcionamiento confiable y una interacción fluida con el sistema.
+
