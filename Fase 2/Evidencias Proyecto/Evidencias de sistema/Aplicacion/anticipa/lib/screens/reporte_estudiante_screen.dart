@@ -261,7 +261,7 @@ class _ReporteEstudianteScreenState extends State<ReporteEstudianteScreen> {
   }
 }
 
-//En este commit se implementó la pantalla de reporte del estudiante,
+//En esta vista se implementó la pantalla de reporte del estudiante,
 // la cual permite visualizar métricas generales relacionadas con sus actividades, pictogramas y estrellas acumuladas.
 // El código consume información desde la API para obtener las actividades asignadas, 
 //los pictogramas registrados y las estrellas ganadas por el estudiante. A partir de estos datos,

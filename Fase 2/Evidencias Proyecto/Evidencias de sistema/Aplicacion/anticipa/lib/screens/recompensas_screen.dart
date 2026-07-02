@@ -338,7 +338,7 @@ class _RecompensasScreenState extends State<RecompensasScreen> {
   }
 }
 
-// En este commit se implementó la pantalla de recompensas para el estudiante, la cual permite visualizar
+// En esta vista  se implementó la pantalla de recompensas para el estudiante, la cual permite visualizar
 // las estrellas acumuladas y las recompensas disponibles mediante el consumo de datos desde la API.
 // Además, se desarrolló la funcionalidad de canje de recompensas a través de solicitudes HTTP al backend, incorporando
 // una ventana de confirmación antes de realizar el canje para evitar acciones accidentales. 
