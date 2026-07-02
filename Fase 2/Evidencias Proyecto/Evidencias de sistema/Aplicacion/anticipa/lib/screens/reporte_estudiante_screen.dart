@@ -270,3 +270,10 @@ class _ReporteEstudianteScreenState extends State<ReporteEstudianteScreen> {
 // Además, se incorporó una observación automática que entrega una interpretación del
 // desempeño del estudiante, permitiendo identificar si mantiene un buen nivel de
 // cumplimiento o si necesita refuerzo en una categoría específica.
+
+//Como resultado, se obtuvo un módulo de reporte funcional 
+//que entrega una visión clara del avance del estudiante dentro del sistema Anticipa.
+// Esta implementación permite analizar su cumplimiento,
+// revisar las actividades pendientes y detectar posibles dificultades por categoría,
+// facilitando el seguimiento por parte del profesor o apoderado y 
+//apoyando una toma de decisiones más informada.
