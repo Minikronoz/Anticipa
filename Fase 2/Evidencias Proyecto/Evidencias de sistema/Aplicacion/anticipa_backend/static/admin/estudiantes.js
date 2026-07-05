@@ -82,8 +82,11 @@ function cargarTabla(lista) {
     let html = "";
 
     lista.forEach(e => {
-        const nivelCurso = (e.curso_r?.nivel_academico ?? "") + (e.curso_r?.letra_academica ?? "");
-        
+
+        const nivelCurso =
+            (e.curso_r?.nivel_academico ?? "") +
+            (e.curso_r?.letra_academica ?? "");
+
         const estado = e.estado ?? "Sin estado";
 
         const badgeClass =
@@ -98,7 +101,7 @@ function cargarTabla(lista) {
             <td>${e.nombre ?? ""}</td>
             <td>${nivelCurso}</td>
             <td>${e.diagnostico ?? ""}</td>
-            <td>${e.puntos_totales ?? 0}</td>
+            <td>${e.desregulaciones ?? 0}</td>
             <td>
                 <span class="badge ${badgeClass}">
                     ${estado}
