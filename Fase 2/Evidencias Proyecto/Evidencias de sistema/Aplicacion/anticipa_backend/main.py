@@ -469,80 +469,54 @@ def listar_estudiantes(db: Session = Depends(get_db)):
     for e in estudiantes:
 
         # =========================
-        # ESTADO (desde BD si existe, si no se calcula)
+        # CURSO (APLANADO)
+        # =========================
+        curso = ""
+        if e.curso_r:
+            nivel = e.curso_r.nivel_academico or ""
+            letra = e.curso_r.letra_academica or ""
+            curso = f"{nivel}{letra}"
+
+        # =========================
+        # ESTADO (BD o cálculo)
         # =========================
         if e.estado:
             estado = e.estado
         else:
-            if e.puntos_totales >= 20:
+            if (e.puntos_totales or 0) >= 20:
                 estado = "Mejorando"
-            elif e.puntos_totales >= 10:
+            elif (e.puntos_totales or 0) >= 10:
                 estado = "Estable"
             else:
                 estado = "Riesgo"
 
         # =========================
-        # DIAGNÓSTICO (desde BD)
+        # DIAGNÓSTICO
         # =========================
-        diagnostico = e.diagnostico if e.diagnostico else "TEA"
+        diagnostico = e.diagnostico or "Sin diagnóstico"
 
         # =========================
-        # SEMANA (temporal aún)
+        # DESREGULACIONES (CAMBIO CLAVE)
         # =========================
-        semana = 0
+        desregulaciones = e.puntos_totales or 0
 
         resultado.append({
             "id_estudiante": e.id_estudiante,
             "nombre": e.nombre,
-            "puntos_totales": e.puntos_totales,
-
+            "curso": curso,
             "diagnostico": diagnostico,
             "estado": estado,
-            "semana": semana,
 
-            "curso_r": {
-                "nivel_academico": e.curso_r.nivel_academico if e.curso_r else "",
-                "letra_academica": e.curso_r.letra_academica if e.curso_r else ""
-            } if e.curso_r else None
+            # NUEVO NOMBRE CONSISTENTE
+            "desregulaciones": desregulaciones,
+
+            # métricas temporales
+            "hoy": 0,
+            "semana": 0,
+            "mes": 0
         })
 
     return resultado
-@app.get("/estudiantes/{id_estudiante}", response_model=schemas.EstudianteResponse, tags=["Estudiantes"])
-def obtener_estudiante(id_estudiante: int, db: Session = Depends(get_db)):
-    e = db.query(models.Estudiante).filter(
-        models.Estudiante.id_estudiante == id_estudiante
-    ).first()
-    if not e:
-        raise HTTPException(status_code=404, detail="Estudiante no encontrado.")
-    return e
-
-@app.get("/estudiantes/usuario/{id_usuario}",
-         response_model=list[schemas.EstudianteResponse], tags=["Estudiantes"])
-def estudiantes_de_usuario(id_usuario: int, db: Session = Depends(get_db)):
-    """Devuelve todos los estudiantes vinculados activamente a un adulto."""
-    vinculos = db.query(models.VinculacionHistorial).filter(
-        models.VinculacionHistorial.usuario_id_usuario == id_usuario,
-        models.VinculacionHistorial.fecha_termino == None
-    ).all()
-    return [v.estudiante for v in vinculos]
-
-@app.patch("/estudiantes/{id_estudiante}",
-           response_model=schemas.EstudianteResponse, tags=["Estudiantes"])
-def actualizar_estudiante(
-    id_estudiante: int,
-    datos: schemas.EstudianteUpdate,
-    db: Session = Depends(get_db)
-):
-    e = db.query(models.Estudiante).filter(
-        models.Estudiante.id_estudiante == id_estudiante
-    ).first()
-    if not e:
-        raise HTTPException(status_code=404, detail="Estudiante no encontrado.")
-    for campo, valor in datos.model_dump(exclude_unset=True).items():
-        setattr(e, campo, valor)
-    db.commit(); db.refresh(e)
-    return e
-
 
 # =========================================================
 # VINCULACIONES
