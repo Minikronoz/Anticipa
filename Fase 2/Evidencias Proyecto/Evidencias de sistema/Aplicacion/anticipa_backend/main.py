@@ -472,7 +472,7 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         selectinload(Estudiante.curso_r)
     ).all()
 
-        conteos = db.query(
+    conteos = db.query(
         EncuestaDiaria.estudiante_id_estudiante,
         func.coalesce(func.sum(EncuestaDiaria.cantidad), 0).label("total")
     ).filter(
