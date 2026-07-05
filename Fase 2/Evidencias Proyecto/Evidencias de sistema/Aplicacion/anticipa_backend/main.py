@@ -498,7 +498,7 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         # =========================
         # DESREGULACIONES (CAMBIO CLAVE)
         # =========================
-        desregulaciones = e.puntos_totales or 0
+        desregulaciones = e.historial_desregulaciones or 0
 
         resultado.append({
             "id_estudiante": e.id_estudiante,
