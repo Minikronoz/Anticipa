@@ -1536,6 +1536,30 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
         for e in encuestas_mes
         if e.tuvo_desregulacion
     )
+        # =========================
+    # TOTAL HISTÓRICO DE DESREGULACIONES
+    # =========================
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id
+    ).all()
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
+    # =========================
+    # TOTAL HISTÓRICO DE DESREGULACIONES
+    # =========================
+    encuestas = db.query(models.EncuestaDiaria).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id
+    ).all()
+
+    total_desregulaciones = sum(
+        e.cantidad or 0
+        for e in encuestas
+        if e.tuvo_desregulacion
+    )
 
     # =========================
     # HISTORIAL ÚLTIMOS 6 MESES
@@ -1568,18 +1592,19 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
     # RESPUESTA
     # =========================
     return {
-        "nombre": estudiante.nombre,
-        "curso": (
-            f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
-            if estudiante.curso_r
-            else ""
-        ),
-        "hoy": dato_hoy,
-        "semana": dato_semana,
-        "mes": dato_mes,
-        "desregulaciones": dato_mes,
-        "historial": historial
-    }
+    "nombre": estudiante.nombre,
+    "curso": (
+        f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
+        if estudiante.curso_r
+        else ""
+    ),
+    "hoy": dato_hoy,
+    "semana": dato_semana,
+    "mes": dato_mes,
+    "desregulaciones": total_desregulaciones,
+    "historial": historial
+}
+
 
 from fastapi import Depends
 from sqlalchemy.orm import Session
