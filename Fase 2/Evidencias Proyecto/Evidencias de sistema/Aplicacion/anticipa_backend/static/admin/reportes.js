@@ -256,8 +256,11 @@ Este reporte presenta metricas de desregulacion emocional y seguimiento de progr
             yPos += 6;
             const evoLabels = datosReporte.evolucion?.labels || [];
             const evoData = datosReporte.evolucion?.data || [];
+            const evoTotal = evoData.reduce((a, b) => a + b, 0) || 1;
             evoLabels.forEach((label, i) => {
-                pdf.text(`${label}: ${evoData[i] || 0} episodios`, margin + 5, yPos);
+                const valor = evoData[i] || 0;
+                const pct = ((valor / evoTotal) * 100).toFixed(1);
+                pdf.text(`${label}: ${valor} episodios (${pct}%)`, margin + 5, yPos);
                 yPos += 5;
             });
 
@@ -266,8 +269,11 @@ Este reporte presenta metricas de desregulacion emocional y seguimiento de progr
             yPos += 6;
             const facLabels = datosReporte.factores?.labels || [];
             const facData = datosReporte.factores?.data || [];
+            const facTotal = facData.reduce((a, b) => a + b, 0) || 1;
             facLabels.forEach((label, i) => {
-                pdf.text(`${label}: ${facData[i] || 0}`, margin + 5, yPos);
+                const valor = facData[i] || 0;
+                const pct = ((valor / facTotal) * 100).toFixed(1);
+                pdf.text(`${label}: ${valor} (${pct}%)`, margin + 5, yPos);
                 yPos += 5;
             });
 
@@ -276,8 +282,11 @@ Este reporte presenta metricas de desregulacion emocional y seguimiento de progr
             yPos += 6;
             const diasLabels = datosReporte.dias?.labels || [];
             const diasData = datosReporte.dias?.data || [];
+            const diasTotal = diasData.reduce((a, b) => a + b, 0) || 1;
             diasLabels.forEach((label, i) => {
-                pdf.text(`${label}: ${diasData[i] || 0}`, margin + 5, yPos);
+                const valor = diasData[i] || 0;
+                const pct = ((valor / diasTotal) * 100).toFixed(1);
+                pdf.text(`${label}: ${valor} (${pct}%)`, margin + 5, yPos);
                 yPos += 5;
             });
 
@@ -286,8 +295,11 @@ Este reporte presenta metricas de desregulacion emocional y seguimiento de progr
             yPos += 6;
             const cursLabels = datosReporte.cursos?.labels || [];
             const cursData = datosReporte.cursos?.data || [];
+            const cursTotal = cursData.reduce((a, b) => a + b, 0) || 1;
             cursLabels.forEach((label, i) => {
-                pdf.text(`${label}: ${cursData[i] || 0}`, margin + 5, yPos);
+                const valor = cursData[i] || 0;
+                const pct = ((valor / cursTotal) * 100).toFixed(1);
+                pdf.text(`${label}: ${valor} (${pct}%)`, margin + 5, yPos);
                 yPos += 5;
             });
 

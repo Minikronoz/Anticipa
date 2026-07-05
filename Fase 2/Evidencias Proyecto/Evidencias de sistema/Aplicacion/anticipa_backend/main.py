@@ -1461,8 +1461,8 @@ def dashboard_reportes(db: Session = Depends(get_db)):
         "cursoCritico": curso_critico,
 
         "evolucion": {
-            "labels": meses_labels[::-1],
-            "data": meses_data[::-1]
+            "labels": meses_labels,
+            "data": meses_data
         },
 
         "factores": {
