@@ -1491,7 +1491,9 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
 
     hoy = date.today()
 
-    # Desregulaciones hoy
+    # =========================
+    # DESREGULACIONES HOY
+    # =========================
     encuesta_hoy = db.query(models.EncuestaDiaria).filter(
         models.EncuestaDiaria.estudiante_id_estudiante == id,
         models.EncuestaDiaria.fecha == hoy
@@ -1503,7 +1505,9 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
         else 0
     )
 
-    # Últimos 7 días
+    # =========================
+    # ÚLTIMOS 7 DÍAS
+    # =========================
     semana_inicio = hoy - timedelta(days=7)
 
     encuestas_semana = db.query(models.EncuestaDiaria).filter(
@@ -1517,7 +1521,9 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
         if e.tuvo_desregulacion
     )
 
-    # Últimos 30 días
+    # =========================
+    # ÚLTIMOS 30 DÍAS
+    # =========================
     mes_inicio = hoy - timedelta(days=30)
 
     encuestas_mes = db.query(models.EncuestaDiaria).filter(
@@ -1531,7 +1537,9 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
         if e.tuvo_desregulacion
     )
 
-    # Evolución mensual
+    # =========================
+    # HISTORIAL ÚLTIMOS 6 MESES
+    # =========================
     historial = []
 
     for i in range(5, -1, -1):
@@ -1556,24 +1564,22 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
 
         historial.append(total)
 
- return {
-    "nombre": estudiante.nombre,
-    "curso": (
-        f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
-        if estudiante.curso_r
-        else ""
-    ),
-
-    "hoy": dato_hoy,
-    "semana": dato_semana,
-    "mes": dato_mes,
-
-    # Total de desregulaciones del último mes
-    "desregulaciones": dato_mes,
-
-    "historial": historial
-}
-
+    # =========================
+    # RESPUESTA
+    # =========================
+    return {
+        "nombre": estudiante.nombre,
+        "curso": (
+            f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
+            if estudiante.curso_r
+            else ""
+        ),
+        "hoy": dato_hoy,
+        "semana": dato_semana,
+        "mes": dato_mes,
+        "desregulaciones": dato_mes,
+        "historial": historial
+    }
 
 from fastapi import Depends
 from sqlalchemy.orm import Session
