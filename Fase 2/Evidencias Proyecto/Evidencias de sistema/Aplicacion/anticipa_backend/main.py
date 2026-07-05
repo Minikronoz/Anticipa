@@ -1556,18 +1556,23 @@ def detalle_estudiante(id: int, db: Session = Depends(get_db)):
 
         historial.append(total)
 
-    return {
-        "nombre": estudiante.nombre,
-        "curso": (
-            f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
-            if estudiante.curso_r
-            else ""
-        ),
-        "hoy": dato_hoy,
-        "semana": dato_semana,
-        "mes": dato_mes,
-        "historial": historial
-    }
+ return {
+    "nombre": estudiante.nombre,
+    "curso": (
+        f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
+        if estudiante.curso_r
+        else ""
+    ),
+
+    "hoy": dato_hoy,
+    "semana": dato_semana,
+    "mes": dato_mes,
+
+    # Total de desregulaciones del último mes
+    "desregulaciones": dato_mes,
+
+    "historial": historial
+}
 
 
 from fastapi import Depends
