@@ -296,58 +296,81 @@ function cargarGraficos() {
 }
 
 
-function verEstudiante(id) {
+async function verEstudiante(id) {
 
-    const estudiante = estudiantes.find(
-        e => Number(e.id_estudiante) === Number(id)
-    );
+    try {
 
-    if (!estudiante) return;
+        // =========================
+        // BUSCAR ESTUDIANTE EN LA LISTA
+        // =========================
+        const estudiante = estudiantes.find(
+            e => Number(e.id_estudiante) === Number(id)
+        );
 
-    // =========================
-    // TÍTULO
-    // =========================
-    document.getElementById("tituloEstudiante").textContent =
-        estudiante.nombre || "Sin nombre";
+        if (!estudiante) return;
 
-    // =========================
-    // CURSO
-    // =========================
-    const curso = document.getElementById("datoCurso");
-    if (curso) {
-        const c = estudiante.curso_r
-            ? `${estudiante.curso_r.nivel_academico}${estudiante.curso_r.letra_academica}`
-            : "SIN CURSO";
+        // =========================
+        // OBTENER DETALLE DESDE EL BACKEND
+        // =========================
+        const response = await fetch(`${API}/reportes/detalle-estudiante/${id}`);
 
-        curso.textContent = c;
+        if (!response.ok) {
+            throw new Error("No fue posible obtener el detalle del estudiante.");
+        }
+
+        const detalle = await response.json();
+
+        console.log("DETALLE:", detalle);
+
+        // =========================
+        // TÍTULO
+        // =========================
+        document.getElementById("tituloEstudiante").textContent =
+            estudiante.nombre || "-";
+
+        // =========================
+        // DATOS BÁSICOS
+        // =========================
+        document.getElementById("datoDiagnostico").textContent =
+            estudiante.diagnostico || "-";
+
+        document.getElementById("datoEstado").textContent =
+            estudiante.estado || "-";
+
+        // =========================
+        // MÉTRICAS DEL MODAL
+        // =========================
+        document.getElementById("datoHoy").textContent =
+            detalle.hoy ?? 0;
+
+        document.getElementById("datoSemana").textContent =
+            detalle.semana ?? 0;
+
+        document.getElementById("datoMes").textContent =
+            detalle.mes ?? 0;
+
+        document.getElementById("datoDesregulaciones").textContent =
+            detalle.desregulaciones ?? 0;
+
+        // =========================
+        // GUARDAR DETALLE
+        // =========================
+        window.detalleEstudiante = detalle;
+
+        // =========================
+        // ABRIR MODAL
+        // =========================
+        const modal = new bootstrap.Modal(
+            document.getElementById("modalEstudiante")
+        );
+
+        modal.show();
+
+    } catch (error) {
+
+        console.error(error);
+        alert("No se pudo cargar la información del estudiante.");
+
     }
 
-    // =========================
-    // DIAGNÓSTICO
-    // =========================
-    document.getElementById("datoDiagnostico").textContent =
-        (estudiante.diagnostico || "SIN DIAGNÓSTICO").toUpperCase();
-
-    // =========================
-    // ESTADO
-    // =========================
-    document.getElementById("datoEstado").textContent =
-        (estudiante.estado || "SIN ESTADO").toUpperCase();
-
-    // =========================
-    // PUNTOS (ÚNICO MÉTRICO REAL DEL ESTUDIANTE)
-    // =========================
-    const puntos = estudiante.puntos_totales || 0;
-
-    const puntosUI = document.getElementById("datoPuntos");
-    if (puntosUI) {
-        puntosUI.textContent = puntos;
-    }
-
-    // =========================
-    // MODAL
-    // =========================
-    new bootstrap.Modal(
-        document.getElementById("modalEstudiante")
-    ).show();
 }
