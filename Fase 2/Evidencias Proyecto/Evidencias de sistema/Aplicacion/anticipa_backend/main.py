@@ -518,6 +518,30 @@ def listar_estudiantes(db: Session = Depends(get_db)):
     return resultado
 
 
+@app.get("/estudiantes/usuario/{id_usuario}", tags=["Estudiantes"])
+def listar_estudiantes_de_usuario(id_usuario: int, db: Session = Depends(get_db)):
+    """Lista los estudiantes vinculados a un usuario (profesor o tutor)."""
+    vinculos = db.query(models.VinculacionHistorial).filter(
+        models.VinculacionHistorial.usuario_id_usuario == id_usuario,
+        models.VinculacionHistorial.fecha_termino == None
+    ).all()
+
+    resultado = []
+    for v in vinculos:
+        estudiante = db.query(models.Estudiante).filter(
+            models.Estudiante.id_estudiante == v.id_estudiante
+        ).first()
+        if estudiante:
+            resultado.append({
+                "id_estudiante": estudiante.id_estudiante,
+                "nombre": estudiante.nombre,
+                "curso_id_curso": estudiante.curso_id_curso,
+                "puntos_totales": estudiante.puntos_totales or 0,
+            })
+
+    return resultado
+
+
 
 # =========================================================
 # VINCULACIONES
