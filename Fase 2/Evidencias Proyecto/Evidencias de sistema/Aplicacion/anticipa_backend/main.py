@@ -464,53 +464,43 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         selectinload(models.Estudiante.curso_r)
     ).all()
 
+    # =========================
+    # PRE-CALCULO DE DESREGULACIONES (OPTIMIZADO)
+    # =========================
+    desreg_map = dict(
+        db.query(
+            models.EncuestaDiaria.estudiante_id_estudiante,
+            func.count(models.EncuestaDiaria.id_encuesta)
+        )
+        .group_by(models.EncuestaDiaria.estudiante_id_estudiante)
+        .all()
+    )
+
     resultado = []
 
     for e in estudiantes:
 
-        # =========================
-        # CURSO (APLANADO)
-        # =========================
         curso = ""
         if e.curso_r:
-            nivel = e.curso_r.nivel_academico or ""
-            letra = e.curso_r.letra_academica or ""
-            curso = f"{nivel}{letra}"
+            curso = f"{e.curso_r.nivel_academico or ''}{e.curso_r.letra_academica or ''}"
 
-        # =========================
-        # ESTADO (BD o cálculo)
-        # =========================
-        if e.estado:
-            estado = e.estado
+        desregulaciones = desreg_map.get(e.id_estudiante, 0)
+
+        if desregulaciones >= 20:
+            estado = "Mejorando"
+        elif desregulaciones >= 10:
+            estado = "Estable"
         else:
-            if (e.puntos_totales or 0) >= 20:
-                estado = "Mejorando"
-            elif (e.puntos_totales or 0) >= 10:
-                estado = "Estable"
-            else:
-                estado = "Riesgo"
-
-        # =========================
-        # DIAGNÓSTICO
-        # =========================
-        diagnostico = e.diagnostico or "Sin diagnóstico"
-
-        # =========================
-        # DESREGULACIONES (CAMBIO CLAVE)
-        # =========================
-        desregulaciones = e.historial_desregulaciones or 0
+            estado = "Riesgo"
 
         resultado.append({
             "id_estudiante": e.id_estudiante,
             "nombre": e.nombre,
             "curso": curso,
-            "diagnostico": diagnostico,
+            "diagnostico": e.diagnostico or "Sin diagnóstico",
             "estado": estado,
-
-            # NUEVO NOMBRE CONSISTENTE
             "desregulaciones": desregulaciones,
-
-            # métricas temporales
+            "estrellas": e.puntos_totales or 0,
             "hoy": 0,
             "semana": 0,
             "mes": 0
