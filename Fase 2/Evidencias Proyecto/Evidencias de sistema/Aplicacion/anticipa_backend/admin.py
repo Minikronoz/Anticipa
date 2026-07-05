@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy import func
 from passlib.context import CryptContext
 import models
 import schemas_admin
@@ -117,6 +118,18 @@ def listar_estudiantes(db: Session = Depends(get_db)):
 
     estudiantes = db.query(models.Estudiante).all()
 
+    # Obtener conteo de desregulaciones por estudiante
+    conteos = db.query(
+        models.EncuestaDiaria.estudiante_id_estudiante,
+        func.coalesce(func.sum(models.EncuestaDiaria.cantidad), 0).label("total")
+    ).filter(
+        models.EncuestaDiaria.tuvo_desregulacion == True
+    ).group_by(
+        models.EncuestaDiaria.estudiante_id_estudiante
+    ).all()
+
+    mapa_desreg = {c.estudiante_id_estudiante: c.total for c in conteos}
+
     resultado = []
 
     for e in estudiantes:
@@ -126,12 +139,24 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         if e.curso_r:
             curso = f"{e.curso_r.nivel_academico}{e.curso_r.letra_academica}"
 
+        desregulaciones = mapa_desreg.get(e.id_estudiante, 0)
+
+        if desregulaciones >= 20:
+            estado = "Mejorando"
+        elif desregulaciones >= 10:
+            estado = "Estable"
+        else:
+            estado = "Riesgo"
+
         resultado.append({
             "id_estudiante": e.id_estudiante,
             "nombre": e.nombre,
             "fecha_nacimiento": e.fecha_nacimiento,
             "codigo_vinculacion": e.codigo_vinculacion,
             "puntos_totales": e.puntos_totales,
+            "diagnostico": e.diagnostico or "Sin diagnóstico",
+            "estado": estado,
+            "desregulaciones": desregulaciones,
             "curso": curso
         })
 
@@ -160,12 +185,28 @@ def obtener_estudiante(
     if estudiante.curso_r:
         curso = f"{estudiante.curso_r.nivel_academico}{estudiante.curso_r.letra_academica}"
 
+    # Obtener desregulaciones del estudiante
+    desreg = db.query(func.coalesce(func.sum(models.EncuestaDiaria.cantidad), 0)).filter(
+        models.EncuestaDiaria.estudiante_id_estudiante == id,
+        models.EncuestaDiaria.tuvo_desregulacion == True
+    ).scalar() or 0
+
+    if desreg >= 20:
+        estado = "Mejorando"
+    elif desreg >= 10:
+        estado = "Estable"
+    else:
+        estado = "Riesgo"
+
     return {
         "id_estudiante": estudiante.id_estudiante,
         "nombre": estudiante.nombre,
         "fecha_nacimiento": estudiante.fecha_nacimiento,
         "codigo_vinculacion": estudiante.codigo_vinculacion,
         "puntos_totales": estudiante.puntos_totales,
+        "diagnostico": estudiante.diagnostico or "Sin diagnóstico",
+        "estado": estado,
+        "desregulaciones": desreg,
         "curso": curso
     }
 

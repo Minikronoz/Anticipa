@@ -1362,25 +1362,107 @@ def reporte_estudiante(
 @app.get("/reportes/dashboard")
 def dashboard_reportes(db: Session = Depends(get_db)):
 
+    from datetime import datetime, timedelta
+    from collections import Counter
+
     estudiantes = db.query(models.Estudiante).all()
     encuestas = db.query(models.EncuestaDiaria).all()
 
-    total_estudiantes = len(estudiantes)
-    total_desregulaciones = sum(e.cantidad or 0 for e in encuestas if e.tuvo_desregulacion)
+    # Calcular desregulaciones por estudiante
+    desreg_por_estudiante = {}
+    for e in encuestas:
+        if e.tuvo_desregulacion and e.cantidad:
+            est_id = e.estudiante_id_estudiante
+            desreg_por_estudiante[est_id] = desreg_por_estudiante.get(est_id, 0) + e.cantidad
 
-    motivos = Counter(e.motivo for e in encuestas if e.motivo)
+    # Calcular estado de cada estudiante
+    estudiantes_estado = []
+    for est in estudiantes:
+        desreg = desreg_por_estudiante.get(est.id_estudiante, 0)
+        if desreg >= 20:
+            estado = "Mejorando"
+        elif desreg >= 10:
+            estado = "Estable"
+        else:
+            estado = "Riesgo"
+        estudiantes_estado.append({
+            "id": est.id_estudiante,
+            "estado": estado,
+            "desreg": desreg,
+            "curso_id": est.curso_id_curso
+        })
 
+    # Contar estudiantes en riesgo
+    riesgo_alto = sum(1 for e in estudiantes_estado if e["estado"] == "Riesgo")
+
+    # Calcular mejora global (% de estudiantes mejorando vs total)
+    mejorando = sum(1 for e in estudiantes_estado if e["estado"] == "Mejorando")
+    mejora_global = f"{(mejorando / len(estudiantes) * 100):.0f}%" if estudiantes else "0%"
+
+    # Motivos más frecuentes
+    motivos = Counter(e.motivo for e in encuestas if e.tuvo_desregulacion and e.motivo)
     motivo_principal = motivos.most_common(1)[0][0] if motivos else "Sin datos"
 
+    # Distribución por día de la semana (0=Lunes, 6=Domingo)
+    dias_semana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
+    conteo_dias = Counter()
+    for e in encuestas:
+        if e.tuvo_desregulacion and e.fecha_encuesta:
+            dia = e.fecha_encuesta.weekday()
+            conteo_dias[dias_semana[dia]] += e.cantidad or 1
+
+    # Distribución por mes (últimos 6 meses)
+    now = datetime.now(CHILE_TZ)
+    meses_labels = []
+    meses_data = []
+    for i in range(5, -1, -1):
+        mes = (now.month - i) if (now.month - i) > 0 else (now.month - i + 12)
+        year = now.year if (now.month - i) > 0 else now.year - 1
+        meses_labels.append(dias_semana[mes - 1] if False else ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][mes - 1])
+        total_mes = 0
+        for e in encuestas:
+            if e.tuvo_desregulacion and e.fecha_encuesta:
+                if e.fecha_encuesta.month == mes and e.fecha_encuesta.year == year:
+                    total_mes += e.cantidad or 1
+        meses_data.append(total_mes)
+
+    # Desregulaciones por curso
+    cursos_map = {}
+    for est in estudiantes:
+        if est.curso_id_curso:
+            curso_obj = db.query(models.Curso).filter(models.Curso.id_curso == est.curso_id_curso).first()
+            if curso_obj:
+                nombre_curso = f"{curso_obj.nivel_academico}{curso_obj.letra_academica}"
+                desreg = desreg_por_estudiante.get(est.id_estudiante, 0)
+                if nombre_curso not in cursos_map:
+                    cursos_map[nombre_curso] = 0
+                cursos_map[nombre_curso] += desreg
+
+    cursos_labels = list(cursos_map.keys())[:5]
+    cursos_data = list(cursos_map.values())[:5]
+
+    # Curso crítico (el de mayor desregulación)
+    curso_critico = max(cursos_map, key=cursos_map.get) if cursos_map else "Sin datos"
+
+    # Generar hallazgos automáticos
+    hallazgos = []
+    if conteo_dias:
+        dia_mas = max(conteo_dias, key=conteo_dias.get)
+        hallazgos.append(f"Las desregulaciones se concentran principalmente los días {dia_mas}.")
+    if cursos_labels:
+        hallazgos.append(f"El curso {curso_critico} presenta el mayor índice de desregulaciones.")
+    if motivo_principal and motivo_principal != "Sin datos":
+        hallazgos.append(f"El factor principal de desregulación es: {motivo_principal}.")
+
     return {
-        "mejoraGlobal": "37%",  # luego lo puedes calcular real
-        "riesgoAlto": 4,
+        "mejoraGlobal": mejora_global,
+        "riesgoAlto": riesgo_alto,
         "factorPrincipal": motivo_principal,
-        "cursoCritico": "5°A",
+        "cursoCritico": curso_critico,
 
         "evolucion": {
-            "labels": ["Ene","Feb","Mar","Abr","May","Jun"],
-            "data": [120,110,98,85,72,64]
+            "labels": meses_labels[::-1],
+            "data": meses_data[::-1]
         },
 
         "factores": {
@@ -1389,20 +1471,16 @@ def dashboard_reportes(db: Session = Depends(get_db)):
         },
 
         "dias": {
-            "labels": ["Lun","Mar","Mié","Jue","Vie"],
-            "data": [25,30,18,35,14]
+            "labels": list(conteo_dias.keys()),
+            "data": list(conteo_dias.values())
         },
 
         "cursos": {
-            "labels": ["1°A","2°A","3°A","4°A","5°A"],
-            "data": [8,12,18,10,25]
+            "labels": cursos_labels,
+            "data": cursos_data
         },
 
-        "hallazgos": [
-            "Las desregulaciones están concentradas en ciertos días.",
-            "El factor principal es el más recurrente.",
-            "El sistema permite detección temprana de crisis."
-        ]
+        "hallazgos": hallazgos if len(hallazgos) >= 3 else hallazgos + ["El sistema permite detección temprana de crisis."] * (3 - len(hallazgos))
     }
 
 @app.get("/reportes/pdf/{id_estudiante}")

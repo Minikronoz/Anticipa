@@ -14,7 +14,7 @@ async function cargarEstudiantes() {
 
     try {
 
-        const res = await fetch(`${API}/estudiantes/`, {
+        const res = await fetch(`${API}/admin/estudiantes`, {
             method: "GET",
             cache: "no-store"
         });
@@ -140,11 +140,7 @@ function cargarCursos() {
     const cursos = [
         ...new Set(
             estudiantes
-                .map(e =>
-                    e.curso_r
-                        ? `${e.curso_r.nivel_academico}${e.curso_r.letra_academica}`
-                        : null
-                )
+                .map(e => e.curso || null)
                 .filter(Boolean)
         )
     ].sort();
@@ -168,10 +164,7 @@ function aplicarFiltros() {
 
         const nombre = (e.nombre || "").toLowerCase();
 
-        const cursoNombre =
-            e.curso_r
-                ? `${e.curso_r.nivel_academico}${e.curso_r.letra_academica}`
-                : "";
+        const cursoNombre = e.curso || "";
 
         return (
             nombre.includes(texto) &&
@@ -217,9 +210,7 @@ function cargarGraficos() {
 
     estudiantes.forEach(est => {
 
-        const curso = est.curso_r
-            ? `${est.curso_r.nivel_academico}${est.curso_r.letra_academica}`
-            : "";
+        const curso = est.curso || "";
 
         if (!curso) return;
 
