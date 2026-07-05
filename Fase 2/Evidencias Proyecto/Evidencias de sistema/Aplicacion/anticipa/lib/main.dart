@@ -95,6 +95,37 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Widget _perfilChip(String label, String email, String password, ThemeColors colors) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: () {
+          setState(() {
+            emailController.text = email;
+            passwordController.text = password;
+          });
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: colors.primary.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: colors.primary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Future<void> hacerLogin() async {
     setState(() {
       isLoading = true;
@@ -184,7 +215,18 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Icon(Icons.calendar_today_rounded, size: 80, color: colors.primary),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                _perfilChip('Profesor', 'solar@profesor.cl', '123456', colors),
+                const SizedBox(width: 12),
+                _perfilChip('Apoderado', 'solar.sebastian1@gmail.com', '123456', colors),
+                const SizedBox(width: 12),
+                _perfilChip('Estudiante', 's.solar@duocuc.cl', '123456', colors),
+              ],
+            ),
+            const SizedBox(height: 20),
             TextField(
               controller: emailController,
               decoration: InputDecoration(
