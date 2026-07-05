@@ -306,18 +306,12 @@ async function verEstudiante(id) {
 
     try {
 
-        // =========================
-        // BUSCAR ESTUDIANTE EN LA LISTA
-        // =========================
         const estudiante = estudiantes.find(
             e => Number(e.id_estudiante) === Number(id)
         );
 
         if (!estudiante) return;
 
-        // =========================
-        // OBTENER DETALLE DESDE EL BACKEND
-        // =========================
         const response = await fetch(`${API}/reportes/detalle-estudiante/${id}`);
 
         if (!response.ok) {
@@ -329,42 +323,73 @@ async function verEstudiante(id) {
         console.log("DETALLE:", detalle);
 
         // =========================
-        // TÍTULO
+        // INFO BÁSICA
         // =========================
-        document.getElementById("tituloEstudiante").textContent =
-            estudiante.nombre || "-";
-
-        // =========================
-        // DATOS BÁSICOS
-        // =========================
-        document.getElementById("datoDiagnostico").textContent =
-            estudiante.diagnostico || "-";
-
-        document.getElementById("datoEstado").textContent =
-            estudiante.estado || "-";
+        document.getElementById("tituloEstudiante").textContent = estudiante.nombre || "-";
+        document.getElementById("datoDiagnostico").textContent = estudiante.diagnostico || "-";
+        document.getElementById("datoEstado").textContent = estudiante.estado || "-";
 
         // =========================
-        // MÉTRICAS DEL MODAL
+        // MÉTRICAS
         // =========================
-        document.getElementById("datoHoy").textContent =
-            detalle.hoy ?? 0;
-
-        document.getElementById("datoSemana").textContent =
-            detalle.semana ?? 0;
-
-        document.getElementById("datoMes").textContent =
-            detalle.mes ?? 0;
-
-        document.getElementById("datoDesregulaciones").textContent =
-            detalle.desregulaciones ?? 0;
+        document.getElementById("datoHoy").textContent = detalle.hoy ?? 0;
+        document.getElementById("datoSemana").textContent = detalle.semana ?? 0;
+        document.getElementById("datoMes").textContent = detalle.mes ?? 0;
+        document.getElementById("datoDesregulaciones").textContent = detalle.desregulaciones ?? 0;
 
         // =========================
-        // GUARDAR DETALLE
+        // GRÁFICO 1: EVOLUCIÓN (HISTORIAL)
+        // =========================
+        const ctx1 = document.getElementById("graficoAlumno");
+
+        if (window.graficoAlumnoInstance) {
+            window.graficoAlumnoInstance.destroy();
+        }
+
+        window.graficoAlumnoInstance = new Chart(ctx1, {
+            type: "line",
+            data: {
+                labels: (detalle.historial || []).map((_, i) => `Día ${i + 1}`),
+                datasets: [{
+                    label: "Desregulaciones",
+                    data: detalle.historial || [],
+                    borderWidth: 2
+                }]
+            }
+        });
+
+        // =========================
+        // GRÁFICO 2: IMPACTO
+        // =========================
+        const ctx2 = document.getElementById("graficoImpacto");
+
+        if (window.graficoImpactoInstance) {
+            window.graficoImpactoInstance.destroy();
+        }
+
+        window.graficoImpactoInstance = new Chart(ctx2, {
+            type: "bar",
+            data: {
+                labels: ["Hoy", "Semana", "Mes"],
+                datasets: [{
+                    label: "Desregulaciones",
+                    data: [
+                        detalle.hoy ?? 0,
+                        detalle.semana ?? 0,
+                        detalle.mes ?? 0
+                    ],
+                    borderWidth: 1
+                }]
+            }
+        });
+
+        // =========================
+        // GUARDAR
         // =========================
         window.detalleEstudiante = detalle;
 
         // =========================
-        // ABRIR MODAL
+        // MODAL
         // =========================
         const modal = new bootstrap.Modal(
             document.getElementById("modalEstudiante")
@@ -373,10 +398,7 @@ async function verEstudiante(id) {
         modal.show();
 
     } catch (error) {
-
         console.error(error);
         alert("No se pudo cargar la información del estudiante.");
-
     }
-
 }
