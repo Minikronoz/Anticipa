@@ -14,13 +14,22 @@ async function cargarEstudiantes() {
 
     try {
 
-        const res = await fetch(`${API}/estudiantes/`);
+        const res = await fetch(`${API}/estudiantes/`, {
+            method: "GET",
+            cache: "no-store"
+        });
 
         if (!res.ok) {
-            throw new Error("Error cargando estudiantes");
+            throw new Error(`HTTP ${res.status}`);
         }
 
-        estudiantes = await res.json();
+        const data = await res.json();
+
+        if (!Array.isArray(data)) {
+            throw new Error("Respuesta inválida del backend");
+        }
+
+        estudiantes = data;
 
         console.log("ESTUDIANTES CARGADOS:", estudiantes);
 
@@ -30,11 +39,12 @@ async function cargarEstudiantes() {
         cargarGraficos();
 
     } catch (error) {
-        console.error(error);
+
+        console.error("ERROR REAL CARGANDO ESTUDIANTES:", error);
+
         alert("No se pudieron cargar los estudiantes desde el backend");
     }
 }
-
 // =======================================
 // MÉTRICAS (TARJETAS)
 // =======================================

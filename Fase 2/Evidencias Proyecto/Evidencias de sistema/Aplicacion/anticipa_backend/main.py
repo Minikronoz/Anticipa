@@ -460,13 +460,18 @@ def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends
 
 from sqlalchemy import func
 
+from sqlalchemy import func
+from models import Estudiante, EncuestaDiaria
+
 @app.get("/estudiantes/")
 def listar_estudiantes(db: Session = Depends(get_db)):
 
-    # 1. traer estudiantes con curso
-    estudiantes = db.query(Estudiante).all()
+    from sqlalchemy.orm import selectinload
 
-    # 2. traer conteo de desregulaciones en bloque
+    estudiantes = db.query(Estudiante).options(
+        selectinload(Estudiante.curso_r)
+    ).all()
+
     conteos = db.query(
         EncuestaDiaria.estudiante_id_estudiante,
         func.count(EncuestaDiaria.id_encuesta).label("total")
@@ -476,7 +481,6 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         EncuestaDiaria.estudiante_id_estudiante
     ).all()
 
-    # 3. mapear a dict (optimizado)
     mapa = {c.estudiante_id_estudiante: c.total for c in conteos}
 
     resultado = []
@@ -484,8 +488,10 @@ def listar_estudiantes(db: Session = Depends(get_db)):
     for e in estudiantes:
 
         curso = ""
-        if e.curso_r:
-            curso = f"{e.curso_r.nivel_academico or ''}{e.curso_r.letra_academica or ''}"
+        if e.curso_r is not None:
+            nivel = e.curso_r.nivel_academico or ""
+            letra = e.curso_r.letra_academica or ""
+            curso = f"{nivel}{letra}"
 
         desregulaciones = mapa.get(e.id_estudiante, 0)
 
@@ -510,7 +516,6 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         })
 
     return resultado
-
 
 
 
