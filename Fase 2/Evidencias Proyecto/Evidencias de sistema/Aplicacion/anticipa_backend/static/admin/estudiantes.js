@@ -76,27 +76,32 @@ function cargarMetricas() {
 // TABLA
 // =======================================
 function cargarTabla(lista) {
-
     const tabla = document.getElementById("tablaEstudiantes");
     tabla.innerHTML = "";
 
-    lista.forEach(e => {
+    let html = "";
 
-        tabla.innerHTML += `
+    lista.forEach(e => {
+        const nivelCurso = (e.curso_r?.nivel_academico ?? "") + (e.curso_r?.letra_academica ?? "");
+        
+        const estado = e.estado ?? "Sin estado";
+
+        const badgeClass =
+            estado === "Riesgo"
+                ? "bg-danger"
+                : estado === "Estable"
+                    ? "bg-warning text-dark"
+                    : "bg-success";
+
+        html += `
         <tr>
-            <td>${e.nombre}</td>
-            <td>${e.curso_r?.nivel_academico || ""}${e.curso_r?.letra_academica || ""}</td>
-            <td>${e.diagnostico}</td>
-            <td>${e.puntos_totales || 0}</td>
+            <td>${e.nombre ?? ""}</td>
+            <td>${nivelCurso}</td>
+            <td>${e.diagnostico ?? ""}</td>
+            <td>${e.puntos_totales ?? 0}</td>
             <td>
-                <span class="badge ${
-                    e.estado === "Riesgo"
-                        ? "bg-danger"
-                        : e.estado === "Estable"
-                            ? "bg-warning text-dark"
-                            : "bg-success"
-                }">
-                    ${e.estado}
+                <span class="badge ${badgeClass}">
+                    ${estado}
                 </span>
             </td>
             <td>
@@ -108,6 +113,8 @@ function cargarTabla(lista) {
         </tr>
         `;
     });
+
+    tabla.innerHTML = html;
 }
 
 // =======================================
