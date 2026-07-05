@@ -1407,8 +1407,8 @@ def dashboard_reportes(db: Session = Depends(get_db)):
     dias_semana = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"]
     conteo_dias = Counter()
     for e in encuestas:
-        if e.tuvo_desregulacion and e.fecha_encuesta:
-            dia = e.fecha_encuesta.weekday()
+        if e.tuvo_desregulacion and e.fecha:
+            dia = e.fecha.weekday()
             conteo_dias[dias_semana[dia]] += e.cantidad or 1
 
     # Distribución por mes (últimos 6 meses)
@@ -1421,8 +1421,8 @@ def dashboard_reportes(db: Session = Depends(get_db)):
         meses_labels.append(dias_semana[mes - 1] if False else ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][mes - 1])
         total_mes = 0
         for e in encuestas:
-            if e.tuvo_desregulacion and e.fecha_encuesta:
-                if e.fecha_encuesta.month == mes and e.fecha_encuesta.year == year:
+            if e.tuvo_desregulacion and e.fecha:
+                if e.fecha.month == mes and e.fecha.year == year:
                     total_mes += e.cantidad or 1
         meses_data.append(total_mes)
 

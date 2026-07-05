@@ -214,7 +214,7 @@ function cargarGraficos() {
 
         if (!curso) return;
 
-        cursos[curso] = (cursos[curso] || 0) + (est.puntos_totales || 0);
+        cursos[curso] = (cursos[curso] || 0) + (est.desregulaciones || 0);
     });
 
     const labelsCursos = Object.keys(cursos);
