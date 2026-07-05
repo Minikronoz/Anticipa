@@ -458,25 +458,26 @@ def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends
     return nuevo
 
 
+from sqlalchemy import func
+
 @app.get("/estudiantes/")
 def listar_estudiantes(db: Session = Depends(get_db)):
 
-    estudiantes = db.query(models.Estudiante).options(
-        selectinload(models.Estudiante.curso_r)
+    # 1. traer estudiantes con curso
+    estudiantes = db.query(Estudiante).all()
+
+    # 2. traer conteo de desregulaciones en bloque
+    conteos = db.query(
+        EncuestaDiaria.estudiante_id_estudiante,
+        func.count(EncuestaDiaria.id_encuesta).label("total")
+    ).filter(
+        EncuestaDiaria.tuvo_desregulacion == True
+    ).group_by(
+        EncuestaDiaria.estudiante_id_estudiante
     ).all()
 
-    # =========================
-    # AGRUPACIÓN REAL DESDE encuesta_diaria
-    # =========================
-    desreg_map = dict(
-        db.query(
-            models.EncuestaDiaria.estudiante_id_estudiante,
-            func.coalesce(func.sum(models.EncuestaDiaria.cantidad), 0)
-        )
-        .filter(models.EncuestaDiaria.tuvo_desregulacion == True)
-        .group_by(models.EncuestaDiaria.estudiante_id_estudiante)
-        .all()
-    )
+    # 3. mapear a dict (optimizado)
+    mapa = {c.estudiante_id_estudiante: c.total for c in conteos}
 
     resultado = []
 
@@ -486,9 +487,8 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         if e.curso_r:
             curso = f"{e.curso_r.nivel_academico or ''}{e.curso_r.letra_academica or ''}"
 
-        desregulaciones = desreg_map.get(e.id_estudiante, 0)
+        desregulaciones = mapa.get(e.id_estudiante, 0)
 
-        # estado derivado de desregulaciones reales
         if desregulaciones >= 20:
             estado = "Mejorando"
         elif desregulaciones >= 10:
