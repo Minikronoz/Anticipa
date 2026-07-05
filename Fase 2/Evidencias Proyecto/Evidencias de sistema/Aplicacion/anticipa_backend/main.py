@@ -457,6 +457,7 @@ def crear_estudiante(estudiante: schemas.EstudianteCreate, db: Session = Depends
     db.add(nuevo); db.commit(); db.refresh(nuevo)
     return nuevo
 
+
 @app.get("/estudiantes/")
 def listar_estudiantes(db: Session = Depends(get_db)):
 
@@ -465,13 +466,14 @@ def listar_estudiantes(db: Session = Depends(get_db)):
     ).all()
 
     # =========================
-    # PRE-CALCULO DE DESREGULACIONES (OPTIMIZADO)
+    # AGRUPACIÓN REAL DESDE encuesta_diaria
     # =========================
     desreg_map = dict(
         db.query(
             models.EncuestaDiaria.estudiante_id_estudiante,
-            func.count(models.EncuestaDiaria.id_encuesta)
+            func.coalesce(func.sum(models.EncuestaDiaria.cantidad), 0)
         )
+        .filter(models.EncuestaDiaria.tuvo_desregulacion == True)
         .group_by(models.EncuestaDiaria.estudiante_id_estudiante)
         .all()
     )
@@ -486,6 +488,7 @@ def listar_estudiantes(db: Session = Depends(get_db)):
 
         desregulaciones = desreg_map.get(e.id_estudiante, 0)
 
+        # estado derivado de desregulaciones reales
         if desregulaciones >= 20:
             estado = "Mejorando"
         elif desregulaciones >= 10:
@@ -507,6 +510,9 @@ def listar_estudiantes(db: Session = Depends(get_db)):
         })
 
     return resultado
+
+
+
 
 # =========================================================
 # VINCULACIONES
