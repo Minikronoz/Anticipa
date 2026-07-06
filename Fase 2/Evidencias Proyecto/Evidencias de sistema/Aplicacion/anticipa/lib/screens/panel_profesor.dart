@@ -440,14 +440,38 @@ class _PanelProfesorState extends State<PanelProfesor> {
                           ),
                         ),
                       ),
-                    Wrap(
-                      spacing: 20,
-                      runSpacing: 20,
-                      children: estudiantes.map((estudiante) {
-                        return _estudianteCard(estudiante);
-                      }).toList(),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final width = constraints.maxWidth;
+                        int crossCount = 2;
+                        double spacing = 12;
+                        double cardHeight = 220;
+                        if (width > 600) {
+                          crossCount = 3;
+                          spacing = 16;
+                          cardHeight = 200;
+                        }
+                        if (width > 900) {
+                          crossCount = 4;
+                          spacing = 16;
+                          cardHeight = 190;
+                        }
+                        return GridView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          padding: EdgeInsets.all(spacing),
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossCount,
+                            mainAxisExtent: cardHeight,
+                            crossAxisSpacing: spacing,
+                            mainAxisSpacing: spacing,
+                          ),
+                          itemCount: estudiantes.length,
+                          itemBuilder: (ctx, i) => _estudianteCard(estudiantes[i]),
+                        );
+                      },
                     ),
-                    const SizedBox(height: 35),
+                    const SizedBox(height: 24),
                     _vincularEstudianteButton(),
                     const SizedBox(height: 25),
                     const Center(
@@ -462,102 +486,109 @@ class _PanelProfesorState extends State<PanelProfesor> {
   }
 
   Widget _estudianteCard(dynamic estudiante) {
-    return Container(
-      width: 270,
-      height: 245,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 160;
+        return Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: const Color(0xFFE2E8F0)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              Text(
-                obtenerEmoji(estudiante),
-                style: const TextStyle(fontSize: 42),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    obtenerEmoji(estudiante),
+                    style: TextStyle(fontSize: isNarrow ? 28 : 32),
+                  ),
+                  SizedBox(height: isNarrow ? 4 : 6),
+                  Text(
+                    estudiante['nombre'] ?? 'Sin nombre',
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: isNarrow ? 11 : 13,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF061A40),
+                    ),
+                  ),
+                  SizedBox(height: isNarrow ? 2 : 4),
+                  Text(
+                    obtenerNombreCurso(estudiante),
+                    style: TextStyle(
+                      fontSize: isNarrow ? 9 : 11,
+                      color: const Color(0xFF334155),
+                    ),
+                  ),
+                  SizedBox(height: isNarrow ? 2 : 4),
+                  Text(
+                    '⭐ ${estudiante['puntos_totales'] ?? 0}',
+                    style: TextStyle(
+                      fontSize: isNarrow ? 11 : 13,
+                      color: const Color(0xFFEAB308),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: isNarrow ? 6 : 8),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 30,
+                    child: ElevatedButton.icon(
+                      onPressed: () => abrirDetalleEstudiante(estudiante),
+                      icon: Icon(Icons.calendar_month, size: isNarrow ? 14 : 16),
+                      label: Text('Ver calendario', style: TextStyle(fontSize: isNarrow ? 10 : 11)),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4F46E5),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                estudiante['nombre'] ?? 'Sin nombre',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF061A40),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                obtenerNombreCurso(estudiante),
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Color(0xFF334155),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '⭐ ${estudiante['puntos_totales'] ?? 0}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  color: Color(0xFFEAB308),
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const Spacer(),
-              SizedBox(
-                width: double.infinity,
-                height: 40,
-                child: ElevatedButton.icon(
-                  onPressed: () => abrirDetalleEstudiante(estudiante),
-                  icon: const Icon(Icons.calendar_month, size: 18),
-                  label: const Text('Ver calendario'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4F46E5),
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => _mostrarDialogoGestionTutores(estudiante),
+                    child: Container(
+                      padding: const EdgeInsets.all(5),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4F46E5).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person_add,
+                        color: const Color(0xFF4F46E5),
+                        size: isNarrow ? 16 : 18,
+                      ),
                     ),
                   ),
                 ),
               ),
             ],
           ),
-          Positioned(
-            top: 0,
-            right: 0,
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(20),
-                onTap: () => _mostrarDialogoGestionTutores(estudiante),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4F46E5).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.person_add,
-                    color: Color(0xFF4F46E5),
-                    size: 22,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

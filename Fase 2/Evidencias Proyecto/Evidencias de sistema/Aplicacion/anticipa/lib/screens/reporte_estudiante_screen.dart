@@ -171,7 +171,7 @@ class _ReporteEstudianteScreenState extends State<ReporteEstudianteScreen> {
 
             Row(
               children: [
-                Expanded(child: _metricCard('$pendientes', 'Pendientes', Icons.pending)),
+                Expanded(child: _metricCard('$pendientes', 'No completadas', Icons.pending)),
                 const SizedBox(width: 12),
                 Expanded(child: _metricCard('$estrellas', 'Estrellas', Icons.star)),
               ],
@@ -230,6 +230,8 @@ class _ReporteEstudianteScreenState extends State<ReporteEstudianteScreen> {
                 ),
               ),
             ),
+
+            const SizedBox(height: 100),
           ],
         ),
       ),
