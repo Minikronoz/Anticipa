@@ -1,0 +1,187 @@
+-- ============================================================
+-- ANTICIPA - Script completo para Supabase
+-- ============================================================
+
+-- ── Tabla: COLEGIO ──────────────────────────────────────────
+CREATE TABLE public.colegio (
+    id_colegio         SERIAL PRIMARY KEY,
+    nombre             VARCHAR(100) NOT NULL,
+    rut                VARCHAR(20) UNIQUE,
+    direccion          VARCHAR(255),
+    telefono           VARCHAR(20),
+    correo             VARCHAR(100),
+    contacto_nombre    VARCHAR(100),
+    activo             BOOLEAN NOT NULL DEFAULT TRUE,
+    plan               VARCHAR(20) NOT NULL DEFAULT 'basico',
+    fecha_contrato     DATE,
+    fecha_vencimiento  DATE
+);
+
+-- ── Tabla: ROL ──────────────────────────────────────────────
+CREATE TABLE public.rol (
+    id_rol     SERIAL PRIMARY KEY,
+    nombre_rol VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- ── Tabla: CURSO ────────────────────────────────────────────
+CREATE TABLE public.curso (
+    id_curso          SERIAL PRIMARY KEY,
+    nivel_academico   VARCHAR(10) NOT NULL,
+    letra_academica   VARCHAR(1),
+    colegio_id_colegio INTEGER REFERENCES public.colegio(id_colegio)
+);
+
+-- ── Tabla: USUARIO ──────────────────────────────────────────
+CREATE TABLE public.usuario (
+    id_usuario         SERIAL PRIMARY KEY,
+    rol_id_rol         INTEGER NOT NULL REFERENCES public.rol(id_rol),
+    nombre             VARCHAR(100) NOT NULL,
+    email              VARCHAR(100) NOT NULL UNIQUE,
+    password_hash      VARCHAR(255) NOT NULL,
+    fecha_registro     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    reset_token        VARCHAR(100) UNIQUE,
+    reset_token_expiry TIMESTAMP WITH TIME ZONE,
+    curso_id_curso     INTEGER REFERENCES public.curso(id_curso),
+    es_admin           BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- ── Tabla: ESTUDIANTE ───────────────────────────────────────
+CREATE TABLE public.estudiante (
+    id_estudiante       SERIAL PRIMARY KEY,
+    nombre              VARCHAR(100) NOT NULL,
+    fecha_nacimiento    DATE NOT NULL,
+    codigo_vinculacion  VARCHAR(7) UNIQUE,
+    puntos_totales      INTEGER NOT NULL DEFAULT 0,
+    diagnostico         VARCHAR(50),
+    estado              VARCHAR(20),
+    creado_en           TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    usuario_id_usuario  INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    curso_id_curso      INTEGER NOT NULL REFERENCES public.curso(id_curso)
+);
+
+-- ── Tabla: VINCULACION_HISTORIAL ────────────────────────────
+CREATE TABLE public.vinculacion_historial (
+    id_vinculo         SERIAL PRIMARY KEY,
+    usuario_id_usuario INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    id_estudiante      INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante),
+    rol_id_rol         INTEGER NOT NULL REFERENCES public.rol(id_rol),
+    fecha_inicio       TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    fecha_termino      TIMESTAMP WITH TIME ZONE,
+    motivo_cambio      VARCHAR(255)
+);
+
+CREATE UNIQUE INDEX idx_un_vinculo_activo
+ON public.vinculacion_historial (usuario_id_usuario, id_estudiante)
+WHERE fecha_termino IS NULL;
+
+-- ── Tabla: PICTOGRAMA ───────────────────────────────────────
+CREATE TABLE public.pictograma (
+    id_pictograma SERIAL PRIMARY KEY,
+    nombre_imagen VARCHAR(100) NOT NULL,
+    url           TEXT NOT NULL,
+    categoria     VARCHAR(50)
+);
+
+-- ── Tabla: CATALOGO_ACTIVIDAD ───────────────────────────────
+CREATE TABLE public.catalogo_actividad (
+    id_catalogo              SERIAL PRIMARY KEY,
+    nombre_predeterminado    VARCHAR(100) NOT NULL,
+    pictograma_id_pictograma INTEGER REFERENCES public.pictograma(id_pictograma)
+);
+
+-- ── Tabla: ACTIVIDAD ────────────────────────────────────────
+CREATE TABLE public.actividad (
+    id_actividad                   SERIAL PRIMARY KEY,
+    estudiante_id_estudiante       INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante) ON DELETE CASCADE,
+    usuario_id_usuario             INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    pictograma_id_pictograma       INTEGER REFERENCES public.pictograma(id_pictograma),
+    catalogo_actividad_id_catalogo INTEGER REFERENCES public.catalogo_actividad(id_catalogo),
+    nombre_tarea                   VARCHAR(100) NOT NULL,
+    hora_inicio                    TIME NOT NULL,
+    hora_fin                       TIME NOT NULL,
+    es_completada                  BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_actividad                DATE NOT NULL,
+    fecha_creacion                 TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- ── Tabla: CONFIGURACION_ALERTA ─────────────────────────────
+CREATE TABLE public.configuracion_alerta (
+    id_alerta              SERIAL PRIMARY KEY,
+    actividad_id_actividad INTEGER NOT NULL UNIQUE REFERENCES public.actividad(id_actividad) ON DELETE CASCADE,
+    minutos_anticipacion   VARCHAR(5) NOT NULL DEFAULT '5',
+    tipo_sonido            VARCHAR(20) NOT NULL DEFAULT 'suave',
+    parpadeo_visual        BOOLEAN NOT NULL DEFAULT TRUE
+);
+
+-- ── Tabla: HISTORIAL_CUMPLIMIENTO ───────────────────────────
+CREATE TABLE public.historial_cumplimiento (
+    id_log                 SERIAL PRIMARY KEY,
+    actividad_id_actividad INTEGER NOT NULL REFERENCES public.actividad(id_actividad),
+    fecha_cumplimiento     TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    observaciones          VARCHAR(255)
+);
+
+-- ── Tabla: RECOMPENSA_DISPONIBLE ────────────────────────────
+CREATE TABLE public.recompensa_disponible (
+    id_recompensa            SERIAL PRIMARY KEY,
+    estudiante_id_estudiante INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante) ON DELETE CASCADE,
+    nombre_recompensa        VARCHAR(100) NOT NULL,
+    recompensa_url           TEXT,
+    meta_estrellas           INTEGER NOT NULL DEFAULT 5,
+    estado_logro             BOOLEAN NOT NULL DEFAULT FALSE,
+    fecha_logro              TIMESTAMP WITH TIME ZONE
+);
+
+-- ── Tabla: REGISTRO_ESTRELLA_DIARIA ─────────────────────────
+CREATE TABLE public.registro_estrella_diaria (
+    id_registro              SERIAL PRIMARY KEY,
+    estudiante_id_estudiante INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante),
+    fecha                    DATE NOT NULL DEFAULT CURRENT_DATE,
+    estrellas_ganadas        INTEGER NOT NULL DEFAULT 0 CHECK (estrellas_ganadas >= 0),
+    CONSTRAINT unq_estudiante_fecha UNIQUE (estudiante_id_estudiante, fecha)
+);
+
+-- ── Tabla: ENCUESTA_DIARIA ──────────────────────────────────
+CREATE TABLE public.encuesta_diaria (
+    id_encuesta               SERIAL PRIMARY KEY,
+    estudiante_id_estudiante  INTEGER NOT NULL REFERENCES public.estudiante(id_estudiante) ON DELETE CASCADE,
+    usuario_id_usuario        INTEGER NOT NULL REFERENCES public.usuario(id_usuario),
+    fecha                     DATE NOT NULL DEFAULT CURRENT_DATE,
+    tuvo_desregulacion        BOOLEAN NOT NULL,
+    cantidad                  INTEGER,
+    motivo                    VARCHAR(100),
+    otro_motivo               TEXT,
+    observacion               TEXT,
+    CONSTRAINT unq_encuesta_por_dia UNIQUE (estudiante_id_estudiante, fecha)
+);
+
+-- ============================================================
+-- SEED DATA
+-- ============================================================
+
+-- Insertar roles
+INSERT INTO public.rol (nombre_rol) VALUES
+    ('Administrador'),
+    ('Profesor'),
+    ('Apoderado'),
+    ('Estudiante');
+
+-- Insertar colegio Sagrados Corazones
+INSERT INTO public.colegio (nombre, rut, direccion, telefono, correo, contacto_nombre, activo, plan, fecha_contrato, fecha_vencimiento)
+VALUES (
+    'Colegio Sagrados Corazones',
+    '76.XXX.XXX-X',
+    'Colón 1234, Hualpén, Chile',
+    '+56 41 XXX XXXX',
+    'contacto@sagradoscorazones.cl',
+    'Director/a Nombre Apellido',
+    TRUE,
+    'premium',
+    CURRENT_DATE,
+    CURRENT_DATE + INTERVAL '1 year'
+);
+
+-- ============================================================
+-- ACTUALIZAR CURSOS EXISTENTES (asignar al colegio 1)
+-- ============================================================
+UPDATE public.curso SET colegio_id_colegio = 1 WHERE colegio_id_colegio IS NULL;
